@@ -1,0 +1,32 @@
+body {
+    background-color: black;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+}
+
+ul li {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+.text-pink {
+    color: #f5cee1 !important;
+}
+
+.p-drawer {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+    border-style: none !important;
+}
+
+@media (max-width: 768px) {
+    .mobile-display-none {
+        display: none !important;
+    }
+}
