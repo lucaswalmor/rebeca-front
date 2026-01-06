@@ -19,10 +19,27 @@ a {
     color: #f5cee1 !important;
 }
 
-.p-drawer {
-    background-color: #1a1a1a !important;
-    color: #ffffff !important;
-    border-style: none !important;
+.botao-assinatura {
+    width: 100%;
+    padding: 10px;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    background-color: #f5cee1;
+    color: #761c49;
+    outline: none;
+    border: none;
+    transition: background-color 0.55s ease, color 0.55s ease, transform 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.botao-assinatura:hover {
+    background-color: #761c49;
+    color: #f5cee1;
+    transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {

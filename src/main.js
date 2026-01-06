@@ -3,7 +3,11 @@ import App from './App.vue'
 import './registerServiceWorker'
 import router from './router'
 
+
 import './assets/css/global.css';
+import './assets/css/primevue.css';
+
+import VueTheMask from 'vue-the-mask'
 
 import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
@@ -24,4 +28,5 @@ app.use(PrimeVue, {
     }
 });
 app.use(ToastService);
+app.use(VueTheMask);
 app.mount('#app')

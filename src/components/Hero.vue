@@ -59,7 +59,7 @@
                     </div>
                 </div>
 
-                <!-- <div class="row mt-3">
+                <div class="row mt-3">
                     <span class="text-white font-bold">Assinatura</span>
                     
                     <div class="p-2 d-flex flex-wrap gap-2">
@@ -76,15 +76,15 @@
                             <span class="me-4 font-bold">R$ 45,00</span>
                         </button>
                     </div>
-                </div> -->
+                </div>
 
-                <!-- <div class="row mt-3">
+                <div class="row mt-3">
                     <div class="p-2 d-flex flex-wrap gap-2">
-                        <button class="botao-assinatura">
+                        <button class="botao-assinatura" @click="navigateTo('/profile')">
                             <span class="ms-4 font-bold">Editar Perfil</span>
                         </button>
                     </div>
-                </div> -->
+                </div>
             </div>
         </template>
     </Card>
@@ -121,6 +121,9 @@ export default {
     methods: {
         toggle(event) {
             this.$refs.menu.toggle(event);
+        },
+        navigateTo(path) {
+            this.$router.push(path);
         }
     }
 }
@@ -232,28 +235,5 @@ img {
 
 .image-button:active {
     transform: translateY(0);
-}
-
-.botao-assinatura {
-    width: 100%;
-    padding: 10px;
-    border-radius: 50px;
-    font-size: 18px;
-    font-weight: 500;
-    letter-spacing: 1px;
-    background-color: #f5cee1;
-    color: #761c49;
-    outline: none;
-    border: none;
-    transition: background-color 0.55s ease, color 0.55s ease, transform 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.botao-assinatura:hover {
-    background-color: #761c49;
-    color: #f5cee1;
-    transform: translateY(-1px);
 }
 </style>
