@@ -627,9 +627,38 @@ export default {
 
 // Responsividade para mobile
 @media (max-width: 768px) {
+    .drawer-comentarios {
+        :deep(.p-drawer) {
+            max-height: 90vh;
+        }
+        
+        :deep(.p-drawer-content) {
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        :deep(.p-drawer-footer) {
+            padding: 0.75rem;
+            position: relative;
+            z-index: 5;
+        }
+    }
+    
+    .comentarios-container {
+        min-height: 0;
+    }
+    
+    .comentarios-list {
+        padding-bottom: 1rem;
+        flex: 1;
+        min-height: 0;
+    }
+    
     .emoji-picker-container {
         margin-top: 0.5rem;
         max-width: 100%;
+        position: relative;
     }
     
     .resposta-input-wrapper {
@@ -637,29 +666,51 @@ export default {
     }
     
     .input-wrapper {
-        position: relative;
+        width: 90%;
     }
     
-    // Ajusta o drawer para não quebrar quando o emoji picker abre
-    .drawer-comentarios {
-        :deep(.p-drawer-content) {
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
+    .comentario-input-container {
+        gap: 0.5rem;
     }
     
-    .comentarios-list {
-        padding-bottom: 1rem;
+    .input-avatar {
+        flex-shrink: 0;
     }
 }
 
 @media (max-width: 480px) {
+    .drawer-comentarios {
+        :deep(.p-drawer) {
+            max-height: 85vh;
+        }
+        
+        :deep(.p-drawer-header) {
+            padding: 1rem;
+            font-size: 1rem;
+        }
+        
+        :deep(.p-drawer-footer) {
+            padding: 0.5rem;
+        }
+    }
+    
     .emoji-picker-container {
         margin-top: 0.4rem;
     }
     
     .resposta-input-container {
         padding-left: 0.3rem;
+    }
+    
+    .comentario-input-container {
+        gap: 0.4rem;
+    }
+    
+    .input-avatar {
+        :deep(.p-avatar) {
+            width: 2rem;
+            height: 2rem;
+        }
     }
 }
 

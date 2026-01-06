@@ -5,7 +5,7 @@
                 <span class="cursor-pointer col font-bold menu-item"
                     :class="selectedMenu === 0 ? 'menu-item-selected text-pink' : 'text-500'" @click="selectMenu(0)">
                     <i class="fa-solid fa-photo-film me-2"></i>
-                    {{ totalPostagens }} Postagens
+                    {{ totalPostagens }} {{ totalPostagens === 1 ? 'Post' : 'Posts' }}
                 </span>
                 <span class="cursor-pointer col font-bold menu-item"
                     :class="selectedMenu === 1 ? 'menu-item-selected text-pink' : 'text-500'" @click="selectMenu(1)">

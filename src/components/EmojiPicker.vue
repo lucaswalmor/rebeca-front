@@ -1,12 +1,5 @@
 <template>
     <div class="emoji-picker-wrapper">
-        <div class="emoji-picker-header">
-            <InputText 
-                v-model="buscaEmoji"
-                placeholder="Buscar emoji..."
-                class="emoji-search-input"
-            />
-        </div>
         <div class="emoji-tabs">
             <button
                 v-for="(categoria, key) in categorias"

@@ -12,7 +12,7 @@
                         </div>
                     </div>
                     <div class="md:col-2 mobile-display-none">
-                        <span class="text-500">{{ content.date }}</span>
+                        <span class="text-500 text-lg">{{ content.date }}</span>
                     </div>
                 </div>
             </template>
@@ -73,10 +73,12 @@
         @deletar-comentario="deletarComentario"
         @deletar-resposta="deletarResposta"
     />
+
+    <Toast />
 </template>
 
 <script>
-import { Avatar, Button, Card, Carousel, Image } from 'primevue';
+import { Avatar, Button, Card, Carousel, Image, Toast } from 'primevue';
 import DrawerComentarios from './drawers/DrawerComentarios.vue';
 
 export default {
@@ -97,7 +99,8 @@ export default {
         Button,
         Image,
         Avatar,
-        DrawerComentarios
+        DrawerComentarios,
+        Toast
     },
     data() {
         return {
@@ -142,6 +145,11 @@ export default {
             }
 
             this.conteudos[contentIndex].isLiked = !this.conteudos[contentIndex].isLiked;
+
+            const msg = this.conteudos[contentIndex].isLiked ? 'Curtido!' : 'Descurtido!';
+            const detail = this.conteudos[contentIndex].isLiked ? 'Você curtiu esta foto' : 'Você descurtiu esta foto';
+
+            this.$toast.add({ severity: this.conteudos[contentIndex].isLiked ? 'success' : 'warn', summary: msg, detail: detail, life: 3000 });
         },
         abrirDrawerComentarios(contentIndex) {
             this.conteudoAtualIndex = contentIndex;
