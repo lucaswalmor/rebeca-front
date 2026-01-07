@@ -3,8 +3,8 @@ import { useAuthStore } from '@/stores/auth';
 
 // Criar instância do axios com configuração base
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api',
-    // baseURL: 'https://rebeca.lksoftware.com.br/public/api',
+    // baseURL: 'http://127.0.0.1:8000/api',
+    baseURL: 'https://rebeca.lksoftware.com.br/public/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
