@@ -1,5 +1,5 @@
 import axios from 'axios';
-import eventBus from '@/utils/eventBus';
+import { useAuthStore } from '@/stores/auth';
 
 // Criar instância do axios com configuração base
 const api = axios.create({
@@ -21,14 +21,16 @@ api.interceptors.request.use(
         
         // Iniciar loading global (exceto se config.skipLoading for true)
         if (!config.skipLoading) {
-            eventBus.emit('loading-start');
+            const authStore = useAuthStore();
+            authStore.startLoading();
         }
         
         return config;
     },
     (error) => {
         // Parar loading em caso de erro na requisição
-        eventBus.emit('loading-stop');
+        const authStore = useAuthStore();
+        authStore.stopLoading();
         return Promise.reject(error);
     }
 );
@@ -38,14 +40,16 @@ api.interceptors.response.use(
     (response) => {
         // Parar loading global (exceto se config.skipLoading for true)
         if (!response.config.skipLoading) {
-            eventBus.emit('loading-stop');
+            const authStore = useAuthStore();
+            authStore.stopLoading();
         }
         return response;
     },
     (error) => {
         // Parar loading em caso de erro
         if (!error.config?.skipLoading) {
-            eventBus.emit('loading-stop');
+            const authStore = useAuthStore();
+            authStore.stopLoading();
         }
         
         if (error.response && error.response.status === 401) {

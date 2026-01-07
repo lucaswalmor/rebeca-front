@@ -32,13 +32,17 @@
 <script>
 import LoginDialog from './dialogs/user/Login.vue';
 import RegisterDialog from './dialogs/user/Register.vue';
-import eventBus from '@/utils/eventBus';
+import { useAuthStore } from '@/stores/auth';
 
 export default {
   name: 'Header',
   components: {
     LoginDialog,
     RegisterDialog
+  },
+  setup() {
+    const authStore = useAuthStore();
+    return { authStore };
   },
   data() {
     return {
@@ -84,8 +88,8 @@ export default {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         this.checkLoginStatus(); // Atualizar estado reativo
-        // Emitir evento global para atualizar componentes
-        eventBus.emit('user-logged-out');
+        // Disparar atualização via Pinia
+        this.authStore.logout();
         this.loading = false;
         this.$toast.add({
           severity: 'success',
@@ -99,8 +103,8 @@ export default {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         this.checkLoginStatus(); // Atualizar estado reativo
-        // Emitir evento global para atualizar componentes
-        eventBus.emit('user-logged-out');
+        // Disparar atualização via Pinia
+        this.authStore.logout();
         this.$toast.add({
           severity: 'info',
           summary: 'Info',

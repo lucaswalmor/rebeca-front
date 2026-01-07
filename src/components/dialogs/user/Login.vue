@@ -17,7 +17,7 @@
 <script>
 import Dialog from 'primevue/dialog';
 import LoginForm from '../../forms/users/LoginForm.vue';
-import eventBus from '@/utils/eventBus';
+import { useAuthStore } from '@/stores/auth';
 
 export default {
     name: 'LoginDialog',
@@ -41,6 +41,10 @@ export default {
                 this.$emit('update:modelValue', value);
             }
         }
+    },
+    setup() {
+        const authStore = useAuthStore();
+        return { authStore };
     },
     data() {
         return {
@@ -73,8 +77,8 @@ export default {
                 
                 // Emitir evento para atualizar estado da aplicação se necessário
                 this.$emit('logged-in', response.data.user);
-                // Emitir evento global para atualizar componentes
-                eventBus.emit('user-logged-in', response.data.user);
+                // Disparar atualização via Pinia
+                this.authStore.login();
             } catch (error) {
                 this.loading = false;
                 let errorMessage = 'Erro ao realizar login';

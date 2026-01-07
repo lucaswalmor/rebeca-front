@@ -156,7 +156,8 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
 import { Menu } from 'primevue';
-import eventBus from '@/utils/eventBus';
+import { useAuthStore } from '@/stores/auth';
+import { storeToRefs } from 'pinia';
 
 export default {
     name: 'Hero',
@@ -213,12 +214,20 @@ export default {
             selectedAvatarFile: null
         }
     },
+    setup() {
+        const authStore = useAuthStore();
+        const { updateTrigger } = storeToRefs(authStore);
+        return { authStore, updateTrigger };
+    },
     mounted() {
         this.checkAdminStatus();
         this.preencherDados();
-        // Escutar eventos de login/logout
-        eventBus.on('user-logged-in', this.checkAdminStatus);
-        eventBus.on('user-logged-out', this.checkAdminStatus);
+    },
+    watch: {
+        // Observar mudanças na store para atualizar status de admin
+        updateTrigger() {
+            this.checkAdminStatus();
+        }
     },
     computed: {
         hasActiveSubscription() {
@@ -258,11 +267,6 @@ export default {
             deep: true,
             immediate: true
         }
-    },
-    beforeUnmount() {
-        // Remover listeners
-        eventBus.off('user-logged-in', this.checkAdminStatus);
-        eventBus.off('user-logged-out', this.checkAdminStatus);
     },
     methods: {
         preencherDados() {

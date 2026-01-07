@@ -16,9 +16,11 @@ import 'primeflex/primeflex.css';
 import api from './axios/api';
 import { MyPreset } from './primevue/config';
 import { isAdmin, hasAssinaturaAtiva, isLoggedIn } from './utils/global';
+import pinia from './stores';
 
 const app = createApp(App)
 app.use(router)
+app.use(pinia)
 app.config.globalProperties.api = api;
 app.config.globalProperties.isAdmin = isAdmin;
 app.config.globalProperties.hasAssinaturaAtiva = hasAssinaturaAtiva;

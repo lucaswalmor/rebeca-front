@@ -24,7 +24,8 @@ import Hero from '@/components/Hero.vue';
 import Menu from '@/components/Menu.vue';
 import Content from '@/views/Content.vue';
 import ScrollTop from 'primevue/scrolltop';
-import eventBus from '@/utils/eventBus';
+import { useAuthStore } from '@/stores/auth';
+import { storeToRefs } from 'pinia';
 
 export default {
     name: 'Main',
@@ -50,19 +51,28 @@ export default {
             canLoadMore: false
         }
     },
+    setup() {
+        const authStore = useAuthStore();
+        const { updateTrigger } = storeToRefs(authStore);
+        return { authStore, updateTrigger };
+    },
     async mounted() {
         await this.carregarContagens();
         await this.carregarPosts();
         
-        // Escutar eventos de logout para recarregar posts
-        eventBus.on('user-logged-out', this.handleLogout);
-        
         // Adicionar listener de scroll para infinite scroll
         window.addEventListener('scroll', this.handleScroll);
     },
+    watch: {
+        // Observar mudanças na store para recarregar posts após logout
+        updateTrigger(newVal, oldVal) {
+            // Se o trigger mudou, pode ser login ou logout
+            // Verificar se ainda está logado para decidir se recarrega
+            this.handleLogout();
+        }
+    },
     beforeUnmount() {
         // Remover listeners
-        eventBus.off('user-logged-out', this.handleLogout);
         window.removeEventListener('scroll', this.handleScroll);
     },
     methods: {

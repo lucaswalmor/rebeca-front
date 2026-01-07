@@ -35,6 +35,7 @@
                                 <span class="text-xs text-secondary">@{{ content.user_apelido || 'Becalima007' }}</span>
                                 <Tag 
                                     :value="content.status === 'ativo' ? 'Ativo' : 'Inativo'" 
+                                    v-if="this.isAdmin()"
                                     :severity="content.status === 'ativo' ? 'success' : 'danger'"
                                     class="tag-status"
                                 />
@@ -46,13 +47,13 @@
                             <span class="text-500 text-sm">{{ content.date }}</span>
                         </div>
                         <Menu 
-                            v-if="isAdminComputed" 
+                            v-if="this.isAdmin()" 
                             :model="getMenuItems(contentIndex)" 
                             popup 
                             :ref="el => { if (el) menuRefs[contentIndex] = el }"
                         />
                         <Button 
-                            v-if="isAdminComputed"
+                            v-if="this.isAdmin()"
                             icon="pi pi-ellipsis-v" 
                             text 
                             rounded 
@@ -148,7 +149,9 @@
 <script>
 import { Avatar, Button, Card, Carousel, Menu, Tag } from 'primevue';
 import DrawerComentarios from './drawers/DrawerComentarios.vue';
-import eventBus from '@/utils/eventBus';
+import { useAuthStore } from '@/stores/auth';
+import { storeToRefs } from 'pinia';
+import { isLoggedIn } from '@/utils/global';
 
 export default {
     name: 'Content',
@@ -184,15 +187,16 @@ export default {
             menuRefs: {}
         }
     },
-    mounted() {
-        // Escutar eventos de login/logout para forçar atualização
-        eventBus.on('user-logged-in', this.forceUpdate);
-        eventBus.on('user-logged-out', this.forceUpdate);
+    setup() {
+        const authStore = useAuthStore();
+        const { updateTrigger } = storeToRefs(authStore);
+        return { authStore, updateTrigger };
     },
-    beforeUnmount() {
-        // Remover listeners
-        eventBus.off('user-logged-in', this.forceUpdate);
-        eventBus.off('user-logged-out', this.forceUpdate);
+    watch: {
+        // Observar mudanças na store para forçar atualização
+        updateTrigger() {
+            this.$forceUpdate();
+        }
     },
     computed: {
         isAdminComputed() {

@@ -18,7 +18,7 @@
 <script>
 import Dialog from 'primevue/dialog';
 import RegisterForm from '../../forms/users/RegisterForm.vue';
-import eventBus from '@/utils/eventBus';
+import { useAuthStore } from '@/stores/auth';
 
 export default {
     name: 'RegisterDialog',
@@ -33,6 +33,10 @@ export default {
         }
     },
     emits: ['update:modelValue', 'open-login'],
+    setup() {
+        const authStore = useAuthStore();
+        return { authStore };
+    },
     data() {
         return {
             loading: false
@@ -83,8 +87,8 @@ export default {
                 
                 // Emitir evento para atualizar estado da aplicação se necessário
                 this.$emit('registered', loginResponse.data.user);
-                // Emitir evento global para atualizar componentes
-                eventBus.emit('user-logged-in', loginResponse.data.user);
+                // Disparar atualização via Pinia
+                this.authStore.login();
             } catch (error) {
                 this.loading = false;
                 let errorMessage = 'Erro ao realizar cadastro';
