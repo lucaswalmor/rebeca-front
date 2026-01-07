@@ -20,7 +20,7 @@
                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                 <span class="font-bold text-white text-truncate">{{ content.user_name || 'Becalima007' }}</span>
                                 <Button 
-                                    v-if="isAdmin"
+                                    v-if="isAdminComputed"
                                     :icon="content.is_fixed ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
                                     :class="{ 'pin-active': content.is_fixed }"
                                     text
@@ -46,13 +46,13 @@
                             <span class="text-500 text-sm">{{ content.date }}</span>
                         </div>
                         <Menu 
-                            v-if="isAdmin" 
+                            v-if="isAdminComputed" 
                             :model="getMenuItems(contentIndex)" 
                             popup 
                             :ref="el => { if (el) menuRefs[contentIndex] = el }"
                         />
                         <Button 
-                            v-if="isAdmin"
+                            v-if="isAdminComputed"
                             icon="pi pi-ellipsis-v" 
                             text 
                             rounded 
@@ -86,7 +86,11 @@
                                     :class="{ 'blur-image': shouldBlurPost(content) }"
                                 />
                                 <div v-if="shouldBlurPost(content)" class="blur-overlay">
-                                    <div class="blur-text">Conteúdo exclusivo para assinantes</div>
+                                    <div class="blur-text">
+                                        <i class="fa-solid fa-lock fa-2x blur-icon"></i>
+                                        <span class="blur-message">Este conteúdo é exclusivo para assinantes</span>
+                                        <span class="blur-submessage">Assine agora para desbloquear todo o conteúdo</span>
+                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -144,6 +148,7 @@
 <script>
 import { Avatar, Button, Card, Carousel, Menu, Tag } from 'primevue';
 import DrawerComentarios from './drawers/DrawerComentarios.vue';
+import eventBus from '@/utils/eventBus';
 
 export default {
     name: 'Content',
@@ -175,15 +180,24 @@ export default {
             expandedDescriptions: {},
             drawerVisible: false,
             conteudoAtualIndex: null,
-            isAdmin: false,
             currentMenuIndex: null,
             menuRefs: {}
         }
     },
     mounted() {
-        this.checkAdminStatus();
+        // Escutar eventos de login/logout para forçar atualização
+        eventBus.on('user-logged-in', this.forceUpdate);
+        eventBus.on('user-logged-out', this.forceUpdate);
+    },
+    beforeUnmount() {
+        // Remover listeners
+        eventBus.off('user-logged-in', this.forceUpdate);
+        eventBus.off('user-logged-out', this.forceUpdate);
     },
     computed: {
+        isAdminComputed() {
+            return this.isAdmin();
+        },
         comentariosAtuais() {
             if (this.conteudoAtualIndex !== null && this.conteudos[this.conteudoAtualIndex]) {
                 return this.conteudos[this.conteudoAtualIndex].comments || [];
@@ -191,20 +205,18 @@ export default {
             return [];
         },
         shouldBlur() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const isAdmin = user.is_admin === true;
-            const hasAssinatura = user.assinatura === true;
+            const isAdmin = this.isAdmin();
+            const hasAssinatura = this.hasAssinaturaAtiva();
             
             // Aplica blur se não for admin e não tiver assinatura ativa
             return !isAdmin && !hasAssinatura;
         },
         canInteract() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const isAdmin = user.is_admin === true;
-            const hasAssinatura = user.assinatura === true;
+            const isAdmin = this.isAdmin();
+            const hasAssinatura = this.hasAssinaturaAtiva();
             
             // Se não estiver logado, não pode interagir
-            if (!user.id) {
+            if (!this.isLoggedIn()) {
                 return false;
             }
             
@@ -239,22 +251,29 @@ export default {
                 alt: `Mídia ${index + 1}`
             }));
         },
-        checkAdminStatus() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            this.isAdmin = user.is_admin === true;
-        },
         shouldBlurPost(post) {
             // Blur apenas para posts exclusivos (tipo_post === 2)
             if (post.tipo_post !== 2) {
                 return false;
             }
             
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const isAdmin = user.is_admin === true;
-            const hasAssinatura = user.assinatura === true;
+            // Usar função global isAdmin
+            const isAdmin = this.isAdmin();
             
-            // Aplica blur se não for admin e não tiver assinatura ativa
-            return !isAdmin && !hasAssinatura;
+            // Se for admin, nunca aplicar blur
+            if (isAdmin) {
+                return false;
+            }
+            
+            // Usar função global hasAssinaturaAtiva
+            const hasAssinatura = this.hasAssinaturaAtiva();
+            
+            // Aplica blur se não tiver assinatura ativa
+            return !hasAssinatura;
+        },
+        forceUpdate() {
+            // Forçar atualização do componente quando login/logout ocorrer
+            this.$forceUpdate();
         },
         getTruncatedDescription(description) {
             if (!description) return '';
@@ -608,13 +627,37 @@ export default {
 
 .blur-text {
     color: #ffffff;
-    font-size: 1.2rem;
-    font-weight: bold;
     text-align: center;
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 8px;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 12px;
     z-index: 11;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    max-width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.blur-icon {
+    color: #f5cee1;
+    margin-bottom: 0.5rem;
+}
+
+.blur-message {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #ffffff;
+    line-height: 1.4;
+}
+
+.blur-submessage {
+    font-size: 1rem;
+    color: #f5cee1;
+    opacity: 0.9;
+    font-weight: 500;
 }
 
 .blur-container {

@@ -15,10 +15,14 @@ import 'primeflex/primeflex.css';
 
 import api from './axios/api';
 import { MyPreset } from './primevue/config';
+import { isAdmin, hasAssinaturaAtiva, isLoggedIn } from './utils/global';
 
 const app = createApp(App)
 app.use(router)
 app.config.globalProperties.api = api;
+app.config.globalProperties.isAdmin = isAdmin;
+app.config.globalProperties.hasAssinaturaAtiva = hasAssinaturaAtiva;
+app.config.globalProperties.isLoggedIn = isLoggedIn;
 app.use(PrimeVue, {
     theme: {
         preset: MyPreset,
