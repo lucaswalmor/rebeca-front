@@ -3,23 +3,25 @@ import App from './App.vue'
 import './registerServiceWorker'
 import router from './router'
 
-
 import './assets/css/global.css';
 import './assets/css/primevue.css';
 
 import VueTheMask from 'vue-the-mask'
 
 import PrimeVue from 'primevue/config';
-import Aura from '@primeuix/themes/aura';
 import ToastService from 'primevue/toastservice';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 
+import api from './axios/api';
+import { MyPreset } from './primevue/config';
+
 const app = createApp(App)
 app.use(router)
+app.config.globalProperties.api = api;
 app.use(PrimeVue, {
     theme: {
-        preset: Aura,
+        preset: MyPreset,
         options: {
             prefix: 'p',
             darkModeSelector: 'dark',

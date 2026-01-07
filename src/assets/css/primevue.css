@@ -9,3 +9,17 @@
     color: #ffffff !important;
     border-style: none !important;
 }
+
+.p-dialog {
+    background-color: black !important;
+    color: #ffffff !important;
+    border-style: none !important;
+}
+
+.p-password-input {
+    width: 100% !important;
+}
+
+.p-iftalabel label {
+    color: #f5cee1 !important;
+}

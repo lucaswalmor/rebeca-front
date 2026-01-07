@@ -2,12 +2,21 @@
     <Card class="text-white">
         <template #title>
             <div class="relative">
-                <div class="w-full">
-                    <img src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg" alt="Capa do perfil">
+                <div class="w-full banner-container" @mouseenter="showBannerOverlay = isAdmin" @mouseleave="showBannerOverlay = false">
+                    <img :src="dados.path_img_banner || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'" alt="Capa do perfil">
+                    <div v-if="showBannerOverlay" class="image-overlay" @click="openBannerDialog">
+                        <i class="fa-solid fa-camera fa-2x"></i>
+                    </div>
                 </div>
-                <div class="absolute avatar">
-                    <Avatar image="https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png" shape="circle"
-                        size="xlarge" />
+                <div class="absolute avatar avatar-container" @mouseenter="showAvatarOverlay = isAdmin" @mouseleave="showAvatarOverlay = false">
+                    <img 
+                        :src="dados.path_img_avatar || 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png'" 
+                        alt="Avatar"
+                        class="avatar-image"
+                    />
+                    <div v-if="showAvatarOverlay" class="image-overlay avatar-overlay" @click="openAvatarDialog">
+                        <i class="fa-solid fa-camera fa-lg"></i>
+                    </div>
                 </div>
             </div>
         </template>
@@ -17,8 +26,8 @@
                     <div class="d-flex flex-column">
                         <div class="d-flex justify-content-between">
                             <div class="d-flex flex-column">
-                                <p class="font-bold text-white">Becalima007</p>
-                                <p class="text-white">@Becalima007</p>
+                                <p class="font-bold text-white">{{ dados.nome }} {{ dados.sobrenome }}</p>
+                                <p class="text-white">@{{ dados.apelido }}</p>
                             </div>
                             <div class="d-flex flex-column">
                                 <i class="fa-solid fa-list-ul fa-lg cursor-pointer" aria-haspopup="true" aria-controls="overlay_menu" @click="toggle"></i>
@@ -26,35 +35,33 @@
                             </div>
                         </div>
                         <p class="text-white">
-                            Inventore sed consequuntur error
-                            repudiandae numquam deserunt quisquam repellat libero asperiores earum nam nobis, culpa
-                            ratione
-                            quam
-                            perferendis esse, cupiditate neque
-                            quas!
+                            {{ dados.sobre }}
                         </p>
                     </div>
                 </div>
 
                 <div class="row mt-3">
                     <div class="social-buttons d-flex flex-wrap">
-                        <a href="#" class="social-button instagram" aria-label="Instagram">
+                        <a v-if="dados.instagram" :href="dados.instagram" target="_blank" class="social-button instagram" aria-label="Instagram">
                             <i class="fa-brands fa-instagram"></i>
                         </a>
-                        <a href="#" class="social-button telegram" aria-label="Telegram">
+                        <a v-if="dados.telegram" :href="dados.telegram" target="_blank" class="social-button telegram" aria-label="Telegram">
                             <i class="fa-brands fa-telegram"></i>
                         </a>
-                        <a href="#" class="social-button whatsapp" aria-label="WhatsApp">
+                        <a v-if="dados.whatsapp" :href="'https://wa.me/' + dados.whatsapp.replace(/\D/g, '')" target="_blank" class="social-button whatsapp" aria-label="WhatsApp">
                             <i class="fa-brands fa-whatsapp"></i>
                         </a>
-                        <a href="#" class="social-button x-twitter" aria-label="X (Twitter)">
+                        <a v-if="dados.x_twitter" :href="dados.x_twitter" target="_blank" class="social-button x-twitter" aria-label="X (Twitter)">
                             <i class="fa-brands fa-x-twitter"></i>
                         </a>
-                        <a href="#" class="social-button" aria-label="tiktok">
+                        <a v-if="dados.tiktok" :href="dados.tiktok" target="_blank" class="social-button tiktok" aria-label="TikTok">
                             <i class="fa-brands fa-tiktok"></i>
                         </a>
-                        <a href="#" class="social-button" aria-label="camera-prive">
-                            <i class="fa-solid fa-camera"></i>
+                        <a v-if="dados.facebook" :href="dados.facebook" target="_blank" class="social-button facebook" aria-label="Facebook">
+                            <i class="fa-brands fa-facebook"></i>
+                        </a>
+                        <a v-if="dados.privacy" :href="dados.privacy" target="_blank" class="social-button privacy" aria-label="Privacy">
+                            <i class="fa-solid fa-lock"></i>
                         </a>
                     </div>
                 </div>
@@ -63,49 +70,125 @@
                     <span class="text-white font-bold">Assinatura</span>
                     
                     <div class="p-2 d-flex flex-wrap gap-2">
-                        <button class="botao-assinatura">
+                        <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
                             <span class="ms-4 font-bold">1 mês</span>
                             <span class="me-4 font-bold">R$ 10,00</span>
-                        </button>
-                        <button class="botao-assinatura">
+                        </Button>
+                        <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
                             <span class="ms-4 font-bold">3 meses</span>
                             <span class="me-4 font-bold">R$ 25,00</span>
-                        </button>
-                        <button class="botao-assinatura">
+                        </Button>
+                        <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
                             <span class="ms-4 font-bold">6 meses</span>
                             <span class="me-4 font-bold">R$ 45,00</span>
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
-                <div class="row mt-3">
+                <div v-if="isAdmin" class="row mt-3">
                     <div class="p-2 d-flex flex-wrap gap-2">
-                        <button class="botao-assinatura" @click="navigateTo('/profile')">
-                            <span class="ms-4 font-bold">Editar Perfil</span>
-                        </button>
+                        <Button label="Editar Perfil" severity="primary" @click="navigateTo('/profile')" />
                     </div>
                 </div>
             </div>
         </template>
     </Card>
+
+    <!-- Dialog para alterar banner -->
+    <Dialog 
+        v-model:visible="showBannerDialog" 
+        modal 
+        header="Alterar Banner" 
+        :style="{ width: '30rem' }"
+        :closable="true"
+    >
+        <div class="mb-4">
+            <FileUpload 
+                mode="basic" 
+                accept="image/*" 
+                :maxFileSize="5000000"
+                @select="onBannerSelect"
+                chooseLabel="Selecionar Imagem"
+                class="w-full"
+            />
+        </div>
+        <div v-if="previewBanner" class="mb-4">
+            <img :src="previewBanner" alt="Preview" class="preview-image" />
+        </div>
+        <div class="flex justify-content-end gap-2">
+            <Button label="Cancelar" severity="secondary" @click="closeBannerDialog" />
+            <Button label="Salvar" severity="primary" @click="saveBanner" :disabled="!previewBanner" />
+        </div>
+    </Dialog>
+
+    <!-- Dialog para alterar avatar -->
+    <Dialog 
+        v-model:visible="showAvatarDialog" 
+        modal 
+        header="Alterar Avatar" 
+        :style="{ width: '30rem' }"
+        :closable="true"
+    >
+        <div class="mb-4">
+            <FileUpload 
+                mode="basic" 
+                accept="image/*" 
+                :maxFileSize="5000000"
+                @select="onAvatarSelect"
+                chooseLabel="Selecionar Imagem"
+                class="w-full"
+            />
+        </div>
+        <div v-if="previewAvatar" class="mb-4 d-flex justify-content-center">
+            <Avatar :image="previewAvatar" shape="circle" size="xlarge" />
+        </div>
+        <div class="flex justify-content-end gap-2">
+            <Button label="Cancelar" severity="secondary" @click="closeAvatarDialog" />
+            <Button label="Salvar" severity="primary" @click="saveAvatar" :disabled="!previewAvatar" />
+        </div>
+    </Dialog>
+
+    <Toast />
 </template>
 
 <script>
 import Card from 'primevue/card';
-import Avatar from 'primevue/avatar';
 import SelectButton from 'primevue/selectbutton';
+import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
+import FileUpload from 'primevue/fileupload';
+import Toast from 'primevue/toast';
 import { Menu } from 'primevue';
+import eventBus from '@/utils/eventBus';
 
 export default {
     name: 'Hero',
     components: {
         Card,
-        Avatar,
         SelectButton,
+        Button,
+        Dialog,
+        FileUpload,
+        Toast,
         Menu
     },
     data() {
         return {
+            dados: {
+                nome: '',
+                sobrenome: '',
+                apelido: '',
+                sobre: '',
+                instagram: '',
+                tiktok: '',
+                facebook: '',
+                telegram: '',
+                whatsapp: '',
+                x_twitter: '',
+                privacy: '',
+                path_img_banner: '', // Mantido hardcoded
+                path_img_avatar: null // Mantido hardcoded
+            },
             items: [
                 {
                     label: 'Refresh',
@@ -115,15 +198,211 @@ export default {
                     label: 'Export',
                     icon: 'pi pi-upload'
                 }
-            ]
+            ],
+            isAdmin: false,
+            loading: false,
+            showBannerOverlay: false,
+            showAvatarOverlay: false,
+            showBannerDialog: false,
+            showAvatarDialog: false,
+            previewBanner: null,
+            previewAvatar: null,
+            selectedBannerFile: null,
+            selectedAvatarFile: null
         }
     },
+    mounted() {
+        this.checkAdminStatus();
+        this.carregarDadosUsuario();
+        // Escutar eventos de login/logout
+        eventBus.on('user-logged-in', this.checkAdminStatus);
+        eventBus.on('user-logged-out', this.checkAdminStatus);
+    },
+    beforeUnmount() {
+        // Remover listeners
+        eventBus.off('user-logged-in', this.checkAdminStatus);
+        eventBus.off('user-logged-out', this.checkAdminStatus);
+    },
     methods: {
+        async carregarDadosUsuario() {
+            try {
+                this.loading = true;
+                const response = await this.api.get('/users/apelido/becaLima007');
+                const userData = response.data.data;
+
+                // Preencher dados do usuário
+                this.dados.nome = userData.nome || '';
+                this.dados.sobrenome = userData.sobrenome || '';
+                this.dados.apelido = userData.apelido || '';
+                this.dados.sobre = userData.sobre || '';
+                this.dados.instagram = userData.instagram || '';
+                this.dados.tiktok = userData.tiktok || '';
+                this.dados.facebook = userData.facebook || '';
+                this.dados.telegram = userData.telegram || '';
+                this.dados.whatsapp = userData.whatsapp || '';
+                this.dados.x_twitter = userData.x_twitter || '';
+                this.dados.privacy = userData.privacy || '';
+                // Preencher imagens do backend
+                this.dados.path_img_banner = userData.path_img_banner || '';
+                this.dados.path_img_avatar = userData.path_img_avatar || null;
+            } catch (error) {
+                console.error('Erro ao carregar dados do usuário:', error);
+                // Em caso de erro, manter dados padrão
+            } finally {
+                this.loading = false;
+            }
+        },
+        checkAdminStatus() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            this.isAdmin = user.is_admin === true;
+        },
         toggle(event) {
             this.$refs.menu.toggle(event);
         },
         navigateTo(path) {
             this.$router.push(path);
+        },
+        openBannerDialog() {
+            this.showBannerDialog = true;
+            this.previewBanner = null;
+            this.selectedBannerFile = null;
+        },
+        closeBannerDialog() {
+            this.showBannerDialog = false;
+            this.previewBanner = null;
+            this.selectedBannerFile = null;
+        },
+        openAvatarDialog() {
+            this.showAvatarDialog = true;
+            this.previewAvatar = null;
+            this.selectedAvatarFile = null;
+        },
+        closeAvatarDialog() {
+            this.showAvatarDialog = false;
+            this.previewAvatar = null;
+            this.selectedAvatarFile = null;
+        },
+        onBannerSelect(event) {
+            const file = event.files[0];
+            if (file) {
+                this.selectedBannerFile = file;
+                // Criar URL local para preview
+                this.previewBanner = URL.createObjectURL(file);
+            }
+        },
+        onAvatarSelect(event) {
+            const file = event.files[0];
+            if (file) {
+                this.selectedAvatarFile = file;
+                // Criar URL local para preview
+                this.previewAvatar = URL.createObjectURL(file);
+            }
+        },
+        async saveBanner() {
+            if (!this.selectedBannerFile) {
+                return;
+            }
+
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const userId = user.id;
+
+                if (!userId) {
+                    this.$toast.add({
+                        severity: 'error',
+                        summary: 'Erro',
+                        detail: 'Usuário não encontrado',
+                        life: 3000
+                    });
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('banner', this.selectedBannerFile);
+
+                const response = await this.api.post(`/users/${userId}/upload-banner`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                // Atualizar a imagem do banner com a URL retornada
+                this.dados.path_img_banner = response.data.url;
+                this.closeBannerDialog();
+                
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Sucesso',
+                    detail: 'Banner atualizado com sucesso!',
+                    life: 3000
+                });
+            } catch (error) {
+                let errorMessage = 'Erro ao atualizar banner';
+                if (error.response && error.response.data) {
+                    if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    }
+                }
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: errorMessage,
+                    life: 3000
+                });
+            }
+        },
+        async saveAvatar() {
+            if (!this.selectedAvatarFile) {
+                return;
+            }
+
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const userId = user.id;
+
+                if (!userId) {
+                    this.$toast.add({
+                        severity: 'error',
+                        summary: 'Erro',
+                        detail: 'Usuário não encontrado',
+                        life: 3000
+                    });
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('avatar', this.selectedAvatarFile);
+
+                const response = await this.api.post(`/users/${userId}/upload-avatar`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                // Atualizar a imagem do avatar com a URL retornada
+                this.dados.path_img_avatar = response.data.url;
+                this.closeAvatarDialog();
+                
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Sucesso',
+                    detail: 'Avatar atualizado com sucesso!',
+                    life: 3000
+                });
+            } catch (error) {
+                let errorMessage = 'Erro ao atualizar avatar';
+                if (error.response && error.response.data) {
+                    if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    }
+                }
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: errorMessage,
+                    life: 3000
+                });
+            }
         }
     }
 }
@@ -145,10 +424,14 @@ export default {
     border-radius: 30px 0;
 }
 
-:deep(.p-avatar) img {
+.avatar-image {
     border: 3px solid #121212;
     height: 6rem;
     width: 6rem;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
 }
 
 img {
@@ -209,6 +492,18 @@ img {
     color: #ffffff;
 }
 
+.social-button.tiktok {
+    color: #ffffff;
+}
+
+.social-button.facebook {
+    color: #1877f2;
+}
+
+.social-button.privacy {
+    color: #ffffff;
+}
+
 .image-button {
     display: inline-flex;
     align-items: center;
@@ -235,5 +530,48 @@ img {
 
 .image-button:active {
     transform: translateY(0);
+}
+
+.banner-container,
+.avatar-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px 0 0 0;
+    transition: background-color 0.2s ease;
+}
+
+.image-overlay:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.image-overlay i {
+    color: #ffffff;
+}
+
+.avatar-overlay {
+    border-radius: 50%;
+    width: 6rem !important;
+    height: 6rem !important;
+    top: -15px !important;
+    left: -15px !important;
+}
+
+.preview-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 8px;
 }
 </style>

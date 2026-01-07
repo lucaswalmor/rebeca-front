@@ -10,7 +10,15 @@ const routes = [
   {
     path: '/profile',
     name: 'profile',
-    component: () => import('../pages/profile/Profile.vue')
+    component: () => import('../pages/profile/Profile.vue'),
+    beforeEnter: (to, from, next) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.is_admin === true) {
+        next();
+      } else {
+        next('/');
+      }
+    }
   }
 ]
 

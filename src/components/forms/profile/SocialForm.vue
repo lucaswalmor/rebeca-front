@@ -30,6 +30,24 @@
                     <label for="x_twitter">X Twitter</label>
                 </IftaLabel>
             </div>
+            <div class="col-md-4 mb-3">
+                <IftaLabel>
+                    <InputText id="tiktok" v-model="dados.tiktok" class="w-full" size="small" />
+                    <label for="tiktok">TikTok</label>
+                </IftaLabel>
+            </div>
+            <div class="col-md-4 mb-3">
+                <IftaLabel>
+                    <InputText id="facebook" v-model="dados.facebook" class="w-full" size="small" />
+                    <label for="facebook">Facebook</label>
+                </IftaLabel>
+            </div>
+            <div class="col-md-4 mb-3">
+                <IftaLabel>
+                    <InputText id="privacy" v-model="dados.privacy" class="w-full" size="small" />
+                    <label for="privacy">Privacy</label>
+                </IftaLabel>
+            </div>
         </div>
     </div>
 </template>
@@ -50,8 +68,19 @@ export default {
                 instagram: '',
                 telegram: '',
                 whatsapp: '',
-                x_twitter: ''
+                x_twitter: '',
+                tiktok: '',
+                facebook: '',
+                privacy: ''
             }
+        }
+    },
+    methods: {
+        /**
+         * Preenche os dados do formulário
+         */
+        preencherDados(dados) {
+            this.dados = { ...this.dados, ...dados };
         }
     }
 }

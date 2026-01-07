@@ -19,6 +19,10 @@ a {
     color: #f5cee1 !important;
 }
 
+.text-red-500 {
+    color: #ef4444 !important;
+}
+
 .botao-assinatura {
     width: 100%;
     padding: 10px;
@@ -40,6 +44,18 @@ a {
     background-color: #761c49;
     color: #f5cee1;
     transform: translateY(-1px);
+}
+
+.p-button.p-button-primary {
+    color: #761c49 !important;
+}
+
+.p-button.p-button-primary:hover {
+    color: #f5cee1 !important;
+}
+
+.p-button.p-button-primary span {
+    color: inherit !important;
 }
 
 @media (max-width: 768px) {

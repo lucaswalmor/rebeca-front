@@ -31,6 +31,14 @@ export default {
                 sobre: ''
             }
         }
+    },
+    methods: {
+        /**
+         * Preenche os dados do formulário
+         */
+        preencherDados(dados) {
+            this.dados = { ...this.dados, ...dados };
+        }
     }
 }
 </script>

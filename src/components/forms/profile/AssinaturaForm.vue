@@ -148,6 +148,16 @@ export default {
          */
         dadosAssinatura() {
             return this.dados;
+        },
+        /**
+         * Preenche os dados do formulário
+         */
+        preencherDados(dados) {
+            this.dados = { ...this.dados, ...dados };
+            // Recalcular valores se necessário
+            if (dados.assinatura_mensal) {
+                this.recalcularTodos();
+            }
         }
     }
 }
