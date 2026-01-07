@@ -6,7 +6,8 @@
         <div class="d-flex gap-5 align-items-center me-5">
           <i class="fa-solid fa-magnifying-glass fa-lg"></i>
           <i 
-            :class="isLoggedIn ? 'fa-solid fa-right-from-bracket fa-lg cursor-pointer' : 'fa-solid fa-right-to-bracket fa-lg cursor-pointer'" 
+            :class="isLoggedIn ? 'fa-solid fa-power-off fa-lg cursor-pointer' : 'fa-solid fa-right-to-bracket fa-lg cursor-pointer'" 
+            :style="isLoggedIn ? 'color: #e40707;' : ''"
             @click="handleIconClick"
           ></i>
         </div>
@@ -25,22 +26,19 @@
       @open-login="openLoginDialog"
       @registered="handleLoggedIn"
     />
-    <Toast />
   </div>
 </template>
 
 <script>
 import LoginDialog from './dialogs/user/Login.vue';
 import RegisterDialog from './dialogs/user/Register.vue';
-import Toast from 'primevue/toast';
 import eventBus from '@/utils/eventBus';
 
 export default {
   name: 'Header',
   components: {
     LoginDialog,
-    RegisterDialog,
-    Toast
+    RegisterDialog
   },
   data() {
     return {

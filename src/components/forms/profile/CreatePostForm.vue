@@ -108,8 +108,7 @@ export default {
             errors: {},
             tiposPost: [
                 { label: 'Simples', value: 1 },
-                { label: 'Exclusivo', value: 2 },
-                { label: 'Outros', value: 3 }
+                { label: 'Exclusivo', value: 2 }
             ]
         }
     },

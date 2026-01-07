@@ -11,10 +11,6 @@
                     :class="selectedMenu === 1 ? 'menu-item-selected text-pink' : 'text-500'" @click="selectMenu(1)">
                     Exclusivos ({{ totalExclusivos }})
                 </span>
-                <span class="cursor-pointer col font-bold menu-item"
-                    :class="selectedMenu === 2 ? 'menu-item-selected text-pink' : 'text-500'" @click="selectMenu(2)">
-                    Outros ({{ totalOutros }})
-                </span>
             </div>
         </template>
     </Card>
@@ -34,10 +30,6 @@ export default {
             default: 0
         },
         totalExclusivos: {
-            type: Number,
-            default: 0
-        },
-        totalOutros: {
             type: Number,
             default: 0
         }

@@ -67,7 +67,6 @@
                 </div>
             </div>
         </div>
-        <Toast />
     </div>
 </template>
 
@@ -80,7 +79,6 @@ import CreatePostForm from '@/components/forms/profile/CreatePostForm.vue';
 import Divider from 'primevue/divider';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
-import Toast from 'primevue/toast';
 
 export default {
     name: 'Profile',
@@ -92,8 +90,7 @@ export default {
         CreatePostForm,
         Divider,
         Button,
-        Card,
-        Toast
+        Card
     },
     data() {
         return {

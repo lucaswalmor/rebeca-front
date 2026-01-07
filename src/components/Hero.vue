@@ -66,21 +66,21 @@
                     </div>
                 </div>
 
-                <div class="row mt-3">
+                <div v-if="!hasActiveSubscription" class="row mt-3">
                     <span class="text-white font-bold">Assinatura</span>
                     
                     <div class="p-2 d-flex flex-wrap gap-2">
                         <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
                             <span class="ms-4 font-bold">1 mês</span>
-                            <span class="me-4 font-bold">R$ 10,00</span>
+                            <span class="me-4 font-bold">{{ valorMensal }}</span>
                         </Button>
                         <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
                             <span class="ms-4 font-bold">3 meses</span>
-                            <span class="me-4 font-bold">R$ 25,00</span>
+                            <span class="me-4 font-bold">{{ valorTrimestral }}</span>
                         </Button>
                         <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
                             <span class="ms-4 font-bold">6 meses</span>
-                            <span class="me-4 font-bold">R$ 45,00</span>
+                            <span class="me-4 font-bold">{{ valorSemestral }}</span>
                         </Button>
                     </div>
                 </div>
@@ -147,8 +147,6 @@
             <Button label="Salvar" severity="primary" @click="saveAvatar" :disabled="!previewAvatar" />
         </div>
     </Dialog>
-
-    <Toast />
 </template>
 
 <script>
@@ -157,7 +155,6 @@ import SelectButton from 'primevue/selectbutton';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
-import Toast from 'primevue/toast';
 import { Menu } from 'primevue';
 import eventBus from '@/utils/eventBus';
 
@@ -175,7 +172,6 @@ export default {
         Button,
         Dialog,
         FileUpload,
-        Toast,
         Menu
     },
     data() {
@@ -224,6 +220,36 @@ export default {
         eventBus.on('user-logged-in', this.checkAdminStatus);
         eventBus.on('user-logged-out', this.checkAdminStatus);
     },
+    computed: {
+        hasActiveSubscription() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            return user.assinatura === true;
+        },
+        valorMensal() {
+            if (!this.userData || !this.userData.valor_assinatura_mensal) {
+                return 'R$ 0,00';
+            }
+            return this.formatarMoeda(this.userData.valor_assinatura_mensal);
+        },
+        valorTrimestral() {
+            if (!this.userData || !this.userData.valor_assinatura_trimestral) {
+                return 'R$ 0,00';
+            }
+            const valorBase = parseFloat(this.userData.valor_assinatura_trimestral);
+            const desconto = parseFloat(this.userData.valor_desconto_trimestral || 0);
+            const valorFinal = valorBase - desconto;
+            return this.formatarMoeda(valorFinal);
+        },
+        valorSemestral() {
+            if (!this.userData || !this.userData.valor_assinatura_semestral) {
+                return 'R$ 0,00';
+            }
+            const valorBase = parseFloat(this.userData.valor_assinatura_semestral);
+            const desconto = parseFloat(this.userData.valor_desconto_semestral || 0);
+            const valorFinal = valorBase - desconto;
+            return this.formatarMoeda(valorFinal);
+        }
+    },
     watch: {
         userData: {
             handler() {
@@ -263,6 +289,10 @@ export default {
         checkAdminStatus() {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             this.isAdmin = user.is_admin === true;
+        },
+        formatarMoeda(valor) {
+            if (!valor || valor === 0) return 'R$ 0,00';
+            return `R$ ${parseFloat(valor).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
         },
         toggle(event) {
             this.$refs.menu.toggle(event);

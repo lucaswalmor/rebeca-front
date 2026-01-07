@@ -1,5 +1,15 @@
 <template>
     <div>
+        <!-- Post fake quando não há posts -->
+        <Card v-if="conteudos.length === 0" class="mb-2">
+            <template #content>
+                <div class="text-center p-5">
+                    <i class="fa-solid fa-image fa-3x text-white mb-3" style="opacity: 0.5;"></i>
+                    <p class="text-white">Ainda não há publicações disponíveis.</p>
+                </div>
+            </template>
+        </Card>
+        
         <Card v-for="(content, contentIndex) in conteudos" :key="contentIndex" class="mb-2">
             <template #title>
                 <div class="d-flex gap-2 justify-content-between align-items-start flex-wrap">
@@ -75,7 +85,9 @@
                                     class="media-content"
                                     :class="{ 'blur-image': shouldBlurPost(content) }"
                                 />
-                                <div v-if="shouldBlurPost(content)" class="blur-overlay"></div>
+                                <div v-if="shouldBlurPost(content)" class="blur-overlay">
+                                    <div class="blur-text">Conteúdo exclusivo para assinantes</div>
+                                </div>
                             </div>
                         </template>
                     </Carousel>
@@ -101,23 +113,15 @@
                         </p>
                     </div>
                 </div>
-                <div class="row mb-2 mt-3">
+                <div v-if="canInteract" class="row mb-2 mt-3">
                     <div class="">
                         <div class="d-flex gap-2 text-white text-xs">
-                            <div v-if="canInteract" class="d-flex gap-2 align-items-center">
+                            <div class="d-flex gap-2 align-items-center">
                                 <i :class="conteudos[contentIndex].isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'" class="fa-2xl cursor-pointer" @click="likeContent(contentIndex)"></i>
                                 <span class="text-white">{{ conteudos[contentIndex].likes || conteudos[contentIndex].likes_count || 0 }}</span>
                             </div>
-                            <div v-else class="d-flex gap-2 align-items-center">
-                                <i class="fa-solid fa-heart fa-2xl" style="opacity: 0.5;"></i>
-                                <span class="text-white">{{ conteudos[contentIndex].likes || conteudos[contentIndex].likes_count || 0 }}</span>
-                            </div>
-                            <div v-if="canInteract" class="d-flex gap-2 align-items-center">
+                            <div class="d-flex gap-2 align-items-center">
                                 <i class="fa-regular fa-comment fa-2xl cursor-pointer" @click="abrirDrawerComentarios(contentIndex)"></i>
-                                <span class="text-white">{{ conteudos[contentIndex].commentsCount || conteudos[contentIndex].comments?.length || 0 }}</span>
-                            </div>
-                            <div v-else class="d-flex gap-2 align-items-center">
-                                <i class="fa-regular fa-comment fa-2xl" style="opacity: 0.5;"></i>
                                 <span class="text-white">{{ conteudos[contentIndex].commentsCount || conteudos[contentIndex].comments?.length || 0 }}</span>
                             </div>
                         </div>
@@ -135,12 +139,10 @@
         @deletar-comentario="deletarComentario"
         @deletar-resposta="deletarResposta"
     />
-
-    <Toast />
 </template>
 
 <script>
-import { Avatar, Button, Card, Carousel, Toast, Menu, Tag } from 'primevue';
+import { Avatar, Button, Card, Carousel, Menu, Tag } from 'primevue';
 import DrawerComentarios from './drawers/DrawerComentarios.vue';
 
 export default {
@@ -164,9 +166,8 @@ export default {
         Carousel,
         Button,
         Avatar,
-        DrawerComentarios,
-        Toast,
-        Menu,
+            DrawerComentarios,
+            Menu,
         Tag
     },
     data() {
@@ -201,6 +202,11 @@ export default {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const isAdmin = user.is_admin === true;
             const hasAssinatura = user.assinatura === true;
+            
+            // Se não estiver logado, não pode interagir
+            if (!user.id) {
+                return false;
+            }
             
             // Admin sempre pode interagir
             if (isAdmin) {
@@ -595,6 +601,20 @@ export default {
     -moz-user-select: none;
     -ms-user-select: none;
     -webkit-touch-callout: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blur-text {
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    z-index: 11;
 }
 
 .blur-container {
@@ -620,6 +640,17 @@ export default {
     display: inline-block !important;
     width: auto !important;
     max-width: fit-content !important;
+}
+
+:deep(.p-avatar img) {
+    object-fit: cover !important;
+    object-position: center !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+:deep(.p-avatar) {
+    overflow: hidden !important;
 }
 
 @media (max-width: 768px) {
