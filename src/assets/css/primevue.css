@@ -1,4 +1,4 @@
-.p-inputtext, .p-textarea {
+.p-inputtext, .p-textarea, .p-card, .p-fileupload-advanced, .p-select {
     background-color: #1a1a1a !important;
     color: #ffffff !important;
     border-style: none !important;

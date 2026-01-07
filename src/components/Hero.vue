@@ -163,6 +163,12 @@ import eventBus from '@/utils/eventBus';
 
 export default {
     name: 'Hero',
+    props: {
+        userData: {
+            type: Object,
+            default: null
+        }
+    },
     components: {
         Card,
         SelectButton,
@@ -213,10 +219,19 @@ export default {
     },
     mounted() {
         this.checkAdminStatus();
-        this.carregarDadosUsuario();
+        this.preencherDados();
         // Escutar eventos de login/logout
         eventBus.on('user-logged-in', this.checkAdminStatus);
         eventBus.on('user-logged-out', this.checkAdminStatus);
+    },
+    watch: {
+        userData: {
+            handler() {
+                this.preencherDados();
+            },
+            deep: true,
+            immediate: true
+        }
     },
     beforeUnmount() {
         // Remover listeners
@@ -224,33 +239,26 @@ export default {
         eventBus.off('user-logged-out', this.checkAdminStatus);
     },
     methods: {
-        async carregarDadosUsuario() {
-            try {
-                this.loading = true;
-                const response = await this.api.get('/users/apelido/becaLima007');
-                const userData = response.data.data;
-
-                // Preencher dados do usuário
-                this.dados.nome = userData.nome || '';
-                this.dados.sobrenome = userData.sobrenome || '';
-                this.dados.apelido = userData.apelido || '';
-                this.dados.sobre = userData.sobre || '';
-                this.dados.instagram = userData.instagram || '';
-                this.dados.tiktok = userData.tiktok || '';
-                this.dados.facebook = userData.facebook || '';
-                this.dados.telegram = userData.telegram || '';
-                this.dados.whatsapp = userData.whatsapp || '';
-                this.dados.x_twitter = userData.x_twitter || '';
-                this.dados.privacy = userData.privacy || '';
-                // Preencher imagens do backend
-                this.dados.path_img_banner = userData.path_img_banner || '';
-                this.dados.path_img_avatar = userData.path_img_avatar || null;
-            } catch (error) {
-                console.error('Erro ao carregar dados do usuário:', error);
-                // Em caso de erro, manter dados padrão
-            } finally {
-                this.loading = false;
+        preencherDados() {
+            if (!this.userData) {
+                return;
             }
+
+            // Preencher dados do usuário
+            this.dados.nome = this.userData.nome || '';
+            this.dados.sobrenome = this.userData.sobrenome || '';
+            this.dados.apelido = this.userData.apelido || '';
+            this.dados.sobre = this.userData.sobre || '';
+            this.dados.instagram = this.userData.instagram || '';
+            this.dados.tiktok = this.userData.tiktok || '';
+            this.dados.facebook = this.userData.facebook || '';
+            this.dados.telegram = this.userData.telegram || '';
+            this.dados.whatsapp = this.userData.whatsapp || '';
+            this.dados.x_twitter = this.userData.x_twitter || '';
+            this.dados.privacy = this.userData.privacy || '';
+            // Preencher imagens do backend
+            this.dados.path_img_banner = this.userData.path_img_banner || '';
+            this.dados.path_img_avatar = this.userData.path_img_avatar || null;
         },
         checkAdminStatus() {
             const user = JSON.parse(localStorage.getItem('user') || '{}');

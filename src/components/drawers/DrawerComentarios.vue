@@ -34,6 +34,7 @@
                                 <div class="comentario-header">
                                     <span class="comentario-nome">{{ comentario.name || 'Usuário' }}</span>
                                     <button 
+                                        v-if="podeDeletarComentario(comentario)"
                                         class="comentario-delete-btn"
                                         @click="deletarComentario(comentario.id)"
                                         title="Deletar comentário"
@@ -51,6 +52,7 @@
                                     <div class="reply-header">
                                         <span class="reply-nome">{{ comentario.reply.name || 'Becalima007' }}</span>
                                         <button 
+                                            v-if="podeDeletarResposta(comentario.reply)"
                                             class="reply-delete-btn"
                                             @click="deletarResposta(comentario.id)"
                                             title="Deletar resposta"
@@ -211,7 +213,34 @@ export default {
             }
         }
     },
+    computed: {
+        isAdmin() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            return user.is_admin === true;
+        },
+        currentUserId() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            return user.id;
+        }
+    },
     methods: {
+        podeDeletarComentario(comentario) {
+            // Admin pode deletar qualquer comentário
+            if (this.isAdmin) {
+                return true;
+            }
+            // Usuário comum só pode deletar seus próprios comentários
+            return comentario.user_id === this.currentUserId;
+        },
+        podeDeletarResposta(reply) {
+            if (!reply) return false;
+            // Admin pode deletar qualquer resposta
+            if (this.isAdmin) {
+                return true;
+            }
+            // Usuário comum só pode deletar suas próprias respostas
+            return reply.user_id === this.currentUserId;
+        },
         /**
          * Emite o evento 'adicionar-comentario' para o componente pai
          * com o texto do comentário digitado pelo usuário

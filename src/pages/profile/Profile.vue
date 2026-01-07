@@ -10,21 +10,60 @@
 
             <Divider />
 
-            <AssinaturaForm ref="assinaturaFormRef" />
+            <div class="row">
+                <!-- Menu Lateral -->
+                <div class="col-md-3 mb-4">
+                    <Card class="profile-menu-card">
+                        <template #content>
+                            <div class="profile-menu">
+                                <div 
+                                    class="menu-item"
+                                    :class="{ 'menu-item-active': activeMenu === 'perfil' }"
+                                    @click="activeMenu = 'perfil'"
+                                >
+                                    <i class="pi pi-user me-2"></i>
+                                    <span>Editar Perfil</span>
+                                </div>
+                                <div 
+                                    class="menu-item"
+                                    :class="{ 'menu-item-active': activeMenu === 'post' }"
+                                    @click="activeMenu = 'post'"
+                                >
+                                    <i class="pi pi-plus-circle me-2"></i>
+                                    <span>Criar Post</span>
+                                </div>
+                            </div>
+                        </template>
+                    </Card>
+                </div>
 
-            <Divider />
+                <!-- Conteúdo -->
+                <div class="col-md-9">
+                    <!-- Formulário de Editar Perfil -->
+                    <div v-show="activeMenu === 'perfil'">
+                        <AssinaturaForm ref="assinaturaFormRef" />
 
-            <SocialForm ref="socialFormRef" />
+                        <Divider />
 
-            <Divider />
+                        <SocialForm ref="socialFormRef" />
 
-            <SobreForm ref="sobreFormRef" />
+                        <Divider />
 
-            <Divider />
+                        <SobreForm ref="sobreFormRef" />
 
-            <div class="row d-flex justify-content-end">
-                <div class="col-md-3 ">
-                    <Button label="Salvar" severity="primary" class="w-full" @click="salvar" :loading="loading" />
+                        <Divider />
+
+                        <div class="row d-flex justify-content-end">
+                            <div class="col-md-3">
+                                <Button label="Salvar" severity="primary" class="w-full" @click="salvar" :loading="loading" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulário de Criar Post -->
+                    <div v-show="activeMenu === 'post'">
+                        <CreatePostForm ref="createPostFormRef" @post-created="handlePostCreated" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -37,8 +76,10 @@ import Header from '@/components/Header.vue';
 import AssinaturaForm from '@/components/forms/profile/AssinaturaForm.vue';
 import SocialForm from '@/components/forms/profile/SocialForm.vue';
 import SobreForm from '@/components/forms/profile/SobreForm.vue';
+import CreatePostForm from '@/components/forms/profile/CreatePostForm.vue';
 import Divider from 'primevue/divider';
 import Button from 'primevue/button';
+import Card from 'primevue/card';
 import Toast from 'primevue/toast';
 
 export default {
@@ -48,15 +89,18 @@ export default {
         AssinaturaForm,
         SocialForm,
         SobreForm,
+        CreatePostForm,
         Divider,
         Button,
+        Card,
         Toast
     },
     data() {
         return {
             dadosFormulario: null,
             loading: false,
-            userId: null
+            userId: null,
+            activeMenu: 'perfil'
         }
     },
     computed: {
@@ -198,7 +242,57 @@ export default {
                 .replace(',', '.');
             const numero = parseFloat(valorLimpo);
             return isNaN(numero) ? null : numero;
+        },
+        handlePostCreated() {
+            this.$toast.add({
+                severity: 'success',
+                summary: 'Sucesso',
+                detail: 'Post criado com sucesso!',
+                life: 3000
+            });
         }
     }
 }
 </script>
+
+<style scoped lang="scss">
+.profile-menu-card {
+    :deep(.p-card-body) {
+        background-color: #121212;
+        border-radius: 10px;
+    }
+
+    :deep(.p-card-content) {
+        padding: 0;
+    }
+}
+
+.profile-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.menu-item {
+    padding: 1rem;
+    cursor: pointer;
+    color: #888888;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+
+    &:hover {
+        background-color: #1a1a1a;
+        color: #ffffff;
+    }
+
+    &.menu-item-active {
+        background-color: #1a1a1a;
+        color: #f5cee1;
+        border-left-color: #f5cee1;
+    }
+
+    i {
+        font-size: 1.1rem;
+    }
+}
+</style>
