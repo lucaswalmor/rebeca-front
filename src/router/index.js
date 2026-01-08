@@ -19,6 +19,16 @@ const routes = [
         next('/');
       }
     }
+  },
+  {
+    path: '/checkout',
+    name: 'checkout',
+    component: () => import('../views/CheckoutView.vue')
+  },
+  {
+    path: '/checkout/success',
+    name: 'checkout-success',
+    component: () => import('../views/CheckoutSuccessView.vue')
   }
 ]
 
