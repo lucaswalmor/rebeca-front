@@ -21,19 +21,9 @@ const routes = [
     }
   },
   {
-    path: '/checkout',
-    name: 'checkout',
-    component: () => import('../views/CheckoutView.vue')
-  },
-  {
     path: '/checkout/success',
     name: 'checkout-success',
     component: () => import('../views/CheckoutSuccessView.vue')
-  },
-  {
-    path: '/pagamento/sucesso',
-    name: 'pagamento-sucesso',
-    component: () => import('../views/CheckoutSuccessPage.vue')
   },
   {
     path: '/user-settings',

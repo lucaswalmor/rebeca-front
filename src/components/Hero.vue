@@ -29,16 +29,12 @@
                                 <p class="font-bold text-white">{{ dados.nome }} {{ dados.sobrenome }}</p>
                                 <p class="text-white">@{{ dados.apelido }}</p>
                                 <Badge
-                                    v-if="!isAdmin() && statusAssinaturaUsuario !== 'Sem Assinatura'"
+                                    v-if="!userState.isAdmin && userState.isLoggedIn && statusAssinaturaUsuario !== 'Sem Assinatura'"
                                     :value="statusAssinaturaUsuario"
                                     :severity="getStatusSeverity(statusAssinaturaUsuario)"
                                     class="mt-2"
                                 />
                             </div>
-                            <!-- <div class="d-flex flex-column">
-                                <i class="fa-solid fa-list-ul fa-lg cursor-pointer" aria-haspopup="true" aria-controls="overlay_menu" @click="toggle"></i>
-                                <Menu ref="menu" id="overlay_menu" :model="items" :popup="true" />
-                            </div> -->
                         </div>
                         <p class="text-white">
                             {{ dados.sobre }}
@@ -72,7 +68,7 @@
                     </div>
                 </div>
 
-                <div v-if="!hasActiveSubscription" class="row mt-3">
+                <div v-if="shouldShowSubscriptionButtons" class="row mt-3">
                     <span class="text-white font-bold">Assinatura</span>
                     
                     <div class="p-2 d-flex flex-wrap gap-2">
@@ -214,6 +210,11 @@ export default {
                 path_img_avatar: null // Mantido hardcoded
             },
             statusAssinaturaUsuario: 'Sem Assinatura',
+            userState: {
+                isLoggedIn: false,
+                isAdmin: false,
+                hasAssinatura: false
+            },
             items: [
                 {
                     label: 'Refresh',
@@ -243,6 +244,12 @@ export default {
     },
     mounted() {
         this.preencherDados();
+        this.updateUserState();
+        // Escutar mudanças no localStorage
+        window.addEventListener('storage', this.handleStorageChange);
+    },
+    beforeUnmount() {
+        window.removeEventListener('storage', this.handleStorageChange);
     },
     computed: {
         hasActiveSubscription() {
@@ -272,6 +279,20 @@ export default {
             const desconto = parseFloat(this.userData.valor_desconto_semestral || 0);
             const valorFinal = valorBase - desconto;
             return this.formatarMoeda(valorFinal);
+        },
+        shouldShowSubscriptionButtons() {
+            // Regra 1: Se usuário estiver logado E não tiver assinatura ativa
+            if (this.userState.isLoggedIn && !this.userState.hasAssinatura) {
+                return true;
+            }
+
+            // Regra 2: Se usuário estiver deslogado, mostrar botões
+            if (!this.userState.isLoggedIn) {
+                return true;
+            }
+
+            // Caso contrário, não mostrar
+            return false;
         }
     },
     watch: {
@@ -284,7 +305,8 @@ export default {
         },
         updateTrigger: {
             handler() {
-                // Quando há mudanças na autenticação, recarregar status da assinatura
+                // Quando há mudanças na autenticação, atualizar estado do usuário
+                this.updateUserState();
                 this.carregarStatusAssinaturaUsuario();
             },
             immediate: true
@@ -322,6 +344,30 @@ export default {
             } catch (error) {
                 console.error('Erro ao carregar status da assinatura:', error);
                 this.statusAssinaturaUsuario = 'Sem Assinatura';
+            }
+        },
+        updateUserState() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                this.userState = {
+                    isLoggedIn: !!user.id && !!localStorage.getItem('token'),
+                    isAdmin: user.is_admin === true || user.is_admin === 'true' || user.is_admin === 1,
+                    hasAssinatura: user.assinatura === true || user.assinatura === 'true' || user.assinatura === 1
+                };
+            } catch (error) {
+                console.error('Erro ao atualizar estado do usuário:', error);
+                this.userState = {
+                    isLoggedIn: false,
+                    isAdmin: false,
+                    hasAssinatura: false
+                };
+            }
+        },
+        handleStorageChange(event) {
+            // Atualizar estado quando localStorage mudar
+            if (event.key === 'user' || event.key === 'token') {
+                this.updateUserState();
+                this.carregarStatusAssinaturaUsuario();
             }
         },
         getStatusSeverity(status) {
@@ -487,12 +533,13 @@ export default {
         },
         async gerarLinkPagamento(plano) {
 
-            if (!this.isLoggedIn()) {
+            if (!this.userState.isLoggedIn) {
+                // Se não estiver logado, mostrar mensagem e não prosseguir
                 this.$toast.add({
                     severity: 'warn',
-                    summary: 'Atenção',
+                    summary: 'Login Necessário',
                     detail: 'Para realizar a assinatura você precisa estar cadastrado.',
-                    life: 3000
+                    life: 5000
                 });
                 return;
             }

@@ -184,7 +184,12 @@ export default {
             drawerVisible: false,
             conteudoAtualIndex: null,
             currentMenuIndex: null,
-            menuRefs: {}
+            menuRefs: {},
+            userState: {
+                isLoggedIn: false,
+                isAdmin: false,
+                hasAssinatura: false
+            }
         }
     },
     setup() {
@@ -192,10 +197,24 @@ export default {
         const { updateTrigger } = storeToRefs(authStore);
         return { authStore, updateTrigger };
     },
+    mounted() {
+        this.updateUserState();
+        // Escutar mudanças no localStorage
+        window.addEventListener('storage', this.handleStorageChange);
+    },
+    beforeUnmount() {
+        window.removeEventListener('storage', this.handleStorageChange);
+    },
     watch: {
-        // Observar mudanças na store para forçar atualização
+        // Observar mudanças na store para atualizar estado do usuário
         updateTrigger() {
-            this.$forceUpdate();
+            this.updateUserState();
+        },
+        // Buscar comentários quando drawer abrir
+        drawerVisible(newValue) {
+            if (newValue && this.conteudoAtualIndex !== null) {
+                this.buscarComentarios();
+            }
         }
     },
     computed: {
@@ -216,21 +235,18 @@ export default {
             return !isAdmin && !hasAssinatura;
         },
         canInteract() {
-            const isAdmin = this.isAdmin();
-            const hasAssinatura = this.hasAssinaturaAtiva();
-            
             // Se não estiver logado, não pode interagir
-            if (!this.isLoggedIn()) {
+            if (!this.userState.isLoggedIn) {
                 return false;
             }
-            
+
             // Admin sempre pode interagir
-            if (isAdmin) {
+            if (this.userState.isAdmin) {
                 return true;
             }
-            
+
             // Usuário normal precisa ter assinatura ativa
-            return hasAssinatura === true;
+            return this.userState.hasAssinatura === true;
         }
     },
     methods: {
@@ -423,11 +439,16 @@ export default {
             }
         },
         async abrirDrawerComentarios(contentIndex) {
+            // Verificar se usuário pode interagir
+            if (!this.canInteract) {
+                return;
+            }
+
             this.conteudoAtualIndex = contentIndex;
             this.drawerVisible = true;
-            
-            // Buscar comentários do backend se ainda não foram carregados
-            const post = this.conteudos[contentIndex];
+        },
+        async buscarComentarios() {
+            const post = this.conteudos[this.conteudoAtualIndex];
             if (post && post.id && (!post.comments || post.comments.length === 0)) {
                 try {
                     const response = await this.api.get(`/posts/${post.id}/comments`);
@@ -436,6 +457,29 @@ export default {
                 } catch (error) {
                     console.error('Erro ao carregar comentários:', error);
                 }
+            }
+        },
+        updateUserState() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                this.userState = {
+                    isLoggedIn: !!user.id && !!localStorage.getItem('token'),
+                    isAdmin: user.is_admin === true || user.is_admin === 'true' || user.is_admin === 1,
+                    hasAssinatura: user.assinatura === true || user.assinatura === 'true' || user.assinatura === 1
+                };
+            } catch (error) {
+                console.error('Erro ao atualizar estado do usuário:', error);
+                this.userState = {
+                    isLoggedIn: false,
+                    isAdmin: false,
+                    hasAssinatura: false
+                };
+            }
+        },
+        handleStorageChange(event) {
+            // Atualizar estado quando localStorage mudar
+            if (event.key === 'user' || event.key === 'token') {
+                this.updateUserState();
             }
         },
         /**
