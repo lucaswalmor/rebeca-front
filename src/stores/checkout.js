@@ -156,7 +156,7 @@ export const useCheckoutStore = defineStore('checkout', () => {
 
         try {
             const payload = {
-                handle: checkoutData.value.handle,
+                handle: 'rehantunes06',
                 order_nsu: orderNsu,
                 transaction_nsu: transactionNsu,
                 slug: slug

@@ -20,57 +20,10 @@
                             <div class="success-icon">
                                 <i class="pi pi-check-circle"></i>
                             </div>
-                            <h2 class="success-title">Pagamento Aprovado!</h2>
+                            <h2 class="success-title">Pagamento Confirmado!</h2>
                             <p class="success-subtitle">
-                                Seu pagamento foi processado com sucesso.
+                                Sua assinatura foi ativada com sucesso. Redirecionando...
                             </p>
-                        </div>
-
-                        <!-- Detalhes do Pagamento -->
-                        <div class="payment-details">
-                            <div class="detail-row">
-                                <span class="label">Valor Pago:</span>
-                                <span class="value">{{ formatCurrency(paymentStatus.paid_amount / 100) }}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="label">Valor Original:</span>
-                                <span class="value">{{ formatCurrency(paymentStatus.amount / 100) }}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="label">Método de Pagamento:</span>
-                                <span class="value">{{ getPaymentMethodName(paymentStatus.capture_method) }}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="label">Parcelas:</span>
-                                <span class="value">{{ paymentStatus.installments }}</span>
-                            </div>
-                            <div v-if="paymentStatus.receipt_url" class="detail-row">
-                                <span class="label">Comprovante:</span>
-                                <a
-                                    :href="paymentStatus.receipt_url"
-                                    target="_blank"
-                                    class="value receipt-link"
-                                >
-                                    Visualizar Comprovante
-                                    <i class="pi pi-external-link"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Ações -->
-                        <div class="actions-section">
-                            <Button
-                                label="Voltar ao Início"
-                                icon="pi pi-home"
-                                @click="goHome"
-                                class="p-button-primary mr-2"
-                            />
-                            <Button
-                                label="Novo Pagamento"
-                                icon="pi pi-plus"
-                                @click="newPayment"
-                                class="p-button-outlined"
-                            />
                         </div>
                     </div>
 
@@ -162,14 +115,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Debug Info (apenas em desenvolvimento) -->
-                <div v-if="isDevelopment && (paymentStatus || error)" class="debug-section mt-4">
-                    <div class="card">
-                        <h6>Informações de Debug</h6>
-                        <pre>{{ JSON.stringify({ paymentStatus, error, urlParams }, null, 2) }}</pre>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -179,38 +124,31 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCheckoutStore } from '@/stores/checkout';
-import { useToast } from 'primevue/usetoast';
+import api from '@/axios/api';
 import Button from 'primevue/button';
 
 const route = useRoute();
 const router = useRouter();
 const checkoutStore = useCheckoutStore();
-const toast = useToast();
 
 const isProcessing = ref(true);
 const isChecking = ref(false);
 const error = ref('');
 
-// Estado computado para verificar se está em desenvolvimento
-const isDevelopment = computed(() => {
-    return import.meta.env.DEV;
-});
-
 // Parâmetros da URL
 const urlParams = computed(() => {
     return {
-        order_nsu: route.query.order_nsu,
+        capture_method: route.query.capture_method,
+        transaction_id: route.query.transaction_id,
         transaction_nsu: route.query.transaction_nsu,
         slug: route.query.slug,
-        success: route.query.success,
-        status: route.query.status
+        order_nsu: route.query.order_nsu,
+        receipt_url: route.query.receipt_url
     };
 });
 
-// Status do pagamento
-const paymentStatus = computed(() => {
-    return checkoutStore.paymentStatus;
-});
+// Status do pagamento (usando dados do backend)
+const paymentStatus = ref(null);
 
 // Formatar moeda
 const formatCurrency = (value) => {
@@ -233,6 +171,7 @@ const getPaymentMethodName = (method) => {
 // Verificar status do pagamento
 const checkPaymentStatus = async () => {
     if (!urlParams.value.order_nsu || !urlParams.value.transaction_nsu || !urlParams.value.slug) {
+        console.log('Parâmetros da URL incompletos:', urlParams.value);
         isProcessing.value = false;
         return;
     }
@@ -241,29 +180,83 @@ const checkPaymentStatus = async () => {
     error.value = '';
 
     try {
-        await checkoutStore.checkPaymentStatus(
-            urlParams.value.order_nsu,
-            urlParams.value.transaction_nsu,
-            urlParams.value.slug
-        );
+        console.log('Iniciando processamento do checkout success com parâmetros:', urlParams.value);
 
-        if (paymentStatus.value?.paid) {
-            toast.add({
-                severity: 'success',
-                summary: 'Pagamento Confirmado!',
-                detail: 'Seu pagamento foi processado com sucesso.',
-                life: 5000
-            });
+        // Primeiro: salvar dados no backend e consultar InfinitePay
+        console.log('Fazendo requisição para o backend...');
+        const backendResponse = await api.post('/assinaturas/processar-checkout-success', urlParams.value);
+
+        console.log('Resposta do backend:', backendResponse.data);
+
+        if (backendResponse.data.success) {
+            // Usar os dados retornados pelo backend
+            const infinitePayData = backendResponse.data.infinitepay_response;
+            const assinaturaData = backendResponse.data.assinatura;
+
+            // Mapear dados para o formato esperado pelo componente
+            paymentStatus.value = {
+                paid: assinaturaData.status === 'aprovado',
+                amount: infinitePayData?.amount || (assinaturaData.paid_amount * 100) || 0,
+                paid_amount: infinitePayData?.paid_amount || (assinaturaData.paid_amount * 100) || 0,
+                installments: infinitePayData?.installments || assinaturaData.installments || 1,
+                capture_method: assinaturaData.capture_method || urlParams.value.capture_method,
+                receipt_url: assinaturaData.receipt_url || urlParams.value.receipt_url,
+                transaction_nsu: assinaturaData.transaction_nsu || urlParams.value.transaction_nsu,
+                order_nsu: assinaturaData.order_nsu || urlParams.value.order_nsu,
+            };
+
+            console.log('Status do pagamento processado:', paymentStatus.value);
+
+            if (paymentStatus.value.paid) {
+                console.log('Pagamento confirmado com sucesso!');
+
+                // Atualizar localStorage com assinatura ativa
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                user.assinatura = true;
+                localStorage.setItem('user', JSON.stringify(user));
+
+                // Atualizar store
+                checkoutStore.resetCheckout();
+
+                // Redirecionar automaticamente para a página inicial
+                console.log('Redirecionando para página inicial...');
+                router.push('/');
+
+            } else {
+                console.log('Pagamento ainda pendente ou não aprovado');
+                error.value = 'Pagamento ainda não foi confirmado pela InfinitePay. Tente novamente em alguns minutos.';
+            }
+
+        } else {
+            throw new Error(backendResponse.data.message || 'Erro ao processar dados do checkout');
         }
 
     } catch (err) {
-        error.value = err.message;
-        toast.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: 'Não foi possível verificar o status do pagamento.',
-            life: 5000
-        });
+        console.error('Erro ao verificar status do pagamento:', err);
+
+        if (err.response) {
+            console.error('Erro na resposta da API:', {
+                status: err.response.status,
+                data: err.response.data,
+                headers: err.response.headers
+            });
+
+            if (err.response.data?.infinitepay_error) {
+                console.error('Erro específico da InfinitePay:', err.response.data.infinitepay_error);
+            }
+
+            if (err.response.data?.infinitepay_exception) {
+                console.error('Exceção na InfinitePay:', err.response.data.infinitepay_exception);
+            }
+
+            error.value = err.response.data?.message || err.response.data?.error || 'Erro na comunicação com o servidor';
+        } else if (err.request) {
+            console.error('Erro na requisição (sem resposta):', err.request);
+            error.value = 'Erro de conexão com o servidor';
+        } else {
+            console.error('Erro geral:', err.message);
+            error.value = err.message;
+        }
     } finally {
         isProcessing.value = false;
         isChecking.value = false;

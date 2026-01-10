@@ -29,6 +29,30 @@ const routes = [
     path: '/checkout/success',
     name: 'checkout-success',
     component: () => import('../views/CheckoutSuccessView.vue')
+  },
+  {
+    path: '/pagamento/sucesso',
+    name: 'pagamento-sucesso',
+    component: () => import('../views/CheckoutSuccessPage.vue')
+  },
+  {
+    path: '/user-settings',
+    name: 'user-settings',
+    component: () => import('../pages/UserSettings.vue'),
+    beforeEnter: (to, from, next) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const token = localStorage.getItem('token');
+      if (token && user.id && user.is_admin === false) {
+        next();
+      } else {
+        next('/');
+      }
+    }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    redirect: '/'
   }
 ]
 

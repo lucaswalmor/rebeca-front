@@ -2,15 +2,15 @@
     <Card class="text-white">
         <template #title>
             <div class="relative">
-                <div class="w-full banner-container" @mouseenter="showBannerOverlay = isAdmin" @mouseleave="showBannerOverlay = false">
+                <div class="w-full banner-container" @mouseenter="showBannerOverlay = isAdmin()" @mouseleave="showBannerOverlay = false">
                     <img :src="dados.path_img_banner || 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'" alt="Capa do perfil">
                     <div v-if="showBannerOverlay" class="image-overlay" @click="openBannerDialog">
                         <i class="fa-solid fa-camera fa-2x"></i>
                     </div>
                 </div>
-                <div class="absolute avatar avatar-container" @mouseenter="showAvatarOverlay = isAdmin" @mouseleave="showAvatarOverlay = false">
-                    <img 
-                        :src="dados.path_img_avatar || 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png'" 
+                <div class="absolute avatar avatar-container" @mouseenter="showAvatarOverlay = isAdmin()" @mouseleave="showAvatarOverlay = false">
+                    <img
+                        :src="dados.path_img_avatar || 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png'"
                         alt="Avatar"
                         class="avatar-image"
                     />
@@ -28,11 +28,17 @@
                             <div class="d-flex flex-column">
                                 <p class="font-bold text-white">{{ dados.nome }} {{ dados.sobrenome }}</p>
                                 <p class="text-white">@{{ dados.apelido }}</p>
+                                <Badge
+                                    v-if="!isAdmin() && statusAssinaturaUsuario !== 'Sem Assinatura'"
+                                    :value="statusAssinaturaUsuario"
+                                    :severity="getStatusSeverity(statusAssinaturaUsuario)"
+                                    class="mt-2"
+                                />
                             </div>
-                            <div class="d-flex flex-column">
+                            <!-- <div class="d-flex flex-column">
                                 <i class="fa-solid fa-list-ul fa-lg cursor-pointer" aria-haspopup="true" aria-controls="overlay_menu" @click="toggle"></i>
                                 <Menu ref="menu" id="overlay_menu" :model="items" :popup="true" />
-                            </div>
+                            </div> -->
                         </div>
                         <p class="text-white">
                             {{ dados.sobre }}
@@ -70,42 +76,52 @@
                     <span class="text-white font-bold">Assinatura</span>
                     
                     <div class="p-2 d-flex flex-wrap gap-2">
-                        <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
+                        <Button
+                            severity="primary"
+                            class="d-flex justify-content-between align-items-center w-full"
+                            @click="gerarLinkPagamento('1_mes')"
+                            :loading="loadingPagamento"
+                        >
                             <span class="ms-4 font-bold">1 mês</span>
                             <span class="me-4 font-bold">{{ valorMensal }}</span>
                         </Button>
-                        <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
+                        <Button
+                            severity="primary"
+                            class="d-flex justify-content-between align-items-center w-full"
+                            @click="gerarLinkPagamento('3_meses')"
+                            :loading="loadingPagamento"
+                        >
                             <span class="ms-4 font-bold">3 meses</span>
                             <span class="me-4 font-bold">{{ valorTrimestral }}</span>
                         </Button>
-                        <Button severity="primary" class="d-flex justify-content-between align-items-center w-full">
+                        <Button
+                            severity="primary"
+                            class="d-flex justify-content-between align-items-center w-full"
+                            @click="gerarLinkPagamento('6_meses')"
+                            :loading="loadingPagamento"
+                        >
                             <span class="ms-4 font-bold">6 meses</span>
                             <span class="me-4 font-bold">{{ valorSemestral }}</span>
                         </Button>
                     </div>
                 </div>
 
-                <div v-if="isAdmin" class="row mt-3">
-                    <div class="p-2 d-flex flex-wrap gap-2">
-                        <Button label="Editar Perfil" severity="primary" @click="navigateTo('/profile')" />
-                    </div>
-                </div>
             </div>
         </template>
     </Card>
 
     <!-- Dialog para alterar banner -->
-    <Dialog 
-        v-model:visible="showBannerDialog" 
-        modal 
-        header="Alterar Banner" 
+    <Dialog
+        v-model:visible="showBannerDialog"
+        modal
+        header="Alterar Banner"
         :style="{ width: '30rem' }"
         :closable="true"
     >
         <div class="mb-4">
-            <FileUpload 
-                mode="basic" 
-                accept="image/*" 
+            <FileUpload
+                mode="basic"
+                accept="image/*"
                 :maxFileSize="5000000"
                 @select="onBannerSelect"
                 chooseLabel="Selecionar Imagem"
@@ -122,17 +138,17 @@
     </Dialog>
 
     <!-- Dialog para alterar avatar -->
-    <Dialog 
-        v-model:visible="showAvatarDialog" 
-        modal 
-        header="Alterar Avatar" 
+    <Dialog
+        v-model:visible="showAvatarDialog"
+        modal
+        header="Alterar Avatar"
         :style="{ width: '30rem' }"
         :closable="true"
     >
         <div class="mb-4">
-            <FileUpload 
-                mode="basic" 
-                accept="image/*" 
+            <FileUpload
+                mode="basic"
+                accept="image/*"
                 :maxFileSize="5000000"
                 @select="onAvatarSelect"
                 chooseLabel="Selecionar Imagem"
@@ -147,6 +163,7 @@
             <Button label="Salvar" severity="primary" @click="saveAvatar" :disabled="!previewAvatar" />
         </div>
     </Dialog>
+
 </template>
 
 <script>
@@ -155,6 +172,8 @@ import SelectButton from 'primevue/selectbutton';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
+import Avatar from 'primevue/avatar';
+import Badge from 'primevue/badge';
 import { Menu } from 'primevue';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -173,6 +192,8 @@ export default {
         Button,
         Dialog,
         FileUpload,
+        Avatar,
+        Badge,
         Menu
     },
     data() {
@@ -192,6 +213,7 @@ export default {
                 path_img_banner: '', // Mantido hardcoded
                 path_img_avatar: null // Mantido hardcoded
             },
+            statusAssinaturaUsuario: 'Sem Assinatura',
             items: [
                 {
                     label: 'Refresh',
@@ -202,7 +224,6 @@ export default {
                     icon: 'pi pi-upload'
                 }
             ],
-            isAdmin: false,
             loading: false,
             showBannerOverlay: false,
             showAvatarOverlay: false,
@@ -211,7 +232,8 @@ export default {
             previewBanner: null,
             previewAvatar: null,
             selectedBannerFile: null,
-            selectedAvatarFile: null
+            selectedAvatarFile: null,
+            loadingPagamento: false
         }
     },
     setup() {
@@ -220,14 +242,7 @@ export default {
         return { authStore, updateTrigger };
     },
     mounted() {
-        this.checkAdminStatus();
         this.preencherDados();
-    },
-    watch: {
-        // Observar mudanças na store para atualizar status de admin
-        updateTrigger() {
-            this.checkAdminStatus();
-        }
     },
     computed: {
         hasActiveSubscription() {
@@ -266,6 +281,13 @@ export default {
             },
             deep: true,
             immediate: true
+        },
+        updateTrigger: {
+            handler() {
+                // Quando há mudanças na autenticação, recarregar status da assinatura
+                this.carregarStatusAssinaturaUsuario();
+            },
+            immediate: true
         }
     },
     methods: {
@@ -274,7 +296,7 @@ export default {
                 return;
             }
 
-            // Preencher dados do usuário
+            // Preencher dados do perfil público (becaLima007)
             this.dados.nome = this.userData.nome || '';
             this.dados.sobrenome = this.userData.sobrenome || '';
             this.dados.apelido = this.userData.apelido || '';
@@ -289,10 +311,27 @@ export default {
             // Preencher imagens do backend
             this.dados.path_img_banner = this.userData.path_img_banner || '';
             this.dados.path_img_avatar = this.userData.path_img_avatar || null;
+
+            // Carregar status da assinatura do usuário logado
+            this.carregarStatusAssinaturaUsuario();
         },
-        checkAdminStatus() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            this.isAdmin = user.is_admin === true;
+        carregarStatusAssinaturaUsuario() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                this.statusAssinaturaUsuario = user.status_assinatura || 'Sem Assinatura';
+            } catch (error) {
+                console.error('Erro ao carregar status da assinatura:', error);
+                this.statusAssinaturaUsuario = 'Sem Assinatura';
+            }
+        },
+        getStatusSeverity(status) {
+            const severities = {
+                'Assinatura Ativa': 'success',
+                'Assinatura À Vencer': 'warning',
+                'Assinatura Vencida': 'danger',
+                'Sem Assinatura': 'secondary'
+            };
+            return severities[status] || 'secondary';
         },
         formatarMoeda(valor) {
             if (!valor || valor === 0) return 'R$ 0,00';
@@ -371,7 +410,7 @@ export default {
                 // Atualizar a imagem do banner com a URL retornada
                 this.dados.path_img_banner = response.data.url;
                 this.closeBannerDialog();
-                
+
                 this.$toast.add({
                     severity: 'success',
                     summary: 'Sucesso',
@@ -424,7 +463,7 @@ export default {
                 // Atualizar a imagem do avatar com a URL retornada
                 this.dados.path_img_avatar = response.data.url;
                 this.closeAvatarDialog();
-                
+
                 this.$toast.add({
                     severity: 'success',
                     summary: 'Sucesso',
@@ -444,6 +483,92 @@ export default {
                     detail: errorMessage,
                     life: 3000
                 });
+            }
+        },
+        async gerarLinkPagamento(plano) {
+
+            if (!this.isLoggedIn()) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Atenção',
+                    detail: 'Para realizar a assinatura você precisa estar cadastrado.',
+                    life: 3000
+                });
+                return;
+            }
+
+            if (!this.userData) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: 'Dados do usuário não carregados',
+                    life: 3000
+                });
+                return;
+            }
+
+            // Calcular valor baseado no plano
+            let valorCalculado = 0;
+            switch (plano) {
+                case '1_mes':
+                    valorCalculado = parseFloat(this.userData.valor_assinatura_mensal || 0);
+                    break;
+                case '3_meses':
+                    valorCalculado = parseFloat(this.userData.valor_assinatura_trimestral || 0) -
+                                   parseFloat(this.userData.valor_desconto_trimestral || 0);
+                    break;
+                case '6_meses':
+                    valorCalculado = parseFloat(this.userData.valor_assinatura_semestral || 0) -
+                                   parseFloat(this.userData.valor_desconto_semestral || 0);
+                    break;
+            }
+
+            if (!valorCalculado || valorCalculado <= 0) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: `Valor da assinatura ${plano} não definido ou inválido: ${valorCalculado}`,
+                    life: 3000
+                });
+                return;
+            }
+
+            this.loadingPagamento = true;
+
+            try {
+                console.log('Enviando dados para gerar link:', { plano, valorCalculado });
+
+                const response = await this.api.post('/assinaturas/gerar-link-pagamento', {
+                    plano: plano,
+                    valor: valorCalculado
+                });
+
+                console.log('Resposta recebida:', response);
+
+                if (response.data.success && response.data.link) {
+                    // Redirecionar para o link de pagamento
+                    window.location.href = response.data.link;
+                } else {
+                    throw new Error('Link de pagamento não gerado');
+                }
+
+            } catch (error) {
+                let errorMessage = 'Erro ao gerar link de pagamento';
+
+                if (error.response && error.response.data) {
+                    if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    }
+                }
+
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: errorMessage,
+                    life: 5000
+                });
+            } finally {
+                this.loadingPagamento = false;
             }
         }
     }

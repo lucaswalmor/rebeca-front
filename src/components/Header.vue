@@ -5,8 +5,14 @@
         <router-link to="/" class="navbar-brand text-white">BecaLima007</router-link>
         <div class="d-flex gap-5 align-items-center me-5">
           <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-          <i 
-            :class="isLoggedIn ? 'fa-solid fa-power-off fa-lg cursor-pointer' : 'fa-solid fa-right-to-bracket fa-lg cursor-pointer'" 
+          <i
+            v-if="isLoggedIn"
+            class="fa-solid fa-user fa-lg cursor-pointer"
+            style="color: #f5cee1;"
+            @click="goToUserSettings"
+          ></i>
+          <i
+            :class="isLoggedIn ? 'fa-solid fa-power-off fa-lg cursor-pointer' : 'fa-solid fa-right-to-bracket fa-lg cursor-pointer'"
             :style="isLoggedIn ? 'color: #e40707;' : ''"
             @click="handleIconClick"
           ></i>
@@ -70,6 +76,14 @@ export default {
         this.openLoginDialog();
       }
     },
+    goToUserSettings() {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.is_admin === true) {
+        this.$router.push('/profile');
+      } else {
+        this.$router.push('/user-settings');
+      }
+    },
     openLoginDialog() {
       this.showRegisterDialog = false;
       this.showLoginDialog = true;
@@ -97,6 +111,10 @@ export default {
           detail: 'Logout realizado com sucesso!',
           life: 3000
         });
+
+        setTimeout(() => {
+          this.$router.push('/');
+        }, 1000);
       } catch (error) {
         this.loading = false;
         // Mesmo em caso de erro, limpar o localStorage

@@ -17,10 +17,15 @@ export default {
     setup() {
         const authStore = useAuthStore();
         const { isLoading } = storeToRefs(authStore);
-        
+
         return {
             isLoading
         };
+    },
+    computed: {
+        showLoading() {
+            return this.isLoading;
+        }
     }
 }
 </script>

@@ -59,7 +59,7 @@ export default {
     async mounted() {
         await this.carregarContagens();
         await this.carregarPosts();
-        
+
         // Adicionar listener de scroll para infinite scroll
         window.addEventListener('scroll', this.handleScroll);
     },
@@ -95,6 +95,7 @@ export default {
                 console.error('Erro ao carregar contagens:', error);
             }
         },
+
         async carregarPosts(loadMore = false) {
             try {
                 if (loadMore) {
