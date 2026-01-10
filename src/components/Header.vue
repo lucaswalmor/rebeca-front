@@ -4,7 +4,7 @@
       <div class="container-fluid text-white">
         <router-link to="/" class="navbar-brand text-white">BecaLima007</router-link>
         <div class="d-flex gap-5 align-items-center me-5">
-          <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+          <i class="fa-solid fa-house fa-lg cursor-pointer" @click="goHome"></i>
           <i
             v-if="isLoggedIn"
             class="fa-solid fa-user fa-lg cursor-pointer"
@@ -83,6 +83,9 @@ export default {
       } else {
         this.$router.push('/user-settings');
       }
+    },
+    goHome() {
+      this.$router.push('/');
     },
     openLoginDialog() {
       this.showRegisterDialog = false;

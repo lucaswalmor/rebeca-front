@@ -45,11 +45,11 @@
                             <h4>Dados Pessoais</h4>
                         </div>
 
-                        <!-- Nome -->
+                        <!-- Nome Completo -->
                         <div class="col-md-12 mb-3">
                             <IftaLabel>
                                 <InputText id="name" v-model="userData.name" class="w-full" size="small" disabled />
-                                <label for="name">Nome</label>
+                                <label for="name">Nome Completo</label>
                             </IftaLabel>
                         </div>
 
@@ -155,7 +155,7 @@
                                                 icon="pi pi-eye"
                                                 class="p-button-rounded p-button-info p-button-text"
                                                 @click="visualizarRecibo(slotProps.data)"
-                                                v-tooltip.top="'Visualizar Recibo'"
+                                                title="Visualizar Recibo"
                                             />
                                         </template>
                                     </Column>
@@ -222,22 +222,21 @@ export default {
         await this.carregarAssinaturas();
     },
     methods: {
-        async carregarDadosUsuario() {
+        carregarDadosUsuario() {
             try {
+                // Usar dados já disponíveis no localStorage (vêm do login)
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 if (!user.id) {
                     this.$router.push('/');
                     return;
                 }
 
-                const response = await this.api.get(`/users/${user.id}`);
-                const userData = response.data.data;
-
+                // Concatenar nome + sobrenome e usar campos corretos
                 this.userData = {
-                    name: userData.name || '',
-                    email: userData.email || '',
-                    apelido: userData.apelido || '',
-                    telefone: userData.telefone || ''
+                    name: user.nome && user.sobrenome ? `${user.nome} ${user.sobrenome}` : '',
+                    email: user.email || '',
+                    apelido: user.apelido || '',
+                    telefone: user.telefone || ''
                 };
             } catch (error) {
                 this.$toast.add({
@@ -246,6 +245,12 @@ export default {
                     detail: 'Erro ao carregar dados do usuário',
                     life: 3000
                 });
+                this.userData = {
+                    name: '',
+                    email: '',
+                    apelido: '',
+                    telefone: ''
+                };
             }
         },
 

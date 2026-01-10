@@ -120,170 +120,176 @@
     </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+<script>
 import { useCheckoutStore } from '@/stores/checkout';
 import api from '@/axios/api';
 import Button from 'primevue/button';
 
-const route = useRoute();
-const router = useRouter();
-const checkoutStore = useCheckoutStore();
-
-const isProcessing = ref(true);
-const isChecking = ref(false);
-const error = ref('');
-
-// Parâmetros da URL
-const urlParams = computed(() => {
-    return {
-        capture_method: route.query.capture_method,
-        transaction_id: route.query.transaction_id,
-        transaction_nsu: route.query.transaction_nsu,
-        slug: route.query.slug,
-        order_nsu: route.query.order_nsu,
-        receipt_url: route.query.receipt_url
-    };
-});
-
-// Status do pagamento (usando dados do backend)
-const paymentStatus = ref(null);
-
-// Formatar moeda
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    }).format(value);
-};
-
-// Obter nome do método de pagamento
-const getPaymentMethodName = (method) => {
-    const methods = {
-        'credit_card': 'Cartão de Crédito',
-        'pix': 'PIX',
-        'boleto': 'Boleto'
-    };
-    return methods[method] || method || 'Não informado';
-};
-
-// Verificar status do pagamento
-const checkPaymentStatus = async () => {
-    if (!urlParams.value.order_nsu || !urlParams.value.transaction_nsu || !urlParams.value.slug) {
-        console.log('Parâmetros da URL incompletos:', urlParams.value);
-        isProcessing.value = false;
-        return;
-    }
-
-    isChecking.value = true;
-    error.value = '';
-
-    try {
-        console.log('Iniciando processamento do checkout success com parâmetros:', urlParams.value);
-
-        // Primeiro: salvar dados no backend e consultar InfinitePay
-        console.log('Fazendo requisição para o backend...');
-        const backendResponse = await api.post('/assinaturas/processar-checkout-success', urlParams.value);
-
-        console.log('Resposta do backend:', backendResponse.data);
-
-        if (backendResponse.data.success) {
-            // Usar os dados retornados pelo backend
-            const infinitePayData = backendResponse.data.infinitepay_response;
-            const assinaturaData = backendResponse.data.assinatura;
-
-            // Mapear dados para o formato esperado pelo componente
-            paymentStatus.value = {
-                paid: assinaturaData.status === 'aprovado',
-                amount: infinitePayData?.amount || (assinaturaData.paid_amount * 100) || 0,
-                paid_amount: infinitePayData?.paid_amount || (assinaturaData.paid_amount * 100) || 0,
-                installments: infinitePayData?.installments || assinaturaData.installments || 1,
-                capture_method: assinaturaData.capture_method || urlParams.value.capture_method,
-                receipt_url: assinaturaData.receipt_url || urlParams.value.receipt_url,
-                transaction_nsu: assinaturaData.transaction_nsu || urlParams.value.transaction_nsu,
-                order_nsu: assinaturaData.order_nsu || urlParams.value.order_nsu,
+export default {
+    name: 'CheckoutSuccessView',
+    components: {
+        Button
+    },
+    data() {
+        return {
+            isProcessing: true,
+            isChecking: false,
+            error: '',
+            paymentStatus: null
+        }
+    },
+    computed: {
+        // Parâmetros da URL
+        urlParams() {
+            return {
+                capture_method: this.$route.query.capture_method,
+                transaction_id: this.$route.query.transaction_id,
+                transaction_nsu: this.$route.query.transaction_nsu,
+                slug: this.$route.query.slug,
+                order_nsu: this.$route.query.order_nsu,
+                receipt_url: this.$route.query.receipt_url
             };
-
-            console.log('Status do pagamento processado:', paymentStatus.value);
-
-            if (paymentStatus.value.paid) {
-                console.log('Pagamento confirmado com sucesso!');
-
-                // Atualizar localStorage com assinatura ativa
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                user.assinatura = true;
-                localStorage.setItem('user', JSON.stringify(user));
-
-                // Atualizar store
-                checkoutStore.resetCheckout();
-
-                // Redirecionar automaticamente para a página inicial
-                console.log('Redirecionando para página inicial...');
-                router.push('/');
-
-            } else {
-                console.log('Pagamento ainda pendente ou não aprovado');
-                error.value = 'Pagamento ainda não foi confirmado pela InfinitePay. Tente novamente em alguns minutos.';
-            }
-
-        } else {
-            throw new Error(backendResponse.data.message || 'Erro ao processar dados do checkout');
         }
+    },
+    methods: {
+        // Formatar moeda
+        formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        },
 
-    } catch (err) {
-        console.error('Erro ao verificar status do pagamento:', err);
+        // Obter nome do método de pagamento
+        getPaymentMethodName(method) {
+            const methods = {
+                'credit_card': 'Cartão de Crédito',
+                'pix': 'PIX',
+                'boleto': 'Boleto'
+            };
+            return methods[method] || method || 'Não informado';
+        },
 
-        if (err.response) {
-            console.error('Erro na resposta da API:', {
-                status: err.response.status,
-                data: err.response.data,
-                headers: err.response.headers
-            });
-
-            if (err.response.data?.infinitepay_error) {
-                console.error('Erro específico da InfinitePay:', err.response.data.infinitepay_error);
+        // Verificar status do pagamento
+        async checkPaymentStatus() {
+            if (!this.urlParams.order_nsu || !this.urlParams.transaction_nsu || !this.urlParams.slug) {
+                console.log('Parâmetros da URL incompletos:', this.urlParams);
+                this.isProcessing = false;
+                return;
             }
 
-            if (err.response.data?.infinitepay_exception) {
-                console.error('Exceção na InfinitePay:', err.response.data.infinitepay_exception);
-            }
+            this.isChecking = true;
+            this.error = '';
 
-            error.value = err.response.data?.message || err.response.data?.error || 'Erro na comunicação com o servidor';
-        } else if (err.request) {
-            console.error('Erro na requisição (sem resposta):', err.request);
-            error.value = 'Erro de conexão com o servidor';
-        } else {
-            console.error('Erro geral:', err.message);
-            error.value = err.message;
+            try {
+                console.log('Iniciando processamento do checkout success com parâmetros:', this.urlParams);
+
+                // Primeiro: salvar dados no backend e consultar InfinitePay
+                console.log('Fazendo requisição para o backend...');
+                const backendResponse = await api.post('/assinaturas/processar-checkout-success', this.urlParams);
+
+                console.log('Resposta do backend:', backendResponse.data);
+
+                if (backendResponse.data.success) {
+                    // Usar os dados retornados pelo backend
+                    const infinitePayData = backendResponse.data.infinitepay_response;
+                    const assinaturaData = backendResponse.data.assinatura;
+
+                    // Mapear dados para o formato esperado pelo componente
+                    this.paymentStatus = {
+                        paid: assinaturaData.status === 'aprovado',
+                        amount: infinitePayData?.amount || (assinaturaData.paid_amount * 100) || 0,
+                        paid_amount: infinitePayData?.paid_amount || (assinaturaData.paid_amount * 100) || 0,
+                        installments: infinitePayData?.installments || assinaturaData.installments || 1,
+                        capture_method: assinaturaData.capture_method || this.urlParams.capture_method,
+                        receipt_url: assinaturaData.receipt_url || this.urlParams.receipt_url,
+                        transaction_nsu: assinaturaData.transaction_nsu || this.urlParams.transaction_nsu,
+                        order_nsu: assinaturaData.order_nsu || this.urlParams.order_nsu,
+                    };
+
+                    console.log('Status do pagamento processado:', this.paymentStatus);
+
+                    if (this.paymentStatus.paid) {
+                        console.log('Pagamento confirmado com sucesso!');
+
+                        // Atualizar localStorage com assinatura ativa
+                        const user = JSON.parse(localStorage.getItem('user') || '{}');
+                        user.assinatura = true;
+                        localStorage.setItem('user', JSON.stringify(user));
+
+                        // Atualizar store
+                        const checkoutStore = useCheckoutStore();
+                        checkoutStore.resetCheckout();
+
+                        // Redirecionar automaticamente para a página inicial
+                        console.log('Redirecionando para página inicial...');
+                        this.$router.push('/');
+
+                    } else {
+                        console.log('Pagamento ainda pendente ou não aprovado');
+                        this.error = 'Pagamento ainda não foi confirmado pela InfinitePay. Tente novamente em alguns minutos.';
+                    }
+
+                } else {
+                    throw new Error(backendResponse.data.message || 'Erro ao processar dados do checkout');
+                }
+
+            } catch (err) {
+                console.error('Erro ao verificar status do pagamento:', err);
+
+                if (err.response) {
+                    console.error('Erro na resposta da API:', {
+                        status: err.response.status,
+                        data: err.response.data,
+                        headers: err.response.headers
+                    });
+
+                    if (err.response.data?.infinitepay_error) {
+                        console.error('Erro específico da InfinitePay:', err.response.data.infinitepay_error);
+                    }
+
+                    if (err.response.data?.infinitepay_exception) {
+                        console.error('Exceção na InfinitePay:', err.response.data.infinitepay_exception);
+                    }
+
+                    this.error = err.response.data?.message || err.response.data?.error || 'Erro na comunicação com o servidor';
+                } else if (err.request) {
+                    console.error('Erro na requisição (sem resposta):', err.request);
+                    this.error = 'Erro de conexão com o servidor';
+                } else {
+                    console.error('Erro geral:', err.message);
+                    this.error = err.message;
+                }
+            } finally {
+                this.isProcessing = false;
+                this.isChecking = false;
+            }
+        },
+
+        // Navegação
+        goHome() {
+            this.$router.push('/');
+        },
+
+        goToCheckout() {
+            this.$router.push('/checkout');
+        },
+
+        newPayment() {
+            const checkoutStore = useCheckoutStore();
+            checkoutStore.resetCheckout();
+            this.$router.push('/checkout');
         }
-    } finally {
-        isProcessing.value = false;
-        isChecking.value = false;
+    },
+
+    // Verificar automaticamente ao montar o componente
+    mounted() {
+        // Simular delay para mostrar o estado de processamento
+        setTimeout(() => {
+            this.checkPaymentStatus();
+        }, 2000);
     }
-};
-
-// Navegação
-const goHome = () => {
-    router.push('/');
-};
-
-const goToCheckout = () => {
-    router.push('/checkout');
-};
-
-const newPayment = () => {
-    checkoutStore.resetCheckout();
-    router.push('/checkout');
-};
-
-// Verificar automaticamente ao montar o componente
-onMounted(() => {
-    // Simular delay para mostrar o estado de processamento
-    setTimeout(() => {
-        checkPaymentStatus();
-    }, 2000);
-});
+}
 </script>
 
 <style scoped>

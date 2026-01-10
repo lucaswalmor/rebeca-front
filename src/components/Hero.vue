@@ -160,6 +160,13 @@
         </div>
     </Dialog>
 
+    <!-- Dialog de login para assinatura -->
+    <LoginDialog
+        :model-value="showLoginDialog"
+        :show-subscription-message="true"
+        @update:model-value="showLoginDialog = $event"
+    />
+
 </template>
 
 <script>
@@ -170,6 +177,7 @@ import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
 import Avatar from 'primevue/avatar';
 import Badge from 'primevue/badge';
+import LoginDialog from './dialogs/user/Login.vue';
 import { Menu } from 'primevue';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -190,6 +198,7 @@ export default {
         FileUpload,
         Avatar,
         Badge,
+        LoginDialog,
         Menu
     },
     data() {
@@ -234,7 +243,8 @@ export default {
             previewAvatar: null,
             selectedBannerFile: null,
             selectedAvatarFile: null,
-            loadingPagamento: false
+            loadingPagamento: false,
+            showLoginDialog: false
         }
     },
     setup() {
@@ -534,13 +544,8 @@ export default {
         async gerarLinkPagamento(plano) {
 
             if (!this.userState.isLoggedIn) {
-                // Se não estiver logado, mostrar mensagem e não prosseguir
-                this.$toast.add({
-                    severity: 'warn',
-                    summary: 'Login Necessário',
-                    detail: 'Para realizar a assinatura você precisa estar cadastrado.',
-                    life: 5000
-                });
+                // Se não estiver logado, mostrar dialog de login necessário
+                this.showLoginDialog = true;
                 return;
             }
 

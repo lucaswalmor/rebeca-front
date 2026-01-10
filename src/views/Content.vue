@@ -1,8 +1,9 @@
 <template>
     <div class="row">
-        <Conteudos 
+        <Conteudos
+            :selected-menu="selectedMenu"
             :conteudos="conteudos"
-            :should-blur="shouldBlurImages"
+            :should-blur="false"
         />
     </div>
 </template>
@@ -25,12 +26,6 @@ export default {
     components: {
         Conteudos
     },
-    computed: {
-        shouldBlurImages() {
-            // Este computed não é mais usado, o blur é controlado no Conteudos.vue
-            return false;
-        }
-    }
 }
 </script>
 

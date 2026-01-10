@@ -1,12 +1,20 @@
 <template>
-    <Dialog 
-        v-model:visible="visible" 
-        modal 
-        header="Login" 
+    <Dialog
+        v-model:visible="visible"
+        modal
+        header="Login"
         :style="{ width: '25rem' }"
         :closable="true"
     >
-        <LoginForm 
+        <div v-if="showSubscriptionMessage" class="mb-3">
+            <Message severity="info" :closable="false">
+                <div class="flex align-items-center">
+                    <i class="pi pi-info-circle mr-2"></i>
+                    <span>Faça login para assinar o conteúdo exclusivo!</span>
+                </div>
+            </Message>
+        </div>
+        <LoginForm
             @login="handleLogin"
             @open-register="handleOpenRegister"
             :loading="loading"
@@ -16,6 +24,7 @@
 
 <script>
 import Dialog from 'primevue/dialog';
+import Message from 'primevue/message';
 import LoginForm from '../../forms/users/LoginForm.vue';
 import { useAuthStore } from '@/stores/auth';
 
@@ -23,15 +32,20 @@ export default {
     name: 'LoginDialog',
     components: {
         Dialog,
+        Message,
         LoginForm
     },
     props: {
         modelValue: {
             type: Boolean,
             default: false
+        },
+        showSubscriptionMessage: {
+            type: Boolean,
+            default: false
         }
     },
-    emits: ['update:modelValue', 'open-register'],
+    emits: ['update:modelValue', 'open-register', 'logged-in'],
     computed: {
         visible: {
             get() {
