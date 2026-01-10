@@ -45,3 +45,8 @@ export function statusAssinatura() {
 
     return user.status_assinatura;
 }
+
+export function currentUserId() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.id;
+}

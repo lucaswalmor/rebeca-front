@@ -35,7 +35,7 @@
                                 <div class="comentario-header">
                                     <span class="comentario-nome">{{ comentario.name || 'Usuário' }}</span>
                                     <button 
-                                        v-if="podeDeletarComentario(comentario)"
+                                        v-if="canDeleteComment(comentario)"
                                         class="comentario-delete-btn"
                                         @click="deletarComentario(comentario.id)"
                                         title="Deletar comentário"
@@ -48,14 +48,14 @@
                                     {{ comentario.comment }}
                                 </div>
                                 
-                                <!-- Resposta da cliente (se existir) -->
+                                <!-- Resposta da clientez (se existir) -->
                                 <div v-if="comentario.reply" class="comentario-reply">
                                     <div class="reply-header">
                                         <span class="reply-nome">{{ comentario.reply.name || 'Becalima007' }}</span>
                                         <button 
-                                            v-if="podeDeletarResposta(comentario.reply)"
+                                            v-if="canDeleteComment(comentario.reply)"
                                             class="reply-delete-btn"
-                                            @click="deletarResposta(comentario.id)"
+                                            @click="deletarResposta(comentario.reply.id)"
                                             title="Deletar resposta"
                                         >
                                             <i class="fa-solid fa-trash"></i>
@@ -218,16 +218,6 @@ export default {
             }
         }
     },
-    computed: {
-        isAdmin() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            return user.is_admin === true;
-        },
-        currentUserId() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            return user.id;
-        }
-    },
     watch: {
         modelValue(newValue) {
             if (newValue && this.comentarios && this.comentarios.length === 0) {
@@ -236,22 +226,40 @@ export default {
         }
     },
     methods: {
-        podeDeletarComentario(comentario) {
-            // Admin pode deletar qualquer comentário
-            if (this.isAdmin) {
+        canDeleteComment(comentario) {
+            if (comentario.user_id === this.currentUserId()) {
                 return true;
             }
+
+            return false;
+        },
+        podeDeletarComentario(comentario) {
+            // Admin pode deletar qualquer comentário
+            if (this.isAdmin()) {
+                return true;
+            }
+
             // Usuário comum só pode deletar seus próprios comentários
-            return comentario.user_id === this.currentUserId;
+            const currentUserId = this.currentUserId();
+            const comentarioUserId = comentario.user_id;
+
+            console.log('currentUserId', currentUserId);
+            console.log('comentarioUserId', comentarioUserId);
+            return comentarioUserId === currentUserId;
         },
         podeDeletarResposta(reply) {
             if (!reply) return false;
+
             // Admin pode deletar qualquer resposta
-            if (this.isAdmin) {
+            if (this.isAdmin()) {
                 return true;
             }
+
             // Usuário comum só pode deletar suas próprias respostas
-            return reply.user_id === this.currentUserId;
+            const currentUserId = this.currentUserId();
+            console.log('currentUserId', currentUserId);
+            console.log('replyUserId', reply.user_id);
+            return reply.user_id === currentUserId;
         },
         /**
          * Emite o evento 'adicionar-comentario' para o componente pai

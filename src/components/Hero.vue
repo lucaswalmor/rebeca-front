@@ -293,17 +293,17 @@ export default {
         },
         shouldShowSubscriptionButtons() {
             // Regra 1: Se usuário estiver logado E não tiver assinatura ativa
-            if (this.userState.isLoggedIn && !this.userState.hasAssinatura) {
+            if (this.userState.isLoggedIn && !this.userState.hasAssinatura && !this.isAdmin()) {
                 return true;
             }
 
             // Regra 2: Se usuário estiver deslogado, mostrar botões
-            if (!this.userState.isLoggedIn) {
+            if (!this.userState.isLoggedIn && !this.isAdmin()) {
                 return true;
             }
             
             
-            if (this.statusAssinatura() !== 'aprovado') {
+            if (this.statusAssinatura() !== 'aprovado' && !this.isAdmin()) {
                 return true;
             }
 
