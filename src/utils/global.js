@@ -39,3 +39,9 @@ export function hasAssinaturaAtiva() {
 export function isLoggedIn() {
     return !!localStorage.getItem('token') && !!localStorage.getItem('user');
 }
+
+export function statusAssinatura() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    return user.status_assinatura;
+}

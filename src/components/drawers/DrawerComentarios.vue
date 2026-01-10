@@ -1,10 +1,11 @@
 <template>
-    <Drawer 
-        v-model:visible="visible" 
-        :header="`Comentários (${comentarios.length})`" 
-        position="bottom" 
+    <Drawer
+        :visible="modelValue"
+        :header="`Comentários (${comentarios.length})`"
+        position="bottom"
         :style="{ height: '70vh' }"
         class="drawer-comentarios"
+        @update:visible="handleVisibleChange"
     >
         <div class="comentarios-container">
             <div v-if="comentarios.length === 0" class="empty-state">
@@ -192,9 +193,13 @@ export default {
         comentarios: {
             type: Array,
             default: () => []
+        },
+        postId: {
+            type: [Number, String],
+            default: null
         }
     },
-    emits: ['update:modelValue', 'adicionar-comentario', 'responder-comentario', 'deletar-comentario', 'deletar-resposta'],
+    emits: ['update:modelValue', 'comentarios-carregados', 'adicionar-comentario', 'responder-comentario', 'deletar-comentario', 'deletar-resposta'],
     data() {
         return {
             novoComentario: '',
@@ -221,6 +226,13 @@ export default {
         currentUserId() {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             return user.id;
+        }
+    },
+    watch: {
+        modelValue(newValue) {
+            if (newValue && this.comentarios && this.comentarios.length === 0) {
+                this.buscarComentarios();
+            }
         }
     },
     methods: {
@@ -332,9 +344,21 @@ export default {
                 this.respostaTexto[context] += emoji;
             }
         },
-        
+        async buscarComentarios() {
+            if (this.postId && (!this.comentarios || this.comentarios.length === 0)) {
+                try {
+                    const response = await this.api.get(`/posts/${this.postId}/comments`);
+                    this.$emit('comentarios-carregados', response.data.data || []);
+                } catch (error) {
+                    console.error('Erro ao carregar comentários:', error);
+                }
+            }
+        },
+        handleVisibleChange(newValue) {
+            this.$emit('update:modelValue', newValue);
+        }
     }
-}
+}   
 </script>
 
 <style scoped lang="scss">

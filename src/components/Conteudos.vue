@@ -136,9 +136,11 @@
         </Card>
     </div>
     
-    <DrawerComentarios 
+    <DrawerComentarios
         v-model="drawerVisible"
         :comentarios="comentariosAtuais"
+        :post-id="conteudoAtualIndex !== null ? conteudos[conteudoAtualIndex]?.id : null"
+        @comentarios-carregados="comentariosCarregados"
         @adicionar-comentario="adicionarComentario"
         @responder-comentario="responderComentario"
         @deletar-comentario="deletarComentario"
@@ -151,7 +153,7 @@ import { Avatar, Button, Card, Carousel, Menu, Tag } from 'primevue';
 import DrawerComentarios from './drawers/DrawerComentarios.vue';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
-import { isLoggedIn } from '@/utils/global';
+import { isLoggedIn, hasAssinaturaAtiva, statusAssinatura, isAdmin } from '@/utils/global';
 
 export default {
     name: 'Content',
@@ -174,8 +176,8 @@ export default {
         Carousel,
         Button,
         Avatar,
-            DrawerComentarios,
-            Menu,
+        DrawerComentarios,
+        Menu,
         Tag
     },
     data() {
@@ -210,12 +212,6 @@ export default {
         updateTrigger() {
             this.updateUserState();
         },
-        // Buscar comentários quando drawer abrir
-        drawerVisible(newValue) {
-            if (newValue && this.conteudoAtualIndex !== null) {
-                this.buscarComentarios();
-            }
-        }
     },
     computed: {
         isAdminComputed() {
@@ -245,8 +241,11 @@ export default {
                 return true;
             }
 
-            // Usuário normal precisa ter assinatura ativa
-            return this.userState.hasAssinatura === true;
+            // Verificar se tem assinatura ativa E status aprovado
+            const hasAssinatura = this.hasAssinaturaAtiva();
+            const statusAssinatura = this.statusAssinatura();
+
+            return hasAssinatura && statusAssinatura === 'aprovado';
         }
     },
     methods: {
@@ -276,20 +275,21 @@ export default {
             if (post.tipo_post !== 2) {
                 return false;
             }
-            
+
             // Usar função global isAdmin
             const isAdmin = this.isAdmin();
-            
+
             // Se for admin, nunca aplicar blur
             if (isAdmin) {
                 return false;
             }
-            
-            // Usar função global hasAssinaturaAtiva
+
+            // Verificar se tem assinatura ativa E status aprovado
             const hasAssinatura = this.hasAssinaturaAtiva();
-            
-            // Aplica blur se não tiver assinatura ativa
-            return !hasAssinatura;
+            const statusAssinatura = this.statusAssinatura();
+
+            // Aplica blur se não tiver assinatura ativa OU se o status não for 'aprovado'
+            return !hasAssinatura || statusAssinatura !== 'aprovado';
         },
         forceUpdate() {
             // Forçar atualização do componente quando login/logout ocorrer
@@ -447,16 +447,10 @@ export default {
             this.conteudoAtualIndex = contentIndex;
             this.drawerVisible = true;
         },
-        async buscarComentarios() {
-            const post = this.conteudos[this.conteudoAtualIndex];
-            if (post && post.id && (!post.comments || post.comments.length === 0)) {
-                try {
-                    const response = await this.api.get(`/posts/${post.id}/comments`);
-                    post.comments = response.data.data || [];
-                    post.commentsCount = post.comments.length;
-                } catch (error) {
-                    console.error('Erro ao carregar comentários:', error);
-                }
+        comentariosCarregados(comentarios) {
+            if (this.conteudoAtualIndex !== null && this.conteudos[this.conteudoAtualIndex]) {
+                this.conteudos[this.conteudoAtualIndex].comments = comentarios;
+                this.conteudos[this.conteudoAtualIndex].commentsCount = comentarios.length;
             }
         },
         updateUserState() {

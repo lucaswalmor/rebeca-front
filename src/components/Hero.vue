@@ -29,10 +29,10 @@
                                 <p class="font-bold text-white">{{ dados.nome }} {{ dados.sobrenome }}</p>
                                 <p class="text-white">@{{ dados.apelido }}</p>
                                 <Badge
-                                    v-if="!userState.isAdmin && userState.isLoggedIn && statusAssinaturaUsuario !== 'Sem Assinatura'"
+                                    v-if="!userState.isAdmin && userState.isLoggedIn"
                                     :value="statusAssinaturaUsuario"
                                     :severity="getStatusSeverity(statusAssinaturaUsuario)"
-                                    class="mt-2"
+                                    :class="getBadgeClasses(statusAssinaturaUsuario)"
                                 />
                             </div>
                         </div>
@@ -181,6 +181,7 @@ import LoginDialog from './dialogs/user/Login.vue';
 import { Menu } from 'primevue';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
+import { statusAssinatura } from '@/utils/global';
 
 export default {
     name: 'Hero',
@@ -300,8 +301,12 @@ export default {
             if (!this.userState.isLoggedIn) {
                 return true;
             }
+            
+            
+            if (this.statusAssinatura() !== 'aprovado') {
+                return true;
+            }
 
-            // Caso contrário, não mostrar
             return false;
         }
     },
@@ -350,7 +355,7 @@ export default {
         carregarStatusAssinaturaUsuario() {
             try {
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
-                this.statusAssinaturaUsuario = user.status_assinatura || 'Sem Assinatura';
+                this.statusAssinaturaUsuario = user.status_assinatura_descricao || 'Sem Assinatura';
             } catch (error) {
                 console.error('Erro ao carregar status da assinatura:', error);
                 this.statusAssinaturaUsuario = 'Sem Assinatura';
@@ -385,9 +390,19 @@ export default {
                 'Assinatura Ativa': 'success',
                 'Assinatura À Vencer': 'warning',
                 'Assinatura Vencida': 'danger',
+                'PENDENTE': 'warning',
                 'Sem Assinatura': 'secondary'
             };
             return severities[status] || 'secondary';
+        },
+        getBadgeClasses(status) {
+            const baseClasses = 'mt-2 mb-3';
+
+            if (status === 'Assinatura Pendente') {
+                return `${baseClasses} badge-pendente`;
+            }
+
+            return baseClasses;
         },
         formatarMoeda(valor) {
             if (!valor || valor === 0) return 'R$ 0,00';
@@ -792,5 +807,11 @@ img {
     max-height: 300px;
     object-fit: cover;
     border-radius: 8px;
+}
+
+/* Customização da badge PENDENTE */
+:deep(.badge-pendente) {
+    color: #c2185b !important; /* Rosa escuro */
+    font-weight: 600;
 }
 </style>
