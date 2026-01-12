@@ -2,9 +2,17 @@ import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
 
 // Criar instância do axios com configuração base
+// Detectar automaticamente se está em desenvolvimento ou produção
+const isDevelopment = window.location.hostname === 'localhost' ||
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.hostname.includes('.local');
+
+const baseURL = isDevelopment
+    ? 'http://127.0.0.1:8000/api'
+    : 'https://rebeca.lksoftware.com.br/public/api';
+
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api',
-    // baseURL: 'https://rebeca.lksoftware.com.br/public/api',
+    baseURL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
