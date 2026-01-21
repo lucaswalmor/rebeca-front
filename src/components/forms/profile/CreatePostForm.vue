@@ -40,11 +40,11 @@
             <div class="row mb-3">
                 <div class="col-md-12">
                     <label class="text-white mb-2 d-block">Mídias (Imagens e Vídeos) <span class="text-red-500">*</span></label>
-                    <FileUpload 
+                    <FileUpload
                         mode="advanced"
                         :multiple="true"
                         accept="image/*,video/*"
-                        :maxFileSize="10485760"
+                        :maxFileSize="524288000"
                         @select="onFileSelect"
                         @remove="onFileRemove"
                         :auto="false"
