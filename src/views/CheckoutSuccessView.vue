@@ -122,6 +122,7 @@
 
 <script>
 import { useCheckoutStore } from '@/stores/checkout';
+import { useAuthStore } from '@/stores/auth';
 import api from '@/axios/api';
 import Button from 'primevue/button';
 
@@ -129,6 +130,10 @@ export default {
     name: 'CheckoutSuccessView',
     components: {
         Button
+    },
+    setup() {
+        const authStore = useAuthStore();
+        return { authStore };
     },
     data() {
         return {
@@ -216,15 +221,22 @@ export default {
                         // Atualizar localStorage com assinatura ativa
                         const user = JSON.parse(localStorage.getItem('user') || '{}');
                         user.assinatura = true;
+                        user.status_assinatura = 'aprovado';
+                        user.status_assinatura_descricao = 'Assinatura Ativa';
                         localStorage.setItem('user', JSON.stringify(user));
+
+                        // Disparar atualização do auth store para forçar reatividade
+                        this.authStore.triggerUpdate();
 
                         // Atualizar store
                         const checkoutStore = useCheckoutStore();
                         checkoutStore.resetCheckout();
 
-                        // Redirecionar automaticamente para a página inicial
-                        console.log('Redirecionando para página inicial...');
-                        this.$router.push('/');
+                        // Pequeno delay para garantir que as atualizações sejam processadas
+                        console.log('Redirecionando para página inicial em 1 segundo...');
+                        setTimeout(() => {
+                            this.$router.push('/');
+                        }, 1000);
 
                     } else {
                         console.log('Pagamento ainda pendente ou não aprovado');

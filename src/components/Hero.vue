@@ -165,6 +165,15 @@
         :model-value="showLoginDialog"
         :show-subscription-message="true"
         @update:model-value="showLoginDialog = $event"
+        @open-register="openRegisterDialog"
+        @logged-in="handleLoggedIn"
+    />
+
+    <!-- Dialog de cadastro -->
+    <RegisterDialog
+        v-model="showRegisterDialog"
+        @open-login="openLoginDialog"
+        @registered="handleLoggedIn"
     />
 
 </template>
@@ -178,6 +187,7 @@ import FileUpload from 'primevue/fileupload';
 import Avatar from 'primevue/avatar';
 import Badge from 'primevue/badge';
 import LoginDialog from './dialogs/user/Login.vue';
+import RegisterDialog from './dialogs/user/Register.vue';
 import { Menu } from 'primevue';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -200,6 +210,7 @@ export default {
         Avatar,
         Badge,
         LoginDialog,
+        RegisterDialog,
         Menu
     },
     data() {
@@ -245,7 +256,8 @@ export default {
             selectedBannerFile: null,
             selectedAvatarFile: null,
             loadingPagamento: false,
-            showLoginDialog: false
+            showLoginDialog: false,
+            showRegisterDialog: false
         }
     },
     setup() {
@@ -292,18 +304,23 @@ export default {
             return this.formatarMoeda(valorFinal);
         },
         shouldShowSubscriptionButtons() {
-            // Regra 1: Se usuário estiver logado E não tiver assinatura ativa
-            if (this.userState.isLoggedIn && !this.userState.hasAssinatura && !this.isAdmin()) {
+            // Não mostrar botões para administradores
+            if (this.isAdmin()) {
+                return false;
+            }
+
+            // Se usuário estiver deslogado, mostrar botões
+            if (!this.userState.isLoggedIn) {
                 return true;
             }
 
-            // Regra 2: Se usuário estiver deslogado, mostrar botões
-            if (!this.userState.isLoggedIn && !this.isAdmin()) {
+            // Se usuário estiver logado mas não tiver assinatura ativa, mostrar botões
+            if (this.userState.isLoggedIn && !this.userState.hasAssinatura) {
                 return true;
             }
-            
-            
-            if (this.statusAssinatura() !== 'aprovado' && !this.isAdmin()) {
+
+            // Verificação adicional pelo status da assinatura
+            if (this.statusAssinatura() !== 'aprovado') {
                 return true;
             }
 
@@ -637,6 +654,18 @@ export default {
             } finally {
                 this.loadingPagamento = false;
             }
+        },
+        openRegisterDialog() {
+            this.showLoginDialog = false;
+            this.showRegisterDialog = true;
+        },
+        openLoginDialog() {
+            this.showRegisterDialog = false;
+            this.showLoginDialog = true;
+        },
+        handleLoggedIn() {
+            this.updateUserState();
+            this.carregarStatusAssinaturaUsuario();
         }
     }
 }

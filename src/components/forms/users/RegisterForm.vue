@@ -1,32 +1,30 @@
 <template>
-    <div>
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <IftaLabel>
-                    <InputText 
-                        id="nome" 
-                        v-model="dados.nome" 
-                        class="w-full" 
-                        size="small"
-                        :class="{ 'p-invalid': errors.nome }"
-                    />
-                    <label for="nome">Nome <span class="text-red-500">*</span></label>
-                </IftaLabel>
-                <small v-if="errors.nome" class="text-red-500">* {{ errors.nome }}</small>
-            </div>
-            <div class="col-md-6">
-                <IftaLabel>
-                    <InputText 
-                        id="sobrenome" 
-                        v-model="dados.sobrenome" 
-                        class="w-full" 
-                        size="small"
-                        :class="{ 'p-invalid': errors.sobrenome }"
-                    />
-                    <label for="sobrenome">Sobrenome <span class="text-red-500">*</span></label>
-                </IftaLabel>
-                <small v-if="errors.sobrenome" class="text-red-500">* {{ errors.sobrenome }}</small>
-            </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <IftaLabel>
+                <InputText 
+                    id="nome" 
+                    v-model="dados.nome" 
+                    class="w-full" 
+                    size="small"
+                    :class="{ 'p-invalid': errors.nome }"
+                />
+                <label for="nome">Nome <span class="text-red-500">*</span></label>
+            </IftaLabel>
+            <small v-if="errors.nome" class="text-red-500">* {{ errors.nome }}</small>
+        </div>
+        <div class="col-md-6 mb-3">
+            <IftaLabel>
+                <InputText 
+                    id="sobrenome" 
+                    v-model="dados.sobrenome" 
+                    class="w-full" 
+                    size="small"
+                    :class="{ 'p-invalid': errors.sobrenome }"
+                />
+                <label for="sobrenome">Sobrenome <span class="text-red-500">*</span></label>
+            </IftaLabel>
+            <small v-if="errors.sobrenome" class="text-red-500">* {{ errors.sobrenome }}</small>
         </div>
 
         <div class="mb-3">
@@ -38,7 +36,7 @@
                     size="small"
                     :class="{ 'p-invalid': errors.apelido }"
                 />
-                <label for="apelido">Apelido <span class="text-red-500">*</span></label>
+                <label for="apelido">Apelido (nome curto para ser usado no site)<span class="text-red-500">*</span></label>
             </IftaLabel>
             <small v-if="errors.apelido" class="text-red-500">* {{ errors.apelido }}</small>
         </div>

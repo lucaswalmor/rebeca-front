@@ -21,14 +21,6 @@
                     class="comentario-item"
                 >
                     <div class="comentario-wrapper">
-                        <!-- Avatar à esquerda -->
-                        <Avatar 
-                            :image="comentario.avatar || 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png'" 
-                            shape="circle"
-                            size="large"
-                            class="comentario-avatar"
-                        />
-                        
                         <!-- Caixa de comentário à direita -->
                         <div class="comentario-content">
                             <div class="comentario-box">
@@ -124,12 +116,6 @@
         
         <template #footer>
             <div class="comentario-input-container">
-                <Avatar 
-                    image="https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png" 
-                    shape="circle"
-                    size="normal"
-                    class="input-avatar"
-                />
                 <div class="input-wrapper">
                     <InputGroup>
                         <InputText 
