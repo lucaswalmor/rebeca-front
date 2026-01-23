@@ -162,6 +162,7 @@ export default {
 
         // Obter nome do método de pagamento
         getPaymentMethodName(method) {
+        // a
             const methods = {
                 'credit_card': 'Cartão de Crédito',
                 'pix': 'PIX',
