@@ -133,7 +133,7 @@ export default {
                 
                 const response = await this.api.get(url);
                 const newPosts = response.data.data || [];
-                
+
                 if (loadMore) {
                     this.conteudos = [...this.conteudos, ...newPosts];
                 } else {

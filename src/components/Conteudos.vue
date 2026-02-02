@@ -203,9 +203,12 @@ export default {
         this.updateUserState();
         // Escutar mudanças no localStorage
         window.addEventListener('storage', this.handleStorageChange);
+        // Escutar quando o usuário volta para a aba
+        window.addEventListener('visibilitychange', this.handleVisibilityChange);
     },
     beforeUnmount() {
         window.removeEventListener('storage', this.handleStorageChange);
+        window.removeEventListener('visibilitychange', this.handleVisibilityChange);
     },
     watch: {
         // Observar mudanças na store para atualizar estado do usuário
@@ -426,8 +429,9 @@ export default {
 
             try {
                 const response = await this.api.post(`/posts/${postId}/like`);
-                post.isLiked = response.data.liked;
-                post.likes = response.data.likes_count;
+                // Atualizar o estado do post
+                this.$set(post, 'isLiked', response.data.liked);
+                this.$set(post, 'likes', response.data.likes_count);
 
                 const msg = post.isLiked ? 'Curtido!' : 'Descurtido!';
                 const detail = post.isLiked ? 'Você curtiu esta foto' : 'Você descurtiu esta foto';
@@ -474,6 +478,39 @@ export default {
             // Atualizar estado quando localStorage mudar
             if (event.key === 'user' || event.key === 'token') {
                 this.updateUserState();
+            }
+        },
+        handleVisibilityChange() {
+            // Quando o usuário volta para a aba, verificar se os dados precisam ser atualizados
+            if (!document.hidden && this.conteudos.length > 0) {
+                // Pequeno delay para garantir que a autenticação foi processada
+                setTimeout(() => {
+                    this.refreshLikesState();
+                }, 100);
+            }
+        },
+        async refreshLikesState() {
+            // Se não estiver logado, não há necessidade de atualizar
+            if (!this.userState.isLoggedIn) {
+                return;
+            }
+
+            try {
+                // Para cada post, verificar se o estado de like está correto
+                for (let i = 0; i < this.conteudos.length; i++) {
+                    const post = this.conteudos[i];
+                    if (post.id) {
+                        // Fazer uma chamada leve para verificar o estado do like
+                        const response = await this.api.get(`/posts/${post.id}/like-status`, { skipLoading: true });
+                        if (response.data) {
+                            this.$set(post, 'isLiked', response.data.isLiked);
+                            this.$set(post, 'likes', response.data.likes_count);
+                        }
+                    }
+                }
+            } catch (error) {
+                // Silenciar erros para não incomodar o usuário
+                console.warn('Erro ao atualizar estado dos likes:', error);
             }
         },
         /**
