@@ -85,7 +85,7 @@ export default {
       }
     },
     goHome() {
-      this.$router.push('/');
+      this.$router.push('/home');
     },
     openLoginDialog() {
       this.showRegisterDialog = false;
@@ -116,7 +116,7 @@ export default {
         });
 
         setTimeout(() => {
-          this.$router.push('/');
+          this.$router.push('/home');
         }, 1000);
       } catch (error) {
         this.loading = false;

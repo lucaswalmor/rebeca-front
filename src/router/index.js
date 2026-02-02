@@ -1,9 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import SiteAdulto from '../views/SiteAdulto.vue'
 import HomeView from '../views/HomeView.vue'
 
 const routes = [
   {
     path: '/',
+    name: 'adult-site',
+    component: SiteAdulto
+  },
+  {
+    path: '/home',
     name: 'home',
     component: HomeView
   },
@@ -16,7 +22,7 @@ const routes = [
       if (user.is_admin === true) {
         next();
       } else {
-        next('/');
+        next('/home');
       }
     }
   },
@@ -35,14 +41,14 @@ const routes = [
       if (token && user.id && user.is_admin === false) {
         next();
       } else {
-        next('/');
+        next('/home');
       }
     }
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    redirect: '/'
+    redirect: '/home'
   }
 ]
 

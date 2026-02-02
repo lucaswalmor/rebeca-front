@@ -227,7 +227,7 @@ export default {
                 // Usar dados já disponíveis no localStorage (vêm do login)
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 if (!user.id) {
-                    this.$router.push('/');
+                    this.$router.push('/home');
                     return;
                 }
 

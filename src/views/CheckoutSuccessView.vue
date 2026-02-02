@@ -235,7 +235,7 @@ export default {
                         // Pequeno delay para garantir que as atualizações sejam processadas
                         console.log('Redirecionando para página inicial em 1 segundo...');
                         setTimeout(() => {
-                            this.$router.push('/');
+                            this.$router.push('/home');
                         }, 1000);
 
                     } else {
@@ -281,7 +281,7 @@ export default {
 
         // Navegação
         goHome() {
-            this.$router.push('/');
+            this.$router.push('/home');
         },
 
         goToCheckout() {

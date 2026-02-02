@@ -125,7 +125,7 @@ export default {
                         detail: 'Usuário não encontrado',
                         life: 3000
                     });
-                    this.$router.push('/');
+                    this.$router.push('/home');
                     return;
                 }
 
