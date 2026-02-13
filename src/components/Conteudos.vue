@@ -430,8 +430,8 @@ export default {
             try {
                 const response = await this.api.post(`/posts/${postId}/like`);
                 // Atualizar o estado do post
-                this.$set(post, 'isLiked', response.data.liked);
-                this.$set(post, 'likes', response.data.likes_count);
+                post.isLiked = response.data.liked;
+                post.likes = response.data.likes_count;
 
                 const msg = post.isLiked ? 'Curtido!' : 'Descurtido!';
                 const detail = post.isLiked ? 'Você curtiu esta foto' : 'Você descurtiu esta foto';
@@ -503,8 +503,8 @@ export default {
                         // Fazer uma chamada leve para verificar o estado do like
                         const response = await this.api.get(`/posts/${post.id}/like-status`, { skipLoading: true });
                         if (response.data) {
-                            this.$set(post, 'isLiked', response.data.isLiked);
-                            this.$set(post, 'likes', response.data.likes_count);
+                            post.isLiked = response.data.isLiked;
+                            post.likes = response.data.likes_count;
                         }
                     }
                 }
