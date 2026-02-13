@@ -290,8 +290,8 @@ export default {
                 return 'R$ 0,00';
             }
             const valorBase = parseFloat(this.userData.valor_assinatura_trimestral);
-            const desconto = parseFloat(this.userData.valor_desconto_trimestral || 0);
-            const valorFinal = valorBase - desconto;
+            const descontoPercentual = parseFloat(this.userData.valor_desconto_trimestral || 0) / 100;
+            const valorFinal = valorBase * (1 - descontoPercentual);
             return this.formatarMoeda(valorFinal);
         },
         valorSemestral() {
@@ -299,8 +299,8 @@ export default {
                 return 'R$ 0,00';
             }
             const valorBase = parseFloat(this.userData.valor_assinatura_semestral);
-            const desconto = parseFloat(this.userData.valor_desconto_semestral || 0);
-            const valorFinal = valorBase - desconto;
+            const descontoPercentual = parseFloat(this.userData.valor_desconto_semestral || 0) / 100;
+            const valorFinal = valorBase * (1 - descontoPercentual);
             return this.formatarMoeda(valorFinal);
         },
         shouldShowSubscriptionButtons() {
@@ -598,12 +598,14 @@ export default {
                     valorCalculado = parseFloat(this.userData.valor_assinatura_mensal || 0);
                     break;
                 case '3_meses':
-                    valorCalculado = parseFloat(this.userData.valor_assinatura_trimestral || 0) -
-                                   parseFloat(this.userData.valor_desconto_trimestral || 0);
+                    const valorTrimestralBase = parseFloat(this.userData.valor_assinatura_trimestral || 0);
+                    const descontoTrimestralPercentual = parseFloat(this.userData.valor_desconto_trimestral || 0) / 100;
+                    valorCalculado = valorTrimestralBase * (1 - descontoTrimestralPercentual);
                     break;
                 case '6_meses':
-                    valorCalculado = parseFloat(this.userData.valor_assinatura_semestral || 0) -
-                                   parseFloat(this.userData.valor_desconto_semestral || 0);
+                    const valorSemestralBase = parseFloat(this.userData.valor_assinatura_semestral || 0);
+                    const descontoSemestralPercentual = parseFloat(this.userData.valor_desconto_semestral || 0) / 100;
+                    valorCalculado = valorSemestralBase * (1 - descontoSemestralPercentual);
                     break;
             }
 
