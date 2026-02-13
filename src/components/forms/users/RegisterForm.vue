@@ -191,6 +191,8 @@ export default {
                 this.errors.data_nascimento = 'Campo obrigatório';
             } else if (!this.isValidDate(this.dados.data_nascimento)) {
                 this.errors.data_nascimento = 'Data inválida (DD/MM/AAAA)';
+            } else if (!this.isValidAge(this.dados.data_nascimento)) {
+                this.errors.data_nascimento = 'É necessário ter pelo menos 18 anos para se cadastrar';
             }
 
             return Object.keys(this.errors).length === 0;
@@ -208,13 +210,33 @@ export default {
             const day = parseInt(parts[0], 10);
             const month = parseInt(parts[1], 10);
             const year = parseInt(parts[2], 10);
-            
+
             if (month < 1 || month > 12) return false;
             if (day < 1 || day > 31) return false;
             if (year < 1900 || year > new Date().getFullYear()) return false;
-            
+
             const date = new Date(year, month - 1, day);
             return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
+        },
+        isValidAge(dateString) {
+            const parts = dateString.split('/');
+            const birthDay = parseInt(parts[0], 10);
+            const birthMonth = parseInt(parts[1], 10);
+            const birthYear = parseInt(parts[2], 10);
+
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1; // getMonth() retorna 0-11
+            const currentDay = today.getDate();
+
+            let age = currentYear - birthYear;
+
+            // Verifica se ainda não fez aniversário este ano
+            if (currentMonth < birthMonth || (currentMonth === birthMonth && currentDay < birthDay)) {
+                age--;
+            }
+
+            return age >= 18;
         },
         formatDateForBackend(dateString) {
             // Converte DD/MM/AAAA para AAAA-MM-DD
