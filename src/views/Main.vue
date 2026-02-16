@@ -236,6 +236,11 @@ export default {
                     return; // Não mostrar dialog para usuários não logados
                 }
 
+                // Não mostrar dialog para administradores
+                if (this.isAdmin()) {
+                    return; // Não mostrar dialog para admins
+                }
+
                 // Verificar status do voto na API
                 const response = await this.api.get('/chat-enquete/status-voto');
                 const { has_voted } = response.data.data;

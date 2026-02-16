@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 // Detectar automaticamente se está em desenvolvimento ou produção
 const isDevelopment = window.location.hostname === 'localhost' ||
                      window.location.hostname === '127.0.0.1' ||
+                     window.location.hostname === '192.168.100.223' ||
                      window.location.hostname.includes('.local');
 
 const baseURL = isDevelopment
