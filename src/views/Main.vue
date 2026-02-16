@@ -115,11 +115,10 @@ export default {
         window.addEventListener('scroll', this.handleScroll);
     },
     watch: {
-        // Observar mudanças na store para recarregar posts após logout
+        // Observar mudanças na store para recarregar posts após login/logout
         updateTrigger(newVal, oldVal) {
-            // Se o trigger mudou, pode ser login ou logout
-            // Verificar se ainda está logado para decidir se recarrega
-            this.handleLogout();
+            // Quando o trigger muda, recarregar dados e verificar enquete
+            this.handleAuthChange();
         }
     },
     beforeUnmount() {
@@ -223,10 +222,13 @@ export default {
                 }
             }
         },
-        async handleLogout() {
-            // Recarregar contagens e posts após logout
+        async handleAuthChange() {
+            // Recarregar contagens e posts após mudança de autenticação
             await this.carregarContagens();
             await this.carregarPosts();
+
+            // Verificar se deve mostrar dialog da enquete após mudança de auth
+            await this.verificarDialogEnquete();
         },
         async verificarDialogEnquete() {
             try {
