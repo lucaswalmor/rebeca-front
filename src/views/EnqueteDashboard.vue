@@ -1,5 +1,7 @@
 <template>
-    <div class="p-4 container">
+    <div>
+        <Header />
+        <div class="p-4 container">
         <div class="text-center mb-4">
             <h1 class="text-3xl font-bold mb-2">Dashboard Enquete Chat</h1>
             <p class="text-gray-600">Estatísticas e participação dos usuários na enquete</p>
@@ -137,6 +139,7 @@
                 </DataTable>
             </template>
         </Card>
+        </div>
     </div>
 </template>
 
@@ -146,10 +149,12 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
+import Header from '@/components/Header.vue';
 
 export default {
     name: 'EnqueteDashboard',
     components: {
+        Header,
         Card,
         DataTable,
         Column,
