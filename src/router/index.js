@@ -46,6 +46,20 @@ const routes = [
     }
   },
   {
+    path: '/admin/enquete',
+    name: 'admin-enquete',
+    component: () => import('../views/EnqueteDashboard.vue'),
+    beforeEnter: (to, from, next) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const token = localStorage.getItem('token');
+      if (token && user.id && user.is_admin === true) {
+        next();
+      } else {
+        next('/home');
+      }
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     redirect: '/home'

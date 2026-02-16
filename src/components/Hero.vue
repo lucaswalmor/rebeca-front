@@ -70,7 +70,7 @@
 
                 <div v-if="shouldShowSubscriptionButtons" class="row mt-3">
                     <span class="text-white font-bold">Assinatura</span>
-                    
+
                     <div class="p-2 d-flex flex-wrap gap-2">
                         <Button
                             severity="primary"
@@ -98,6 +98,22 @@
                         >
                             <span class="ms-4 font-bold">6 meses</span>
                             <span class="me-4 font-bold">{{ valorSemestral }}</span>
+                        </Button>
+                    </div>
+                </div>
+
+                <!-- Botão para dashboard da enquete (apenas para admin) -->
+                <div v-if="isAdmin()" class="row mt-3">
+                    <span class="text-white font-bold">Administração</span>
+
+                    <div class="p-2 d-flex flex-wrap gap-2">
+                        <Button
+                            severity="warning"
+                            class="d-flex justify-content-center align-items-center w-full"
+                            @click="irParaDashboardEnquete"
+                        >
+                            <i class="pi pi-chart-bar me-2"></i>
+                            <span class="font-bold">Dashboard Enquete Chat</span>
                         </Button>
                     </div>
                 </div>
@@ -668,6 +684,9 @@ export default {
         handleLoggedIn() {
             this.updateUserState();
             this.carregarStatusAssinaturaUsuario();
+        },
+        irParaDashboardEnquete() {
+            this.$router.push('/admin/enquete');
         }
     }
 }

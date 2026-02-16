@@ -3,19 +3,60 @@
         <div class="md:w-7 sm:w-full">
             <Hero :user-data="userData" />
 
-            <Menu 
-                @selectMenu="selectMenu" 
+            <Menu
+                @selectMenu="selectMenu"
                 :totalPostagens="postsCount.simples || 0"
                 :totalExclusivos="postsCount.exclusivos || 0"
             />
 
             <Content :selectedMenu="selectedMenu" :conteudos="conteudos" />
-            
+
             <div v-if="loadingMore" class="text-center p-3">
                 <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #f5cee1;"></i>
             </div>
         </div>
         <ScrollTop />
+
+        <!-- Dialog da enquete sobre chat -->
+        <Dialog
+            v-model:visible="showChatEnqueteDialog"
+            modal
+            header="Enquete: Chat em Tempo Real"
+            :style="{ width: '30rem' }"
+            :closable="false"
+            :dismissableMask="false"
+            :closeOnEscape="false"
+        >
+            <div class="text-center">
+                <div class="mb-4">
+                    <i class="pi pi-comments text-4xl text-primary mb-3"></i>
+                    <h3 class="text-xl font-semibold mb-2">Gostaria de um chat para conversar comigo em tempo real?</h3>
+                    <p class="text-gray-600">Sua opinião é muito importante para melhorar o site!</p>
+                </div>
+
+                <div class="flex flex-column gap-3">
+                    <Button
+                        label="Sim, gostaria muito!"
+                        icon="pi pi-thumbs-up"
+                        class="w-full p-button-success"
+                        @click="votarEnquete(true)"
+                        :loading="voting"
+                    />
+                    <Button
+                        label="Não, obrigado"
+                        icon="pi pi-thumbs-down"
+                        class="w-full p-button-danger"
+                        @click="votarEnquete(false)"
+                        :loading="voting"
+                    />
+                </div>
+
+                <div class="mt-3 text-sm text-gray-500">
+                    <i class="pi pi-info-circle"></i>
+                    Você só verá esta enquete uma vez.
+                </div>
+            </div>
+        </Dialog>
     </div>
 </template>
 
@@ -24,6 +65,8 @@ import Hero from '@/components/Hero.vue';
 import Menu from '@/components/Menu.vue';
 import Content from '@/views/Content.vue';
 import ScrollTop from 'primevue/scrolltop';
+import Dialog from 'primevue/dialog';
+import Button from 'primevue/button';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
 
@@ -33,24 +76,29 @@ export default {
         Hero,
         Menu,
         Content,
-        ScrollTop
+        ScrollTop,
+        Dialog,
+        Button
     },
-    data() {
-        return {
-            selectedMenu: 0,
-            conteudos: [],
-            loading: false,
-            loadingMore: false,
-            postsCount: {
-                simples: 0,
-                exclusivos: 0
-            },
-            userData: null,
-            currentPage: 1,
-            hasMore: false,
-            canLoadMore: false
-        }
-    },
+        data() {
+            return {
+                selectedMenu: 0,
+                conteudos: [],
+                loading: false,
+                loadingMore: false,
+                postsCount: {
+                    simples: 0,
+                    exclusivos: 0
+                },
+                userData: null,
+                currentPage: 1,
+                hasMore: false,
+                canLoadMore: false,
+                showChatEnqueteDialog: false,
+                voting: false,
+                hasCheckedVoteStatus: false
+            }
+        },
     setup() {
         const authStore = useAuthStore();
         const { updateTrigger } = storeToRefs(authStore);
@@ -59,6 +107,9 @@ export default {
     async mounted() {
         await this.carregarContagens();
         await this.carregarPosts();
+
+        // Verificar se deve mostrar dialog da enquete após carregar conteúdo
+        await this.verificarDialogEnquete();
 
         // Adicionar listener de scroll para infinite scroll
         window.addEventListener('scroll', this.handleScroll);
@@ -176,6 +227,59 @@ export default {
             // Recarregar contagens e posts após logout
             await this.carregarContagens();
             await this.carregarPosts();
+        },
+        async verificarDialogEnquete() {
+            try {
+                // Verificar se usuário está logado
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (!user.id) {
+                    return; // Não mostrar dialog para usuários não logados
+                }
+
+                // Verificar status do voto na API
+                const response = await this.api.get('/chat-enquete/status-voto');
+                const { has_voted } = response.data.data;
+
+                if (!has_voted) {
+                    // Mostrar dialog apenas se não votou ainda
+                    this.showChatEnqueteDialog = true;
+                }
+
+                this.hasCheckedVoteStatus = true;
+            } catch (error) {
+                console.error('Erro ao verificar status da enquete:', error);
+            }
+        },
+        async votarEnquete(resposta) {
+            try {
+                this.voting = true;
+
+                // Enviar resposta para API
+                await this.api.post('/chat-enquete/votar', {
+                    resposta: resposta
+                });
+
+                // Fechar dialog
+                this.showChatEnqueteDialog = false;
+
+                // Mostrar mensagem de sucesso
+                this.$toast?.add({
+                    severity: 'success',
+                    summary: 'Obrigado!',
+                    detail: 'Sua resposta foi registrada com sucesso.',
+                    life: 3000
+                });
+            } catch (error) {
+                console.error('Erro ao votar na enquete:', error);
+                this.$toast?.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: 'Erro ao registrar sua resposta. Tente novamente.',
+                    life: 3000
+                });
+            } finally {
+                this.voting = false;
+            }
         }
     }
 }
