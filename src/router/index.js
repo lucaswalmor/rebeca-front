@@ -1,12 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import SiteAdulto from '../views/SiteAdulto.vue'
+// import SiteAdulto from '../views/SiteAdulto.vue'
+import PaginaEmConstrucao from '../views/PaginaEmConstrucao.vue'
 import HomeView from '../views/HomeView.vue'
 
 const routes = [
+  // {
+  //   path: '/',
+  //   name: 'adult-site',
+  //   component: SiteAdulto
+  // },
   {
     path: '/',
-    name: 'adult-site',
-    component: SiteAdulto
+    name: 'pagina-em-construcao',
+    component: PaginaEmConstrucao
   },
   {
     path: '/home',
