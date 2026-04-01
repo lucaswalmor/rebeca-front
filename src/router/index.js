@@ -4,16 +4,16 @@ import PaginaEmConstrucao from '../views/PaginaEmConstrucao.vue'
 import HomeView from '../views/HomeView.vue'
 
 const routes = [
-  // {
-  //   path: '/',
-  //   name: 'adult-site',
-  //   component: SiteAdulto
-  // },
   {
     path: '/',
-    name: 'pagina-em-construcao',
-    component: PaginaEmConstrucao
+    name: 'adult-site',
+    component: SiteAdulto
   },
+  // {
+  //   path: '/',
+  //   name: 'pagina-em-construcao',
+  //   component: PaginaEmConstrucao
+  // },
   {
     path: '/home',
     name: 'home',
