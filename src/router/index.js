@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import SiteAdulto from '../views/SiteAdulto.vue'
+import SiteAdulto from '../views/SiteAdulto.vue'
 import PaginaEmConstrucao from '../views/PaginaEmConstrucao.vue'
 import HomeView from '../views/HomeView.vue'
 
