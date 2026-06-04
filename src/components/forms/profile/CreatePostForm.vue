@@ -44,7 +44,6 @@
                         mode="advanced"
                         :multiple="true"
                         accept="image/*,video/*"
-                        :maxFileSize="524288000"
                         @select="onFileSelect"
                         @remove="onFileRemove"
                         :auto="false"
