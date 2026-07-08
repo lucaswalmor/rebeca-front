@@ -159,9 +159,10 @@ export default {
                 const isAdmin = user.is_admin === true;
                 const hasAssinatura = user.assinatura === true;
                 
-                // Se não estiver logado ou não tiver assinatura, limitar a 5 posts
-                // Se tiver assinatura ativa, usar paginação de 20 em 20
-                const perPage = (!user.id || !hasAssinatura) ? 5 : 20;
+                // Admin e assinantes têm acesso total (paginação de 50 em 50).
+                // Visitantes e usuários sem assinatura ficam limitados a 5 posts.
+                const acessoTotal = isAdmin || hasAssinatura;
+                const perPage = (!user.id || !acessoTotal) ? 5 : 50;
                 
                 // Se for admin, usar rota especial que retorna todos os posts (ativos e inativos)
                 // Caso contrário, usar rota pública que retorna apenas posts ativos
@@ -193,7 +194,7 @@ export default {
                 // Atualizar informações de paginação
                 if (response.data.meta) {
                     this.hasMore = response.data.meta.has_more;
-                    this.canLoadMore = this.hasMore && (user.id && hasAssinatura);
+                    this.canLoadMore = this.hasMore && (user.id && acessoTotal);
                 }
             } catch (error) {
                 console.error('Erro ao carregar posts:', error);
