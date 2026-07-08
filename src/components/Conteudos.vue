@@ -190,7 +190,8 @@ export default {
             userState: {
                 isLoggedIn: false,
                 isAdmin: false,
-                hasAssinatura: false
+                hasAssinatura: false,
+                statusAssinatura: null
             }
         }
     },
@@ -218,7 +219,7 @@ export default {
     },
     computed: {
         isAdminComputed() {
-            return this.isAdmin();
+            return this.userState.isAdmin;
         },
         comentariosAtuais() {
             if (this.conteudoAtualIndex !== null && this.conteudos[this.conteudoAtualIndex]) {
@@ -279,20 +280,17 @@ export default {
                 return false;
             }
 
-            // Usar função global isAdmin
-            const isAdmin = this.isAdmin();
+            // Usa userState (reativo) em vez das funções globais que leem o
+            // localStorage de forma não reativa. Assim o blur é recalculado
+            // automaticamente após login/logout (via watch de updateTrigger).
 
-            // Se for admin, nunca aplicar blur
-            if (isAdmin) {
+            // Se for admin, nunca aplicar blur (acesso total)
+            if (this.userState.isAdmin) {
                 return false;
             }
 
-            // Verificar se tem assinatura ativa E status aprovado
-            const hasAssinatura = this.hasAssinaturaAtiva();
-            const statusAssinatura = this.statusAssinatura();
-
             // Aplica blur se não tiver assinatura ativa OU se o status não for 'aprovado'
-            return !hasAssinatura || statusAssinatura !== 'aprovado';
+            return !this.userState.hasAssinatura || this.userState.statusAssinatura !== 'aprovado';
         },
         forceUpdate() {
             // Forçar atualização do componente quando login/logout ocorrer
@@ -463,14 +461,16 @@ export default {
                 this.userState = {
                     isLoggedIn: !!user.id && !!localStorage.getItem('token'),
                     isAdmin: user.is_admin === true || user.is_admin === 'true' || user.is_admin === 1,
-                    hasAssinatura: user.assinatura === true || user.assinatura === 'true' || user.assinatura === 1
+                    hasAssinatura: user.assinatura === true || user.assinatura === 'true' || user.assinatura === 1,
+                    statusAssinatura: user.status_assinatura
                 };
             } catch (error) {
                 console.error('Erro ao atualizar estado do usuário:', error);
                 this.userState = {
                     isLoggedIn: false,
                     isAdmin: false,
-                    hasAssinatura: false
+                    hasAssinatura: false,
+                    statusAssinatura: null
                 };
             }
         },
