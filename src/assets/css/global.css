@@ -46,16 +46,20 @@ a {
     transform: translateY(-1px);
 }
 
-.p-button.p-button-primary {
+/* Texto rosa escuro no estado normal (mesma cor do hover de fundo) */
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined),
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined) .p-button-label,
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined) .p-button-icon,
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined) span {
     color: #761c49 !important;
 }
 
-.p-button.p-button-primary:hover {
+/* No hover: texto rosa claro */
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover,
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover .p-button-label,
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover .p-button-icon,
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover span {
     color: #f5cee1 !important;
-}
-
-.p-button.p-button-primary span {
-    color: inherit !important;
 }
 
 @media (max-width: 768px) {
