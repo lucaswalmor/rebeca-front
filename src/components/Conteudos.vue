@@ -83,6 +83,7 @@
                                     preview
                                     imageClass="media-content"
                                     class="media-image-preview"
+                                    :imageStyle="{ width: '100%', maxWidth: '100%', height: 'auto' }"
                                 />
                                 <video
                                     v-else-if="slotProps.data.tipo === 'video'"
@@ -136,6 +137,7 @@
                                     preview
                                     imageClass="media-content"
                                     class="media-image-preview"
+                                    :imageStyle="{ width: '100%', maxWidth: '100%', height: 'auto' }"
                                 />
                                 <video
                                     v-else-if="slotProps.data.tipo === 'video'"
@@ -875,44 +877,86 @@ export default {
     background-color: #121212;
 }
 
+:deep(.p-card-body),
+:deep(.p-card-content) {
+    overflow: hidden;
+}
+
+:deep(.p-carousel) {
+    width: 100%;
+}
+
+:deep(.p-carousel-content-container),
+:deep(.p-carousel-content),
+:deep(.p-carousel-viewport),
+:deep(.p-carousel-items-container),
+:deep(.p-carousel-item-list) {
+    width: 100% !important;
+    max-width: 100%;
+}
+
+:deep(.p-carousel-item) {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
 .carousel-media-container {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 400px;
+    min-height: 280px;
     position: relative;
+    overflow: hidden;
 }
 
 .media-content {
     width: 100%;
     max-width: 100%;
     height: auto;
-    max-height: 600px;
+    max-height: min(70vh, 600px);
     object-fit: contain;
     display: block;
 }
 
 .media-image-preview {
+    width: 100% !important;
+    max-width: 100%;
+    display: block !important;
+}
+
+.media-image-preview :deep(.p-image),
+.media-image-preview :deep(.p-image-preview-container) {
     width: 100%;
-    display: flex;
-    justify-content: center;
+    max-width: 100%;
+    display: block;
 }
 
-.media-image-preview :deep(img.media-content),
-.media-image-preview :deep(.p-image-preview-indicator) {
-    max-height: 600px;
+.media-image-preview :deep(img) {
+    width: 100% !important;
+    max-width: 100%;
+    height: auto !important;
+    max-height: min(70vh, 600px);
+    object-fit: contain;
+    display: block;
 }
 
-.media-image-preview :deep(.p-image-preview-indicator) {
+.media-image-preview :deep(.p-image-preview-indicator),
+.media-image-preview :deep(.p-image-preview-mask) {
+    width: 100%;
     border-radius: 0;
 }
 
-.media-content video {
+.media-content video,
+video.media-content {
     width: 100%;
     max-width: 100%;
     height: auto;
-    max-height: 600px;
+    max-height: min(70vh, 600px);
 }
 
 .blur-container {
@@ -1022,16 +1066,19 @@ export default {
     border-radius: 12px;
     border: 1px solid rgba(245, 206, 225, 0.2);
     width: 100%;
-    max-width: 420px;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .unlock-panel--in-carousel {
     min-height: 280px;
-    margin: 0 auto;
 }
 
 .unlock-slide {
-    padding: 0.5rem 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 0.75rem;
 }
 
 .unlock-lock {
@@ -1053,7 +1100,8 @@ export default {
 }
 
 .unlock-btn {
-    max-width: 320px;
+    width: 100%;
+    max-width: 100%;
 }
 
 .blur-container {
@@ -1101,13 +1149,16 @@ export default {
         width: 100% !important;
         margin-top: 0.5rem;
     }
-}
 
+    .carousel-media-container,
+    .unlock-panel--in-carousel {
+        min-height: 220px;
+    }
 
-
-@media (max-width: 768px) {
-    :deep(.p-carousel-content) {
-        width: 300px !important;
+    .unlock-btn :deep(.p-button-label) {
+        white-space: normal;
+        line-height: 1.25;
+        font-size: 0.9rem;
     }
 }
 </style>
