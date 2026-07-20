@@ -67,9 +67,9 @@
             </template>
             <template #content>
                 <div class="row">
-                    <!-- Conteúdo completo liberado -->
+                    <!-- Admin ou conteúdo completo liberado -->
                     <Carousel
-                        v-if="content.has_full_access && getDisplayMedia(content).length > 0"
+                        v-if="hasFullContentAccess(content) && getDisplayMedia(content).length > 0"
                         :value="getDisplayMedia(content)"
                         :numVisible="1"
                         :numScroll="1"
@@ -92,8 +92,8 @@
                         </template>
                     </Carousel>
 
-                    <!-- Assinante: prévia + CTA desbloquear -->
-                    <template v-else-if="content.has_preview_access && !content.has_full_access">
+                    <!-- Assinante (não admin): prévia + CTA desbloquear -->
+                    <template v-else-if="!isAdminComputed && content.has_preview_access && !content.has_full_access">
                         <Carousel
                             v-if="getDisplayMedia(content).length > 0"
                             :value="getDisplayMedia(content)"
@@ -137,9 +137,9 @@
                         </div>
                     </template>
 
-                    <!-- Sem assinatura: blur -->
+                    <!-- Sem assinatura (não admin): bloqueado -->
                     <div
-                        v-else
+                        v-else-if="!isAdminComputed"
                         class="carousel-media-container blur-container locked-placeholder"
                     >
                         <div class="blur-overlay static-lock">
@@ -365,9 +365,21 @@ export default {
             }));
         },
         getDisplayMedia(post) {
-            // Backend já filtra: sem acesso retorna só a prévia em media;
-            // com acesso retorna o conteúdo exclusivo.
-            return this.getMediaForCarousel(post.media || post.image || []);
+            const media = this.getMediaForCarousel(post.media || post.image || []);
+
+            // Admin: se a API ainda não mandou mídia no array principal, usa a prévia como fallback
+            if ((this.isAdminComputed || this.isAdmin()) && media.length === 0 && post.preview) {
+                return this.getMediaForCarousel([post.preview]);
+            }
+
+            return media;
+        },
+        hasFullContentAccess(post) {
+            // Admin sempre vê tudo liberado, independente de flags/assinatura/compra
+            if (this.isAdminComputed || this.isAdmin()) {
+                return true;
+            }
+            return post.has_full_access === true || post.is_locked === false;
         },
         formatPreco(preco) {
             const value = Number(preco || 0);
@@ -378,6 +390,11 @@ export default {
         },
         async comprarPost(post) {
             if (!post?.id) return;
+
+            // Admin não compra — já tem acesso total
+            if (this.isAdminComputed || this.isAdmin()) {
+                return;
+            }
 
             if (!this.userState.isLoggedIn) {
                 this.$toast.add({
@@ -420,7 +437,7 @@ export default {
             }
         },
         isPostLocked(post) {
-            if (post.has_full_access === true || post.is_locked === false) {
+            if (this.hasFullContentAccess(post)) {
                 return false;
             }
             if (post.is_locked === true || post.has_full_access === false) {
@@ -429,7 +446,7 @@ export default {
             return this.shouldBlurPost(post);
         },
         shouldBlurPost(post) {
-            if (this.userState.isAdmin) {
+            if (this.isAdminComputed || this.isAdmin()) {
                 return false;
             }
 

@@ -146,17 +146,17 @@ export default {
                 
                 // Verificar se o usuário está logado e é admin
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
-                const isAdmin = user.is_admin === true;
-                const hasAssinatura = user.assinatura === true;
+                const isAdminUser = user.is_admin === true || user.is_admin === 'true' || user.is_admin === 1;
+                const hasAssinatura = user.assinatura === true || user.assinatura === 'true' || user.assinatura === 1;
                 
                 // Admin e assinantes têm acesso total (paginação de 50 em 50).
                 // Visitantes e usuários sem assinatura ficam limitados a 5 posts.
-                const acessoTotal = isAdmin || hasAssinatura;
+                const acessoTotal = isAdminUser || hasAssinatura;
                 const perPage = (!user.id || !acessoTotal) ? 5 : 50;
                 
                 // Se for admin, usar rota especial que retorna todos os posts (ativos e inativos)
                 // Caso contrário, usar rota pública que retorna apenas posts ativos
-                let url = isAdmin ? '/posts/admin/all' : '/posts';
+                let url = isAdminUser ? '/posts/admin/all' : '/posts';
                 
                 const params = new URLSearchParams();
                 params.append('page', this.currentPage.toString());
