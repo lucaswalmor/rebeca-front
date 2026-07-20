@@ -1,10 +1,6 @@
 <template>
     <div class="row">
-        <Conteudos
-            :selected-menu="selectedMenu"
-            :conteudos="conteudos"
-            :should-blur="false"
-        />
+        <Conteudos :conteudos="conteudos" />
     </div>
 </template>
 
@@ -14,10 +10,6 @@ import Conteudos from '@/components/Conteudos.vue';
 export default {
     name: 'Content',
     props: {
-        selectedMenu: {
-            type: Number,
-            required: true
-        },
         conteudos: {
             type: Array,
             required: true

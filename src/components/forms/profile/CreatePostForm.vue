@@ -21,25 +21,39 @@
 
             <div class="row mb-3">
                 <div class="col-md-12">
-                    <IftaLabel>
-                        <Select 
-                            id="tipo_post"
-                            v-model="dados.tipo_post" 
-                            :options="tiposPost" 
-                            optionLabel="label" 
-                            optionValue="value"
-                            class="w-full"
-                            :class="{ 'p-invalid': errors.tipo_post }"
-                        />
-                        <label for="tipo_post">Tipo do Post <span class="text-red-500">*</span></label>
-                    </IftaLabel>
-                    <small v-if="errors.tipo_post" class="text-red-500">* {{ errors.tipo_post }}</small>
+                    <label class="text-white mb-2 d-block">
+                        Prévia pública (1 imagem ou vídeo)
+                        <span class="text-400 text-sm fw-normal"> — visível para quem não assina</span>
+                    </label>
+                    <FileUpload
+                        mode="advanced"
+                        :multiple="false"
+                        accept="image/*,video/*"
+                        @select="onPreviewSelect"
+                        @remove="onPreviewRemove"
+                        @clear="onPreviewClear"
+                        :auto="false"
+                        chooseLabel="Selecionar Prévia"
+                        uploadLabel="Enviar"
+                        cancelLabel="Cancelar"
+                        :customUpload="true"
+                        :fileLimit="1"
+                    >
+                        <template #empty>
+                            <p class="text-white">Arraste e solte a prévia aqui ou clique para selecionar (opcional).</p>
+                        </template>
+                    </FileUpload>
+                    <small v-if="errors.preview" class="text-red-500">* {{ errors.preview }}</small>
                 </div>
             </div>
 
             <div class="row mb-3">
                 <div class="col-md-12">
-                    <label class="text-white mb-2 d-block">Mídias (Imagens e Vídeos) <span class="text-red-500">*</span></label>
+                    <label class="text-white mb-2 d-block">
+                        Conteúdo exclusivo (imagens e vídeos)
+                        <span class="text-red-500">*</span>
+                        <span class="text-400 text-sm fw-normal"> — só para assinantes</span>
+                    </label>
                     <FileUpload
                         mode="advanced"
                         :multiple="true"
@@ -80,7 +94,6 @@
 <script>
 import IftaLabel from 'primevue/iftalabel';
 import Textarea from 'primevue/textarea';
-import Select from 'primevue/select';
 import FileUpload from 'primevue/fileupload';
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
@@ -90,7 +103,6 @@ export default {
     components: {
         IftaLabel,
         Textarea,
-        Select,
         FileUpload,
         Button,
         Toast
@@ -99,19 +111,25 @@ export default {
     data() {
         return {
             dados: {
-                description: '',
-                tipo_post: 1
+                description: ''
             },
+            previewFile: null,
             selectedFiles: [],
             loading: false,
-            errors: {},
-            tiposPost: [
-                { label: 'Simples', value: 1 },
-                { label: 'Exclusivo', value: 2 }
-            ]
+            errors: {}
         }
     },
     methods: {
+        onPreviewSelect(event) {
+            const files = Array.from(event.files || []);
+            this.previewFile = files[0] || null;
+        },
+        onPreviewRemove() {
+            this.previewFile = null;
+        },
+        onPreviewClear() {
+            this.previewFile = null;
+        },
         onFileSelect(event) {
             const files = Array.from(event.files);
             files.forEach(file => {
@@ -126,7 +144,6 @@ export default {
             }
         },
         async criarPost() {
-            // Validação
             this.errors = {};
             
             if (!this.dados.description || !this.dados.description.trim()) {
@@ -134,7 +151,7 @@ export default {
             }
             
             if (this.selectedFiles.length === 0) {
-                this.errors.media = 'Selecione pelo menos uma mídia (imagem ou vídeo)';
+                this.errors.media = 'Selecione pelo menos uma mídia exclusiva (imagem ou vídeo)';
             }
             
             if (Object.keys(this.errors).length > 0) {
@@ -144,15 +161,24 @@ export default {
             try {
                 this.loading = true;
                 
-                // Criar o post primeiro
                 const postResponse = await this.api.post('/posts', {
-                    tipo_post: this.dados.tipo_post,
                     description: this.dados.description.trim()
                 });
                 
                 const postId = postResponse.data.data.id;
+
+                if (this.previewFile) {
+                    const previewData = new FormData();
+                    previewData.append('media[]', this.previewFile);
+                    previewData.append('is_preview', '1');
+
+                    await this.api.post(`/posts/${postId}/media`, previewData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+                }
                 
-                // Upload das mídias
                 if (this.selectedFiles.length > 0) {
                     const formData = new FormData();
                     this.selectedFiles.forEach(file => {
@@ -166,9 +192,8 @@ export default {
                     });
                 }
                 
-                // Limpar formulário
                 this.dados.description = '';
-                this.dados.tipo_post = 1;
+                this.previewFile = null;
                 this.selectedFiles = [];
                 
                 this.$emit('post-created');
@@ -195,4 +220,3 @@ export default {
 
 <style scoped lang="scss">
 </style>
-

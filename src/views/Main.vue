@@ -4,12 +4,10 @@
             <Hero :user-data="userData" />
 
             <Menu
-                @selectMenu="selectMenu"
-                :totalPostagens="postsCount.simples || 0"
-                :totalExclusivos="postsCount.exclusivos || 0"
+                :totalPostagens="postsCount.total || 0"
             />
 
-            <Content :selectedMenu="selectedMenu" :conteudos="conteudos" />
+            <Content :conteudos="conteudos" />
 
             <div v-if="loadingMore" class="text-center p-3">
                 <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #f5cee1;"></i>
@@ -82,13 +80,11 @@ export default {
     },
         data() {
             return {
-                selectedMenu: 0,
                 conteudos: [],
                 loading: false,
                 loadingMore: false,
                 postsCount: {
-                    simples: 0,
-                    exclusivos: 0
+                    total: 0
                 },
                 userData: null,
                 currentPage: 1,
@@ -126,12 +122,6 @@ export default {
         window.removeEventListener('scroll', this.handleScroll);
     },
     methods: {
-        async selectMenu(menu) {
-            this.selectedMenu = menu;
-            this.currentPage = 1;
-            this.conteudos = [];
-            await this.carregarPosts();
-        },
         async carregarContagens() {
             try {
                 const response = await this.api.get('/users/apelido/becaLima007');
@@ -168,15 +158,7 @@ export default {
                 // Caso contrário, usar rota pública que retorna apenas posts ativos
                 let url = isAdmin ? '/posts/admin/all' : '/posts';
                 
-                // Adicionar filtro por tipo_post baseado na aba selecionada
                 const params = new URLSearchParams();
-                if (this.selectedMenu === 0) {
-                    params.append('tipo_post', '1'); // Simples
-                } else if (this.selectedMenu === 1) {
-                    params.append('tipo_post', '2'); // Exclusivos
-                }
-                
-                // Adicionar parâmetros de paginação
                 params.append('page', this.currentPage.toString());
                 params.append('per_page', perPage.toString());
                 

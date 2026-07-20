@@ -67,35 +67,49 @@
             </template>
             <template #content>
                 <div class="row">
-                    <Carousel :value="getMediaForCarousel(content.media || content.image)" :numVisible="1" :numScroll="1">
+                    <Carousel
+                        v-if="getDisplayMedia(content).length > 0"
+                        :value="getDisplayMedia(content)"
+                        :numVisible="1"
+                        :numScroll="1"
+                    >
                         <template #item="slotProps">
-                            <div class="carousel-media-container" :class="{ 'blur-container': shouldBlurPost(content) }">
-                                <!-- Imagem -->
+                            <div class="carousel-media-container">
                                 <img 
                                     v-if="slotProps.data.tipo === 'image' || !slotProps.data.tipo"
                                     :src="slotProps.data.url || slotProps.data" 
                                     :alt="slotProps.data.alt || 'Mídia do post'" 
                                     class="media-content"
-                                    :class="{ 'blur-image': shouldBlurPost(content) }"
                                 />
-                                <!-- Vídeo -->
                                 <video 
                                     v-else-if="slotProps.data.tipo === 'video'"
                                     :src="slotProps.data.url" 
                                     controls
                                     class="media-content"
-                                    :class="{ 'blur-image': shouldBlurPost(content) }"
                                 />
-                                <div v-if="shouldBlurPost(content)" class="blur-overlay">
-                                    <div class="blur-text">
-                                        <i class="fa-solid fa-lock fa-2x blur-icon"></i>
-                                        <span class="blur-message">Este conteúdo é exclusivo para assinantes</span>
-                                        <span class="blur-submessage">Assine agora para desbloquear todo o conteúdo</span>
-                                    </div>
-                                </div>
                             </div>
                         </template>
                     </Carousel>
+
+                    <!-- Sem prévia e sem acesso: placeholder com cadeado -->
+                    <div
+                        v-else-if="isPostLocked(content)"
+                        class="carousel-media-container blur-container locked-placeholder"
+                    >
+                        <div class="blur-overlay static-lock">
+                            <div class="blur-text">
+                                <i class="fa-solid fa-lock fa-2x blur-icon"></i>
+                                <span class="blur-message">Este conteúdo é exclusivo para assinantes</span>
+                                <span class="blur-submessage">Assine agora para desbloquear todo o conteúdo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Com prévia mas sem acesso: CTA abaixo da prévia -->
+                    <div v-if="isPostLocked(content) && content.preview" class="lock-cta mt-2">
+                        <i class="fa-solid fa-lock me-2"></i>
+                        <span>Prévia pública — assine para ver o conteúdo completo</span>
+                    </div>
                 </div>
                 <div class="row mb-2 mt-3">
                     <div class="">
@@ -158,17 +172,9 @@ import { isLoggedIn, hasAssinaturaAtiva, statusAssinatura, isAdmin } from '@/uti
 export default {
     name: 'Content',
     props: {
-        selectedMenu: {
-            type: Number,
-            required: true
-        },
         conteudos: {
             type: Array,
             required: true
-        },
-        shouldBlur: {
-            type: Boolean,
-            default: false
         }
     },
     components: {
@@ -274,22 +280,26 @@ export default {
                 alt: `Mídia ${index + 1}`
             }));
         },
-        shouldBlurPost(post) {
-            // Blur apenas para posts exclusivos (tipo_post === 2)
-            if (post.tipo_post !== 2) {
+        getDisplayMedia(post) {
+            // Backend já filtra: sem acesso retorna só a prévia em media;
+            // com acesso retorna o conteúdo exclusivo.
+            return this.getMediaForCarousel(post.media || post.image || []);
+        },
+        isPostLocked(post) {
+            if (post.has_full_access === true || post.is_locked === false) {
                 return false;
             }
-
-            // Usa userState (reativo) em vez das funções globais que leem o
-            // localStorage de forma não reativa. Assim o blur é recalculado
-            // automaticamente após login/logout (via watch de updateTrigger).
-
-            // Se for admin, nunca aplicar blur (acesso total)
+            if (post.is_locked === true || post.has_full_access === false) {
+                return true;
+            }
+            // Fallback para posts antigos sem os novos campos
+            return this.shouldBlurPost(post);
+        },
+        shouldBlurPost(post) {
             if (this.userState.isAdmin) {
                 return false;
             }
 
-            // Aplica blur se não tiver assinatura ativa OU se o status não for 'aprovado'
             return !this.userState.hasAssinatura || this.userState.statusAssinatura !== 'aprovado';
         },
         forceUpdate() {
@@ -737,6 +747,32 @@ export default {
     color: #f5cee1;
     opacity: 0.9;
     font-weight: 500;
+}
+
+.locked-placeholder {
+    background: #1a1a1a;
+    border-radius: 12px;
+    min-height: 280px;
+}
+
+.blur-overlay.static-lock {
+    position: relative;
+    min-height: 280px;
+    background: transparent;
+}
+
+.lock-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.75rem 1rem;
+    background: rgba(245, 206, 225, 0.12);
+    border: 1px solid rgba(245, 206, 225, 0.35);
+    border-radius: 10px;
+    color: #f5cee1;
+    font-size: 0.9rem;
+    text-align: center;
 }
 
 .blur-container {

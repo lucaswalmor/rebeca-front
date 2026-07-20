@@ -2,14 +2,9 @@
     <Card class="mt-2 mb-2">
         <template #content>
             <div class="row text-center">
-                <span class="cursor-pointer col font-bold menu-item"
-                    :class="selectedMenu === 0 ? 'menu-item-selected text-pink' : 'text-500'" @click="selectMenu(0)">
+                <span class="cursor-pointer col font-bold menu-item menu-item-selected text-pink">
                     <i class="fa-solid fa-photo-film me-2"></i>
                     {{ totalPostagens }} {{ totalPostagens === 1 ? 'Post' : 'Posts' }}
-                </span>
-                <span class="cursor-pointer col font-bold menu-item"
-                    :class="selectedMenu === 1 ? 'menu-item-selected text-pink' : 'text-500'" @click="selectMenu(1)">
-                    Exclusivos ({{ totalExclusivos }})
                 </span>
             </div>
         </template>
@@ -28,22 +23,6 @@ export default {
         totalPostagens: {
             type: Number,
             default: 0
-        },
-        totalExclusivos: {
-            type: Number,
-            default: 0
-        }
-    },
-    data() {
-        return {
-            selectedMenu: 0
-        }
-    },
-    methods: {
-        selectMenu(menu) {
-            this.selectedMenu = menu;
-
-            this.$emit('selectMenu', menu);
         }
     }
 }
