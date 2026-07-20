@@ -39,4 +39,9 @@ app.use(PrimeVue, {
 });
 app.use(ToastService);
 app.use(VueTheMask);
-app.mount('#app')
+app.mount('#app');
+
+// Bloqueia o menu de contexto (botão direito) em toda a aplicação
+document.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+});
