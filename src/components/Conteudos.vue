@@ -76,15 +76,17 @@
                     >
                         <template #item="slotProps">
                             <div class="carousel-media-container">
-                                <img 
+                                <Image
                                     v-if="slotProps.data.tipo === 'image' || !slotProps.data.tipo"
-                                    :src="slotProps.data.url || slotProps.data" 
-                                    :alt="slotProps.data.alt || 'Mídia do post'" 
-                                    class="media-content"
+                                    :src="slotProps.data.url || slotProps.data"
+                                    :alt="slotProps.data.alt || 'Mídia do post'"
+                                    preview
+                                    imageClass="media-content"
+                                    class="media-image-preview"
                                 />
-                                <video 
+                                <video
                                     v-else-if="slotProps.data.tipo === 'video'"
-                                    :src="slotProps.data.url" 
+                                    :src="slotProps.data.url"
                                     controls
                                     class="media-content"
                                 />
@@ -127,11 +129,13 @@
 
                             <!-- Slide de mídia (prévia) -->
                             <div v-else class="carousel-media-container">
-                                <img
+                                <Image
                                     v-if="slotProps.data.tipo === 'image' || !slotProps.data.tipo"
                                     :src="slotProps.data.url || slotProps.data"
                                     :alt="slotProps.data.alt || 'Prévia'"
-                                    class="media-content"
+                                    preview
+                                    imageClass="media-content"
+                                    class="media-image-preview"
                                 />
                                 <video
                                     v-else-if="slotProps.data.tipo === 'video'"
@@ -239,7 +243,7 @@
 </template>
 
 <script>
-import { Avatar, Button, Card, Carousel, Menu, Tag } from 'primevue';
+import { Avatar, Button, Card, Carousel, Image, Menu, Tag } from 'primevue';
 import Dialog from 'primevue/dialog';
 import InputNumber from 'primevue/inputnumber';
 import Textarea from 'primevue/textarea';
@@ -261,6 +265,7 @@ export default {
         Carousel,
         Button,
         Avatar,
+        Image,
         DrawerComentarios,
         Menu,
         Tag,
@@ -886,6 +891,21 @@ export default {
     max-height: 600px;
     object-fit: contain;
     display: block;
+}
+
+.media-image-preview {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.media-image-preview :deep(img.media-content),
+.media-image-preview :deep(.p-image-preview-indicator) {
+    max-height: 600px;
+}
+
+.media-image-preview :deep(.p-image-preview-indicator) {
+    border-radius: 0;
 }
 
 .media-content video {
