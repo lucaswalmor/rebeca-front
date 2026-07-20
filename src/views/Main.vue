@@ -1,6 +1,6 @@
 <template>
-    <div class="p-4 d-flex justify-content-center align-items-center flex-column container">
-        <div class="md:w-7 sm:w-full">
+    <div class="main-feed d-flex justify-content-center align-items-center flex-column container">
+        <div class="md:w-7 sm:w-full feed-column">
             <Hero :user-data="userData" />
 
             <Menu
@@ -274,3 +274,26 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+.main-feed {
+    padding: 1.5rem;
+    width: 100%;
+}
+
+.feed-column {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .main-feed {
+        padding: 0.5rem 0.15rem;
+        max-width: 100%;
+    }
+
+    .main-feed.container {
+        padding-left: 0.15rem;
+        padding-right: 0.15rem;
+    }
+}
+</style>

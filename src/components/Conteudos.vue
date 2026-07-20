@@ -66,13 +66,14 @@
                 </div>
             </template>
             <template #content>
-                <div class="row">
+                <div class="row post-media-row">
                     <!-- Admin ou conteúdo completo liberado -->
                     <Carousel
                         v-if="hasFullContentAccess(content) && getDisplayMedia(content).length > 0"
                         :value="getDisplayMedia(content)"
                         :numVisible="1"
                         :numScroll="1"
+                        class="post-carousel"
                     >
                         <template #item="slotProps">
                             <div class="carousel-media-container">
@@ -102,6 +103,7 @@
                         :numVisible="1"
                         :numScroll="1"
                         :circular="false"
+                        class="post-carousel"
                     >
                         <template #item="slotProps">
                             <!-- Slide de desbloqueio (depois da prévia) -->
@@ -1150,15 +1152,60 @@ video.media-content {
         margin-top: 0.5rem;
     }
 
-    .carousel-media-container,
+    :deep(.p-card-body) {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    :deep(.p-card-caption),
+    :deep(.p-card-title) {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+
+    .post-media-row {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+        width: calc(100% + 1rem);
+        max-width: none;
+    }
+
+    .post-carousel {
+        width: 100%;
+    }
+
+    .carousel-media-container {
+        min-height: 0;
+        background: #0a0a0a;
+    }
+
     .unlock-panel--in-carousel {
         min-height: 220px;
+        margin: 0 0.5rem;
+        width: calc(100% - 1rem);
+    }
+
+    .media-content,
+    .media-image-preview :deep(img),
+    video.media-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 85vh;
+        object-fit: contain;
+    }
+
+    .unlock-slide {
+        padding: 0.5rem;
     }
 
     .unlock-btn :deep(.p-button-label) {
         white-space: normal;
         line-height: 1.25;
         font-size: 0.9rem;
+    }
+
+    :deep(.p-carousel-indicator-list) {
+        padding: 0.5rem 0 0;
     }
 }
 </style>
