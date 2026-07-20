@@ -67,8 +67,9 @@
             </template>
             <template #content>
                 <div class="row">
+                    <!-- Conteúdo completo liberado -->
                     <Carousel
-                        v-if="getDisplayMedia(content).length > 0"
+                        v-if="content.has_full_access && getDisplayMedia(content).length > 0"
                         :value="getDisplayMedia(content)"
                         :numVisible="1"
                         :numScroll="1"
@@ -91,24 +92,63 @@
                         </template>
                     </Carousel>
 
-                    <!-- Sem prévia e sem acesso: placeholder com cadeado -->
+                    <!-- Assinante: prévia + CTA desbloquear -->
+                    <template v-else-if="content.has_preview_access && !content.has_full_access">
+                        <Carousel
+                            v-if="getDisplayMedia(content).length > 0"
+                            :value="getDisplayMedia(content)"
+                            :numVisible="1"
+                            :numScroll="1"
+                        >
+                            <template #item="slotProps">
+                                <div class="carousel-media-container">
+                                    <img 
+                                        v-if="slotProps.data.tipo === 'image' || !slotProps.data.tipo"
+                                        :src="slotProps.data.url || slotProps.data" 
+                                        :alt="slotProps.data.alt || 'Prévia'" 
+                                        class="media-content"
+                                    />
+                                    <video 
+                                        v-else-if="slotProps.data.tipo === 'video'"
+                                        :src="slotProps.data.url" 
+                                        controls
+                                        class="media-content"
+                                    />
+                                </div>
+                            </template>
+                        </Carousel>
+
+                        <div class="unlock-panel mt-2">
+                            <i class="fa-solid fa-lock unlock-lock"></i>
+                            <div class="unlock-meta">
+                                <span v-if="content.media_count">
+                                    <i class="fa-solid fa-film me-1"></i>{{ content.media_count }}
+                                </span>
+                                <span class="unlock-price">{{ formatPreco(content.preco) }}</span>
+                            </div>
+                            <Button
+                                :label="`Desbloquear conteúdo — ${formatPreco(content.preco)}`"
+                                icon="pi pi-lock-open"
+                                class="w-full unlock-btn"
+                                severity="primary"
+                                :loading="buyingPostId === content.id"
+                                @click="comprarPost(content)"
+                            />
+                        </div>
+                    </template>
+
+                    <!-- Sem assinatura: blur -->
                     <div
-                        v-else-if="isPostLocked(content)"
+                        v-else
                         class="carousel-media-container blur-container locked-placeholder"
                     >
                         <div class="blur-overlay static-lock">
                             <div class="blur-text">
                                 <i class="fa-solid fa-lock fa-2x blur-icon"></i>
                                 <span class="blur-message">Este conteúdo é exclusivo para assinantes</span>
-                                <span class="blur-submessage">Assine agora para desbloquear todo o conteúdo</span>
+                                <span class="blur-submessage">Assine agora para ver a prévia e desbloquear conteúdos</span>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Com prévia mas sem acesso: CTA abaixo da prévia -->
-                    <div v-if="isPostLocked(content) && content.preview" class="lock-cta mt-2">
-                        <i class="fa-solid fa-lock me-2"></i>
-                        <span>Prévia pública — assine para ver o conteúdo completo</span>
                     </div>
                 </div>
                 <div class="row mb-2 mt-3">
@@ -160,10 +200,43 @@
         @deletar-comentario="deletarComentario"
         @deletar-resposta="deletarResposta"
     />
+
+    <Dialog
+        v-model:visible="editDialogVisible"
+        modal
+        header="Editar Post"
+        :style="{ width: '28rem' }"
+    >
+        <div class="d-flex flex-column gap-3">
+            <div>
+                <label class="text-white mb-2 d-block">Descrição</label>
+                <Textarea v-model="editForm.description" rows="4" class="w-full" />
+            </div>
+            <div>
+                <label class="text-white mb-2 d-block">Preço (R$)</label>
+                <InputNumber
+                    v-model="editForm.preco"
+                    class="w-full"
+                    mode="currency"
+                    currency="BRL"
+                    locale="pt-BR"
+                    :min="0.01"
+                    :minFractionDigits="2"
+                />
+            </div>
+        </div>
+        <template #footer>
+            <Button label="Cancelar" text @click="editDialogVisible = false" />
+            <Button label="Salvar" severity="primary" :loading="editLoading" @click="salvarEdicaoPost" />
+        </template>
+    </Dialog>
 </template>
 
 <script>
 import { Avatar, Button, Card, Carousel, Menu, Tag } from 'primevue';
+import Dialog from 'primevue/dialog';
+import InputNumber from 'primevue/inputnumber';
+import Textarea from 'primevue/textarea';
 import DrawerComentarios from './drawers/DrawerComentarios.vue';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -184,7 +257,10 @@ export default {
         Avatar,
         DrawerComentarios,
         Menu,
-        Tag
+        Tag,
+        Dialog,
+        InputNumber,
+        Textarea
     },
     data() {
         return {
@@ -193,6 +269,14 @@ export default {
             conteudoAtualIndex: null,
             currentMenuIndex: null,
             menuRefs: {},
+            buyingPostId: null,
+            editDialogVisible: false,
+            editLoading: false,
+            editPostIndex: null,
+            editForm: {
+                description: '',
+                preco: null
+            },
             userState: {
                 isLoggedIn: false,
                 isAdmin: false,
@@ -285,6 +369,56 @@ export default {
             // com acesso retorna o conteúdo exclusivo.
             return this.getMediaForCarousel(post.media || post.image || []);
         },
+        formatPreco(preco) {
+            const value = Number(preco || 0);
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        },
+        async comprarPost(post) {
+            if (!post?.id) return;
+
+            if (!this.userState.isLoggedIn) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Login necessário',
+                    detail: 'Faça login para comprar este conteúdo',
+                    life: 3000
+                });
+                return;
+            }
+
+            if (!this.userState.hasAssinatura || this.userState.statusAssinatura !== 'aprovado') {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Assinatura necessária',
+                    detail: 'Você precisa de uma assinatura ativa para comprar conteúdos',
+                    life: 3000
+                });
+                return;
+            }
+
+            try {
+                this.buyingPostId = post.id;
+                const response = await this.api.post(`/posts/${post.id}/comprar`);
+                if (response.data.success && response.data.link) {
+                    window.location.href = response.data.link;
+                } else {
+                    throw new Error(response.data.message || 'Não foi possível gerar o link de pagamento');
+                }
+            } catch (error) {
+                const detail = error.response?.data?.message || error.message || 'Erro ao iniciar compra';
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail,
+                    life: 4000
+                });
+            } finally {
+                this.buyingPostId = null;
+            }
+        },
         isPostLocked(post) {
             if (post.has_full_access === true || post.is_locked === false) {
                 return false;
@@ -292,7 +426,6 @@ export default {
             if (post.is_locked === true || post.has_full_access === false) {
                 return true;
             }
-            // Fallback para posts antigos sem os novos campos
             return this.shouldBlurPost(post);
         },
         shouldBlurPost(post) {
@@ -314,6 +447,11 @@ export default {
             const post = this.conteudos[contentIndex];
             return [
                 {
+                    label: 'Editar Post',
+                    icon: 'pi pi-pencil',
+                    command: () => this.abrirEdicaoPost(contentIndex)
+                },
+                {
                     label: post.status === 'ativo' ? 'Inativar Post' : 'Ativar Post',
                     icon: post.status === 'ativo' ? 'pi pi-eye-slash' : 'pi pi-eye',
                     command: () => this.togglePostStatus(contentIndex)
@@ -324,6 +462,50 @@ export default {
                     command: () => this.deletarPost(contentIndex)
                 }
             ];
+        },
+        abrirEdicaoPost(contentIndex) {
+            const post = this.conteudos[contentIndex];
+            this.editPostIndex = contentIndex;
+            this.editForm = {
+                description: post.description || '',
+                preco: post.preco != null ? Number(post.preco) : null
+            };
+            this.editDialogVisible = true;
+        },
+        async salvarEdicaoPost() {
+            const post = this.conteudos[this.editPostIndex];
+            if (!post?.id) return;
+
+            if (!this.editForm.description?.trim()) {
+                this.$toast.add({ severity: 'warn', summary: 'Atenção', detail: 'Descrição obrigatória', life: 3000 });
+                return;
+            }
+            if (this.editForm.preco === null || Number(this.editForm.preco) < 0.01) {
+                this.$toast.add({ severity: 'warn', summary: 'Atenção', detail: 'Preço inválido', life: 3000 });
+                return;
+            }
+
+            try {
+                this.editLoading = true;
+                const response = await this.api.put(`/posts/${post.id}`, {
+                    description: this.editForm.description.trim(),
+                    preco: Number(this.editForm.preco)
+                });
+                post.description = response.data.data.description;
+                post.preco = response.data.data.preco;
+                this.editDialogVisible = false;
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Sucesso',
+                    detail: 'Post atualizado',
+                    life: 3000
+                });
+            } catch (error) {
+                const detail = error.response?.data?.message || 'Erro ao atualizar post';
+                this.$toast.add({ severity: 'error', summary: 'Erro', detail, life: 3000 });
+            } finally {
+                this.editLoading = false;
+            }
         },
         toggleMenu(event, contentIndex) {
             this.currentMenuIndex = contentIndex;
@@ -773,6 +955,39 @@ export default {
     color: #f5cee1;
     font-size: 0.9rem;
     text-align: center;
+}
+
+.unlock-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1rem;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 206, 225, 0.2);
+}
+
+.unlock-lock {
+    font-size: 2rem;
+    color: #f5cee1;
+}
+
+.unlock-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #ffffff;
+    font-size: 0.95rem;
+}
+
+.unlock-price {
+    font-weight: 700;
+    color: #f5cee1;
+}
+
+.unlock-btn {
+    max-width: 320px;
 }
 
 .blur-container {

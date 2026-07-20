@@ -22,7 +22,9 @@
                             </div>
                             <h2 class="success-title">Pagamento Confirmado!</h2>
                             <p class="success-subtitle">
-                                Sua assinatura foi ativada com sucesso. Redirecionando...
+                                {{ isPostPurchase
+                                    ? 'Conteúdo liberado com sucesso. Redirecionando...'
+                                    : 'Sua assinatura foi ativada com sucesso. Redirecionando...' }}
                             </p>
                         </div>
                     </div>
@@ -140,7 +142,8 @@ export default {
             isProcessing: true,
             isChecking: false,
             error: '',
-            paymentStatus: null
+            paymentStatus: null,
+            isPostPurchase: false
         }
     },
     computed: {
@@ -200,6 +203,8 @@ export default {
                     // Usar os dados retornados pelo backend
                     const infinitePayData = backendResponse.data.infinitepay_response;
                     const assinaturaData = backendResponse.data.assinatura;
+                    this.isPostPurchase = backendResponse.data.type === 'post_compra'
+                        || (this.urlParams.order_nsu || '').startsWith('post-');
 
                     // Mapear dados para o formato esperado pelo componente
                     this.paymentStatus = {
@@ -218,12 +223,14 @@ export default {
                     if (this.paymentStatus.paid) {
                         console.log('Pagamento confirmado com sucesso!');
 
-                        // Atualizar localStorage com assinatura ativa
-                        const user = JSON.parse(localStorage.getItem('user') || '{}');
-                        user.assinatura = true;
-                        user.status_assinatura = 'aprovado';
-                        user.status_assinatura_descricao = 'Assinatura Ativa';
-                        localStorage.setItem('user', JSON.stringify(user));
+                        if (!this.isPostPurchase) {
+                            // Atualizar localStorage com assinatura ativa
+                            const user = JSON.parse(localStorage.getItem('user') || '{}');
+                            user.assinatura = true;
+                            user.status_assinatura = 'aprovado';
+                            user.status_assinatura_descricao = 'Assinatura Ativa';
+                            localStorage.setItem('user', JSON.stringify(user));
+                        }
 
                         // Disparar atualização do auth store para forçar reatividade
                         this.authStore.triggerUpdate();

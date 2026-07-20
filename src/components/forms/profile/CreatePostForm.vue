@@ -21,9 +21,29 @@
 
             <div class="row mb-3">
                 <div class="col-md-12">
+                    <IftaLabel>
+                        <InputNumber
+                            id="preco"
+                            v-model="dados.preco"
+                            class="w-full"
+                            mode="currency"
+                            currency="BRL"
+                            locale="pt-BR"
+                            :min="0.01"
+                            :minFractionDigits="2"
+                            :class="{ 'p-invalid': errors.preco }"
+                        />
+                        <label for="preco">Preço do conteúdo <span class="text-red-500">*</span></label>
+                    </IftaLabel>
+                    <small v-if="errors.preco" class="text-red-500">* {{ errors.preco }}</small>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-12">
                     <label class="text-white mb-2 d-block">
-                        Prévia pública (1 imagem ou vídeo)
-                        <span class="text-400 text-sm fw-normal"> — visível para quem não assina</span>
+                        Prévia (1 imagem ou vídeo)
+                        <span class="text-400 text-sm fw-normal"> — visível apenas para assinantes</span>
                     </label>
                     <FileUpload
                         mode="advanced"
@@ -52,7 +72,7 @@
                     <label class="text-white mb-2 d-block">
                         Conteúdo exclusivo (imagens e vídeos)
                         <span class="text-red-500">*</span>
-                        <span class="text-400 text-sm fw-normal"> — só para assinantes</span>
+                        <span class="text-400 text-sm fw-normal"> — liberado após compra</span>
                     </label>
                     <FileUpload
                         mode="advanced"
@@ -94,6 +114,7 @@
 <script>
 import IftaLabel from 'primevue/iftalabel';
 import Textarea from 'primevue/textarea';
+import InputNumber from 'primevue/inputnumber';
 import FileUpload from 'primevue/fileupload';
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
@@ -103,6 +124,7 @@ export default {
     components: {
         IftaLabel,
         Textarea,
+        InputNumber,
         FileUpload,
         Button,
         Toast
@@ -111,7 +133,8 @@ export default {
     data() {
         return {
             dados: {
-                description: ''
+                description: '',
+                preco: null
             },
             previewFile: null,
             selectedFiles: [],
@@ -149,6 +172,10 @@ export default {
             if (!this.dados.description || !this.dados.description.trim()) {
                 this.errors.description = 'A descrição é obrigatória';
             }
+
+            if (this.dados.preco === null || this.dados.preco === undefined || Number(this.dados.preco) < 0.01) {
+                this.errors.preco = 'Informe o preço do conteúdo (mínimo R$ 0,01)';
+            }
             
             if (this.selectedFiles.length === 0) {
                 this.errors.media = 'Selecione pelo menos uma mídia exclusiva (imagem ou vídeo)';
@@ -162,7 +189,8 @@ export default {
                 this.loading = true;
                 
                 const postResponse = await this.api.post('/posts', {
-                    description: this.dados.description.trim()
+                    description: this.dados.description.trim(),
+                    preco: Number(this.dados.preco)
                 });
                 
                 const postId = postResponse.data.data.id;
@@ -193,6 +221,7 @@ export default {
                 }
                 
                 this.dados.description = '';
+                this.dados.preco = null;
                 this.previewFile = null;
                 this.selectedFiles = [];
                 
