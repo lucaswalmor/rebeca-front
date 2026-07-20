@@ -92,50 +92,56 @@
                         </template>
                     </Carousel>
 
-                    <!-- Assinante (não admin): prévia + CTA desbloquear -->
-                    <template v-else-if="!isAdminComputed && content.has_preview_access && !content.has_full_access">
-                        <Carousel
-                            v-if="getDisplayMedia(content).length > 0"
-                            :value="getDisplayMedia(content)"
-                            :numVisible="1"
-                            :numScroll="1"
-                        >
-                            <template #item="slotProps">
-                                <div class="carousel-media-container">
-                                    <img 
-                                        v-if="slotProps.data.tipo === 'image' || !slotProps.data.tipo"
-                                        :src="slotProps.data.url || slotProps.data" 
-                                        :alt="slotProps.data.alt || 'Prévia'" 
-                                        class="media-content"
-                                    />
-                                    <video 
-                                        v-else-if="slotProps.data.tipo === 'video'"
-                                        :src="slotProps.data.url" 
-                                        controls
-                                        class="media-content"
+                    <!-- Assinante (não admin): prévia + slide de desbloquear no carrossel -->
+                    <Carousel
+                        v-else-if="!isAdminComputed && content.has_preview_access && !content.has_full_access"
+                        :value="getLockedCarouselItems(content)"
+                        :numVisible="1"
+                        :numScroll="1"
+                        :circular="false"
+                    >
+                        <template #item="slotProps">
+                            <!-- Slide de desbloqueio (depois da prévia) -->
+                            <div
+                                v-if="slotProps.data.tipo === 'unlock'"
+                                class="carousel-media-container unlock-slide"
+                            >
+                                <div class="unlock-panel unlock-panel--in-carousel">
+                                    <i class="fa-solid fa-lock unlock-lock"></i>
+                                    <div class="unlock-meta">
+                                        <span v-if="content.media_count">
+                                            <i class="fa-solid fa-film me-1"></i>{{ content.media_count }}
+                                        </span>
+                                        <span class="unlock-price">{{ formatPreco(content.preco) }}</span>
+                                    </div>
+                                    <Button
+                                        :label="`Desbloquear conteúdo — ${formatPreco(content.preco)}`"
+                                        icon="pi pi-lock-open"
+                                        class="w-full unlock-btn"
+                                        severity="primary"
+                                        :loading="buyingPostId === content.id"
+                                        @click="comprarPost(content)"
                                     />
                                 </div>
-                            </template>
-                        </Carousel>
-
-                        <div class="unlock-panel mt-2">
-                            <i class="fa-solid fa-lock unlock-lock"></i>
-                            <div class="unlock-meta">
-                                <span v-if="content.media_count">
-                                    <i class="fa-solid fa-film me-1"></i>{{ content.media_count }}
-                                </span>
-                                <span class="unlock-price">{{ formatPreco(content.preco) }}</span>
                             </div>
-                            <Button
-                                :label="`Desbloquear conteúdo — ${formatPreco(content.preco)}`"
-                                icon="pi pi-lock-open"
-                                class="w-full unlock-btn"
-                                severity="primary"
-                                :loading="buyingPostId === content.id"
-                                @click="comprarPost(content)"
-                            />
-                        </div>
-                    </template>
+
+                            <!-- Slide de mídia (prévia) -->
+                            <div v-else class="carousel-media-container">
+                                <img
+                                    v-if="slotProps.data.tipo === 'image' || !slotProps.data.tipo"
+                                    :src="slotProps.data.url || slotProps.data"
+                                    :alt="slotProps.data.alt || 'Prévia'"
+                                    class="media-content"
+                                />
+                                <video
+                                    v-else-if="slotProps.data.tipo === 'video'"
+                                    :src="slotProps.data.url"
+                                    controls
+                                    class="media-content"
+                                />
+                            </div>
+                        </template>
+                    </Carousel>
 
                     <!-- Sem assinatura (não admin): bloqueado -->
                     <div
@@ -373,6 +379,17 @@ export default {
             }
 
             return media;
+        },
+        getLockedCarouselItems(post) {
+            const media = this.getDisplayMedia(post);
+            return [
+                ...media,
+                {
+                    tipo: 'unlock',
+                    media_count: post.media_count,
+                    preco: post.preco
+                }
+            ];
         },
         hasFullContentAccess(post) {
             // Admin sempre vê tudo liberado, independente de flags/assinatura/compra
@@ -978,11 +995,23 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
     padding: 1.25rem 1rem;
     background: #1a1a1a;
     border-radius: 12px;
     border: 1px solid rgba(245, 206, 225, 0.2);
+    width: 100%;
+    max-width: 420px;
+}
+
+.unlock-panel--in-carousel {
+    min-height: 280px;
+    margin: 0 auto;
+}
+
+.unlock-slide {
+    padding: 0.5rem 0;
 }
 
 .unlock-lock {
