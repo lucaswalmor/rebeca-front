@@ -2,6 +2,9 @@
     <div>
         <div class="col-md-12 text-300 mb-3">
             <h4>Criar Novo Post</h4>
+            <p class="text-400 text-sm mb-0">
+                Você pode criar um post só com prévia (grátis para assinantes) ou prévia + conteúdo exclusivo pago.
+            </p>
         </div>
             <div class="row mb-3">
                 <div class="col-md-12">
@@ -29,11 +32,15 @@
                             mode="currency"
                             currency="BRL"
                             locale="pt-BR"
-                            :min="0.01"
+                            :min="0"
                             :minFractionDigits="2"
                             :class="{ 'p-invalid': errors.preco }"
                         />
-                        <label for="preco">Preço do conteúdo <span class="text-red-500">*</span></label>
+                        <label for="preco">
+                            Preço do conteúdo
+                            <span v-if="requiresPrice" class="text-red-500">*</span>
+                            <span v-else class="text-400 text-sm fw-normal"> — opcional (só prévia = grátis)</span>
+                        </label>
                     </IftaLabel>
                     <small v-if="errors.preco" class="text-red-500">* {{ errors.preco }}</small>
                 </div>
@@ -43,7 +50,8 @@
                 <div class="col-md-12">
                     <label class="text-white mb-2 d-block">
                         Prévia (1 imagem ou vídeo)
-                        <span class="text-400 text-sm fw-normal"> — visível apenas para assinantes</span>
+                        <span v-if="!hasExclusiveFiles" class="text-red-500">*</span>
+                        <span class="text-400 text-sm fw-normal"> — visível para assinantes</span>
                     </label>
                     <FileUpload
                         mode="advanced"
@@ -60,7 +68,7 @@
                         :fileLimit="1"
                     >
                         <template #empty>
-                            <p class="text-white">Arraste e solte a prévia aqui ou clique para selecionar (opcional).</p>
+                            <p class="text-white">Arraste e solte a prévia aqui ou clique para selecionar.</p>
                         </template>
                     </FileUpload>
                     <small v-if="errors.preview" class="text-red-500">* {{ errors.preview }}</small>
@@ -71,8 +79,7 @@
                 <div class="col-md-12">
                     <label class="text-white mb-2 d-block">
                         Conteúdo exclusivo (imagens e vídeos)
-                        <span class="text-red-500">*</span>
-                        <span class="text-400 text-sm fw-normal"> — liberado após compra</span>
+                        <span class="text-400 text-sm fw-normal"> — opcional; liberado após compra</span>
                     </label>
                     <FileUpload
                         mode="advanced"
@@ -88,7 +95,7 @@
                         :fileLimit="20"
                     >
                         <template #empty>
-                            <p class="text-white">Arraste e solte arquivos aqui ou clique para selecionar.</p>
+                            <p class="text-white">Opcional. Se não enviar, o post fica só com a prévia (grátis para assinantes).</p>
                         </template>
                     </FileUpload>
                     <small v-if="errors.media" class="text-red-500">* {{ errors.media }}</small>
@@ -104,7 +111,7 @@
                         class="w-full" 
                         @click="criarPost" 
                         :loading="loading"
-                        :disabled="selectedFiles.length === 0"
+                        :disabled="!canSubmit"
                     />
                 </div>
             </div>
@@ -142,6 +149,17 @@ export default {
             errors: {}
         }
     },
+    computed: {
+        hasExclusiveFiles() {
+            return this.selectedFiles.length > 0;
+        },
+        requiresPrice() {
+            return this.hasExclusiveFiles;
+        },
+        canSubmit() {
+            return !!this.previewFile || this.hasExclusiveFiles;
+        }
+    },
     methods: {
         onPreviewSelect(event) {
             const files = Array.from(event.files || []);
@@ -173,12 +191,16 @@ export default {
                 this.errors.description = 'A descrição é obrigatória';
             }
 
-            if (this.dados.preco === null || this.dados.preco === undefined || Number(this.dados.preco) < 0.01) {
-                this.errors.preco = 'Informe o preço do conteúdo (mínimo R$ 0,01)';
+            if (!this.previewFile && !this.hasExclusiveFiles) {
+                this.errors.preview = 'Envie pelo menos a prévia do post';
             }
-            
-            if (this.selectedFiles.length === 0) {
-                this.errors.media = 'Selecione pelo menos uma mídia exclusiva (imagem ou vídeo)';
+
+            // Post só com prévia: preço opcional (vira 0).
+            // Post com exclusivo: preço obrigatório.
+            if (this.requiresPrice) {
+                if (this.dados.preco === null || this.dados.preco === undefined || Number(this.dados.preco) < 0.01) {
+                    this.errors.preco = 'Informe o preço do conteúdo exclusivo (mínimo R$ 0,01)';
+                }
             }
             
             if (Object.keys(this.errors).length > 0) {
@@ -187,10 +209,14 @@ export default {
             
             try {
                 this.loading = true;
+
+                const preco = this.requiresPrice
+                    ? Number(this.dados.preco)
+                    : Number(this.dados.preco || 0);
                 
                 const postResponse = await this.api.post('/posts', {
                     description: this.dados.description.trim(),
-                    preco: Number(this.dados.preco)
+                    preco
                 });
                 
                 const postId = postResponse.data.data.id;

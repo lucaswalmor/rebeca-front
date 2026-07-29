@@ -234,7 +234,7 @@
                     mode="currency"
                     currency="BRL"
                     locale="pt-BR"
-                    :min="0.01"
+                    :min="0"
                     :minFractionDigits="2"
                 />
             </div>
@@ -523,7 +523,7 @@ export default {
                 this.$toast.add({ severity: 'warn', summary: 'Atenção', detail: 'Descrição obrigatória', life: 3000 });
                 return;
             }
-            if (this.editForm.preco === null || Number(this.editForm.preco) < 0.01) {
+            if (this.editForm.preco === null || Number(this.editForm.preco) < 0) {
                 this.$toast.add({ severity: 'warn', summary: 'Atenção', detail: 'Preço inválido', life: 3000 });
                 return;
             }
