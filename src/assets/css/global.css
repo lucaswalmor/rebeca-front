@@ -54,7 +54,13 @@ a {
     color: #761c49 !important;
 }
 
-/* No hover: texto rosa claro */
+/* No hover: fundo escuro + texto rosa claro (contraste legível) */
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover,
+.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):enabled:hover {
+    background-color: #761c49 !important;
+    border-color: #761c49 !important;
+}
+
 .p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover,
 .p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover .p-button-label,
 .p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover .p-button-icon,

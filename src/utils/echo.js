@@ -28,7 +28,7 @@ function isDevelopmentHost() {
 export function getApiOrigin() {
     return isDevelopmentHost()
         ? 'http://127.0.0.1:8000'
-        : 'https://rebeca-backend.irkqjy.easypanel.host';
+        : 'https://api.becalima007.com.br';
 }
 
 export function getReverbConfig() {
@@ -43,10 +43,10 @@ export function getReverbConfig() {
         };
     }
 
-    // Produção: host público do app Reverb no EasyPanel (sem .env na Vercel)
+    // Produção: domínio custom do app Reverb (EasyPanel + CNAME)
     return {
         key: '908514ef1238b19a',
-        wsHost: 'rebeca-reverb.irkqjy.easypanel.host',
+        wsHost: 'reverb.becalima007.com.br',
         wsPort: 443,
         wssPort: 443,
         forceTLS: true,

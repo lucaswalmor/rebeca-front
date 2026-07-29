@@ -18,16 +18,20 @@
             </div>
             <div class="header-actions">
                 <button
+                    class="icon-btn"
+                    title="Galeria"
+                    @click="showGallery = true"
+                >
+                    <i class="pi pi-th-large"></i>
+                </button>
+                <button
                     v-if="!isAdminUser"
                     class="icon-btn"
-                    title="Liberar fotos/vídeos"
+                    title="Comprar créditos para enviar fotos/vídeos"
                     @click="showUnlock = true"
                 >
-                    <i class="pi pi-images"></i>
+                    <i class="pi pi-shopping-bag"></i>
                     <span v-if="mediaCredits > 0" class="credit-pill">{{ mediaCredits }}</span>
-                </button>
-                <button class="icon-btn" title="Galeria" @click="showGallery = true">
-                    <i class="pi pi-th-large"></i>
                 </button>
                 <button
                     class="icon-btn"
@@ -119,10 +123,9 @@
                 @change="onFileSelected"
             />
             <button
-                v-if="canSendMedia"
                 class="icon-btn"
                 title="Enviar mídia"
-                @click="$refs.fileInput.click()"
+                @click="onAttachClick"
             >
                 <i class="pi pi-paperclip"></i>
             </button>
@@ -222,9 +225,6 @@ export default {
         otherName() {
             const u = this.otherUser || {};
             return u.apelido || `${u.nome || ''} ${u.sobrenome || ''}`.trim() || 'Conversa';
-        },
-        canSendMedia() {
-            return this.isAdminUser || this.mediaCredits > 0;
         },
         clearMenuItems() {
             const items = [
@@ -580,6 +580,13 @@ export default {
             } finally {
                 this.sending = false;
             }
+        },
+        onAttachClick() {
+            if (!this.isAdminUser && this.mediaCredits < 1) {
+                this.showUnlock = true;
+                return;
+            }
+            this.$refs.fileInput.click();
         },
         async onFileSelected(event) {
             const file = event.target.files?.[0];

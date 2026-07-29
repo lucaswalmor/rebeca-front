@@ -10,8 +10,8 @@ const isDevelopment = window.location.hostname === 'localhost' ||
 
 const baseURL = isDevelopment
     ? 'http://127.0.0.1:8000/api'
-    : 'https://rebeca-backend.irkqjy.easypanel.host/api';
-    // : 'https://rebeca.lksoftware.com.br/public/api';
+    : 'https://api.becalima007.com.br/api';
+    // : 'https://rebeca-backend.irkqjy.easypanel.host/api';
 
 const api = axios.create({
     baseURL,
