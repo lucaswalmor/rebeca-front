@@ -12,8 +12,8 @@
             </Card>
         </div>
 
-        <div v-else class="messages-shell" :class="{ 'list-mode': isAdminUser && !activeConversation }">
-            <div
+        <div v-else class="messages-shell">
+            <aside
                 v-if="isAdminUser"
                 class="list-pane"
                 :class="{ 'hidden-mobile': Boolean(activeConversation) }"
@@ -22,17 +22,26 @@
                     :conversations="conversations"
                     :selected-id="activeConversation?.id"
                     :loading="loadingList"
+                    :show-new-button="true"
                     @select="selectConversation"
+                    @new-conversation="showStartDialog = true"
                 />
-            </div>
+            </aside>
 
-            <div
+            <section
                 class="thread-pane"
                 :class="{ 'hidden-mobile': isAdminUser && !activeConversation }"
             >
                 <div v-if="!activeConversation" class="empty-thread">
                     <i class="pi pi-comments"></i>
-                    <p>{{ isAdminUser ? 'Selecione uma conversa' : 'Abrindo chat...' }}</p>
+                    <p>{{ isAdminUser ? 'Selecione uma conversa à esquerda' : 'Abrindo chat...' }}</p>
+                    <Button
+                        v-if="isAdminUser"
+                        label="Iniciar nova conversa"
+                        icon="pi pi-plus"
+                        class="mt-3"
+                        @click="showStartDialog = true"
+                    />
                 </div>
                 <ChatThread
                     v-else
@@ -41,8 +50,14 @@
                     @back="activeConversation = null"
                     @updated="onThreadUpdated"
                 />
-            </div>
+            </section>
         </div>
+
+        <ChatStartConversationDialog
+            v-if="isAdminUser"
+            v-model:visible="showStartDialog"
+            @started="onConversationStarted"
+        />
     </div>
 </template>
 
@@ -50,6 +65,7 @@
 import Header from '@/components/Header.vue';
 import ChatConversationList from '@/components/chat/ChatConversationList.vue';
 import ChatThread from '@/components/chat/ChatThread.vue';
+import ChatStartConversationDialog from '@/components/chat/ChatStartConversationDialog.vue';
 import Card from 'primevue/card';
 import Button from 'primevue/button';
 import { isAdmin, hasAssinaturaAtiva } from '@/utils/global';
@@ -62,6 +78,7 @@ export default {
         Header,
         ChatConversationList,
         ChatThread,
+        ChatStartConversationDialog,
         Card,
         Button,
     },
@@ -71,6 +88,7 @@ export default {
             activeConversation: null,
             loadingList: false,
             blocked: false,
+            showStartDialog: false,
         };
     },
     computed: {
@@ -152,6 +170,11 @@ export default {
         selectConversation(item) {
             this.activeConversation = item;
         },
+        async onConversationStarted(conversation) {
+            await this.loadConversations();
+            const found = this.conversations.find((c) => c.id === conversation.id);
+            this.activeConversation = found || conversation;
+        },
         async onThreadUpdated() {
             if (this.isAdminUser) {
                 await this.loadConversations();
@@ -172,17 +195,16 @@ export default {
 .messages-shell {
     height: calc(100vh - 56px);
     display: grid;
-    grid-template-columns: 360px 1fr;
-
-    &.list-mode {
-        grid-template-columns: 1fr;
-    }
+    grid-template-columns: minmax(300px, 380px) 1fr;
+    overflow: hidden;
 }
 
 .list-pane,
 .thread-pane {
+    min-width: 0;
     min-height: 0;
     height: 100%;
+    overflow: hidden;
 }
 
 .empty-thread {
@@ -192,11 +214,17 @@ export default {
     align-items: center;
     justify-content: center;
     color: #888;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    background: #0d0d0d;
+    border-left: 1px solid #1f1f1f;
 
     i {
         font-size: 2.5rem;
         color: #f5cee1;
+    }
+
+    p {
+        margin: 0;
     }
 }
 
@@ -225,13 +253,17 @@ export default {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .messages-shell {
         grid-template-columns: 1fr;
     }
 
     .hidden-mobile {
         display: none !important;
+    }
+
+    .empty-thread {
+        border-left: none;
     }
 }
 </style>

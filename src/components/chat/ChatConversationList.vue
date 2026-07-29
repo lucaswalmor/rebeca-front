@@ -1,43 +1,55 @@
 <template>
     <div class="chat-list">
         <div class="chat-list-header">
-            <h3>Conversas</h3>
+            <div class="header-top">
+                <h3>Conversas</h3>
+            </div>
+            <Button
+                v-if="showNewButton"
+                label="Iniciar nova conversa"
+                icon="pi pi-plus"
+                class="w-full new-chat-btn"
+                size="small"
+                @click="$emit('new-conversation')"
+            />
             <InputText
                 v-model="search"
-                placeholder="Pesquisar..."
+                placeholder="Pesquisar conversas..."
                 class="w-full search-input"
                 size="small"
             />
         </div>
 
-        <div v-if="loading" class="chat-list-empty">
-            <i class="pi pi-spin pi-spinner"></i>
-        </div>
+        <div class="chat-list-body">
+            <div v-if="loading" class="chat-list-empty">
+                <i class="pi pi-spin pi-spinner"></i>
+            </div>
 
-        <div v-else-if="filtered.length === 0" class="chat-list-empty">
-            Nenhuma conversa ainda.
-        </div>
+            <div v-else-if="filtered.length === 0" class="chat-list-empty">
+                Nenhuma conversa ainda.
+            </div>
 
-        <div
-            v-for="item in filtered"
-            :key="item.id"
-            class="chat-list-item"
-            :class="{ active: selectedId === item.id }"
-            @click="$emit('select', item)"
-        >
-            <Avatar
-                :image="item.other_user?.path_img_avatar || defaultAvatar"
-                shape="circle"
-                size="large"
-            />
-            <div class="chat-list-meta">
-                <div class="chat-list-top">
-                    <span class="name">{{ displayName(item) }}</span>
-                    <span class="time">{{ formatTime(item.last_message_at || item.latest_message?.created_at) }}</span>
-                </div>
-                <div class="chat-list-bottom">
-                    <span class="preview">{{ previewText(item) }}</span>
-                    <Badge v-if="item.unread_count > 0" :value="item.unread_count" severity="danger" />
+            <div
+                v-for="item in filtered"
+                :key="item.id"
+                class="chat-list-item"
+                :class="{ active: selectedId === item.id }"
+                @click="$emit('select', item)"
+            >
+                <Avatar
+                    :image="item.other_user?.path_img_avatar || defaultAvatar"
+                    shape="circle"
+                    size="large"
+                />
+                <div class="chat-list-meta">
+                    <div class="chat-list-top">
+                        <span class="name">{{ displayName(item) }}</span>
+                        <span class="time">{{ formatTime(item.last_message_at || item.latest_message?.created_at) }}</span>
+                    </div>
+                    <div class="chat-list-bottom">
+                        <span class="preview">{{ previewText(item) }}</span>
+                        <Badge v-if="item.unread_count > 0" :value="item.unread_count" severity="danger" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -48,16 +60,18 @@
 import Avatar from 'primevue/avatar';
 import Badge from 'primevue/badge';
 import InputText from 'primevue/inputtext';
+import Button from 'primevue/button';
 
 export default {
     name: 'ChatConversationList',
-    components: { Avatar, Badge, InputText },
+    components: { Avatar, Badge, InputText, Button },
     props: {
         conversations: { type: Array, default: () => [] },
         selectedId: { type: [Number, String], default: null },
         loading: { type: Boolean, default: false },
+        showNewButton: { type: Boolean, default: false },
     },
-    emits: ['select'],
+    emits: ['select', 'new-conversation'],
     data() {
         return {
             search: '',
@@ -82,8 +96,8 @@ export default {
         previewText(item) {
             const m = item.latest_message;
             if (!m) return 'Sem mensagens';
-            if (m.type === 'image') return '📷 Foto';
-            if (m.type === 'video') return '🎬 Vídeo';
+            if (m.type === 'image') return 'Foto';
+            if (m.type === 'video') return 'Vídeo';
             return m.body || '';
         },
         formatTime(iso) {
@@ -115,16 +129,32 @@ export default {
 .chat-list-header {
     padding: 1rem;
     border-bottom: 1px solid #2a2a2a;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
 
-    h3 {
-        color: #f5cee1;
-        margin: 0 0 0.75rem;
-        font-size: 1.25rem;
-    }
+.header-top h3 {
+    color: #f5cee1;
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.new-chat-btn {
+    background: #f5cee1 !important;
+    border-color: #f5cee1 !important;
+    color: #761c49 !important;
 }
 
 .search-input {
     background: #1a1a1a !important;
+}
+
+.chat-list-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .chat-list-empty {
