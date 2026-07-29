@@ -169,7 +169,7 @@ import Menu from 'primevue/menu';
 import EmojiPicker from '@/components/EmojiPicker.vue';
 import ChatGalleryDialog from './ChatGalleryDialog.vue';
 import ChatMediaUnlockDialog from './ChatMediaUnlockDialog.vue';
-import { getEcho, chatLog, chatWarn } from '@/utils/echo';
+import { getEcho, chatLog, chatWarn, isEchoConnected } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 import { isAdmin, currentUserId } from '@/utils/global';
 
@@ -322,10 +322,11 @@ export default {
         },
         startPolling() {
             this.stopPolling();
-            // Fallback enquanto o WebSocket do Reverb não estiver estável em produção
+            // Só como fallback se o WebSocket cair — com Reverb saudável não fica batendo a API
             this.pollTimer = setInterval(() => {
+                if (isEchoConnected()) return;
                 this.pollMessages();
-            }, 3000);
+            }, 5000);
         },
         stopPolling() {
             if (this.pollTimer) {
@@ -335,6 +336,8 @@ export default {
         },
         async pollMessages() {
             if (!this.conversationId || document.hidden) return;
+            if (isEchoConnected()) return;
+            chatWarn('ws offline — poll fallback');
             try {
                 const { data } = await this.api.get(
                     `/chat/conversations/${this.conversationId}/messages`,
