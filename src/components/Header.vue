@@ -5,6 +5,20 @@
         <router-link to="/" class="navbar-brand text-white">BecaLima007</router-link>
         <div class="d-flex gap-5 align-items-center me-5">
           <i class="fa-solid fa-house fa-lg cursor-pointer" @click="goHome"></i>
+          <span
+            v-if="isLoggedIn"
+            class="position-relative cursor-pointer"
+            title="Mensagens"
+            @click="goMessages"
+          >
+            <i class="fa-solid fa-comments fa-lg" style="color: #f5cee1;"></i>
+            <Badge
+              v-if="unreadCount > 0"
+              :value="unreadCount > 99 ? '99+' : unreadCount"
+              severity="danger"
+              class="messages-badge"
+            />
+          </span>
           <i
             v-if="isLoggedIn"
             class="fa-solid fa-user fa-lg cursor-pointer"
@@ -38,17 +52,25 @@
 <script>
 import LoginDialog from './dialogs/user/Login.vue';
 import RegisterDialog from './dialogs/user/Register.vue';
+import Badge from 'primevue/badge';
 import { useAuthStore } from '@/stores/auth';
+import { useChatStore } from '@/stores/chat';
+import { storeToRefs } from 'pinia';
+import { disconnectEcho, refreshEchoAuth } from '@/utils/echo';
 
 export default {
   name: 'Header',
   components: {
     LoginDialog,
-    RegisterDialog
+    RegisterDialog,
+    Badge
   },
   setup() {
     const authStore = useAuthStore();
-    return { authStore };
+    const chatStore = useChatStore();
+    const { unreadCount } = storeToRefs(chatStore);
+    const { updateTrigger } = storeToRefs(authStore);
+    return { authStore, chatStore, unreadCount, updateTrigger };
   },
   data() {
     return {
@@ -58,8 +80,15 @@ export default {
       isLoggedIn: false
     }
   },
+  watch: {
+    updateTrigger() {
+      this.checkLoginStatus();
+      this.syncChat();
+    }
+  },
   mounted() {
     this.checkLoginStatus();
+    this.syncChat();
   },
   methods: {
     checkLoginStatus() {
@@ -67,14 +96,26 @@ export default {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       this.isLoggedIn = !!token && !!user.id;
     },
+    syncChat() {
+      if (!this.isLoggedIn) {
+        this.chatStore.reset();
+        disconnectEcho();
+        return;
+      }
+      refreshEchoAuth();
+      this.chatStore.bindInbox();
+      this.chatStore.fetchUnread();
+    },
     handleIconClick() {
-      // Verificar novamente o status antes de executar a ação
       this.checkLoginStatus();
       if (this.isLoggedIn) {
         this.handleLogout();
       } else {
         this.openLoginDialog();
       }
+    },
+    goMessages() {
+      this.$router.push('/messages');
     },
     goToUserSettings() {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -96,7 +137,8 @@ export default {
       this.showRegisterDialog = true;
     },
     handleLoggedIn() {
-      this.checkLoginStatus(); // Atualizar estado após login
+      this.checkLoginStatus();
+      this.syncChat();
     },
     async handleLogout() {
       try {
@@ -104,8 +146,9 @@ export default {
         await this.api.post('/logout');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        this.checkLoginStatus(); // Atualizar estado reativo
-        // Disparar atualização via Pinia
+        this.checkLoginStatus();
+        this.chatStore.reset();
+        disconnectEcho();
         this.authStore.logout();
         this.loading = false;
         this.$toast.add({
@@ -120,11 +163,11 @@ export default {
         }, 1000);
       } catch (error) {
         this.loading = false;
-        // Mesmo em caso de erro, limpar o localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        this.checkLoginStatus(); // Atualizar estado reativo
-        // Disparar atualização via Pinia
+        this.checkLoginStatus();
+        this.chatStore.reset();
+        disconnectEcho();
         this.authStore.logout();
         this.$toast.add({
           severity: 'info',
@@ -137,3 +180,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.messages-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  transform: scale(0.85);
+}
+</style>

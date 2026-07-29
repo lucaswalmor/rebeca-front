@@ -139,7 +139,8 @@ export default {
                         desconto_trimestral: userData.valor_desconto_trimestral || 0,
                         desconto_semestral: userData.valor_desconto_semestral || 0,
                         valor_trimestral: this.formatarMoeda(userData.valor_assinatura_trimestral),
-                        valor_semestral: this.formatarMoeda(userData.valor_assinatura_semestral)
+                        valor_semestral: this.formatarMoeda(userData.valor_assinatura_semestral),
+                        pacote_midia_chat: this.formatarMoeda(userData.valor_pacote_midia_chat)
                     });
                 }
 
@@ -189,6 +190,7 @@ export default {
                 const valorMensal = this.converterValorFormatado(dadosAssinatura.assinatura_mensal);
                 const valorTrimestral = this.converterValorFormatado(dadosAssinatura.valor_trimestral);
                 const valorSemestral = this.converterValorFormatado(dadosAssinatura.valor_semestral);
+                const valorPacoteMidia = this.converterValorFormatado(dadosAssinatura.pacote_midia_chat);
 
                 const dadosParaSalvar = {
                     valor_assinatura_mensal: valorMensal,
@@ -196,6 +198,7 @@ export default {
                     valor_assinatura_semestral: valorSemestral,
                     valor_desconto_trimestral: dadosAssinatura.desconto_trimestral,
                     valor_desconto_semestral: dadosAssinatura.desconto_semestral,
+                    valor_pacote_midia_chat: valorPacoteMidia,
                     instagram: dadosSocial.instagram,
                     telegram: dadosSocial.telegram,
                     whatsapp: dadosSocial.whatsapp,

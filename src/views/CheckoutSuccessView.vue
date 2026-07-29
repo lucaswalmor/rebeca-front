@@ -22,9 +22,7 @@
                             </div>
                             <h2 class="success-title">Pagamento Confirmado!</h2>
                             <p class="success-subtitle">
-                                {{ isPostPurchase
-                                    ? 'Conteúdo liberado com sucesso. Redirecionando...'
-                                    : 'Sua assinatura foi ativada com sucesso. Redirecionando...' }}
+                                {{ successSubtitle }}
                             </p>
                         </div>
                     </div>
@@ -143,10 +141,20 @@ export default {
             isChecking: false,
             error: '',
             paymentStatus: null,
-            isPostPurchase: false
+            isPostPurchase: false,
+            isChatMediaPurchase: false
         }
     },
     computed: {
+        successSubtitle() {
+            if (this.isChatMediaPurchase) {
+                return 'Pacote de mídia liberado. Redirecionando para o chat...';
+            }
+            if (this.isPostPurchase) {
+                return 'Conteúdo liberado com sucesso. Redirecionando...';
+            }
+            return 'Sua assinatura foi ativada com sucesso. Redirecionando...';
+        },
         // Parâmetros da URL
         urlParams() {
             return {
@@ -206,6 +214,9 @@ export default {
                     this.isPostPurchase = backendResponse.data.type === 'post_compra'
                         || (this.urlParams.order_nsu || '').startsWith('post-');
 
+                    this.isChatMediaPurchase = backendResponse.data.type === 'chat_media'
+                        || (this.urlParams.order_nsu || '').startsWith('chatmedia-');
+
                     // Mapear dados para o formato esperado pelo componente
                     this.paymentStatus = {
                         paid: assinaturaData.status === 'aprovado',
@@ -218,12 +229,16 @@ export default {
                         order_nsu: assinaturaData.order_nsu || this.urlParams.order_nsu,
                     };
 
+                    if (this.isChatMediaPurchase && assinaturaData.status === 'aprovado') {
+                        setTimeout(() => this.$router.push('/messages'), 1000);
+                    }
+
                     console.log('Status do pagamento processado:', this.paymentStatus);
 
                     if (this.paymentStatus.paid) {
                         console.log('Pagamento confirmado com sucesso!');
 
-                        if (!this.isPostPurchase) {
+                        if (!this.isPostPurchase && !this.isChatMediaPurchase) {
                             // Atualizar localStorage com assinatura ativa
                             const user = JSON.parse(localStorage.getItem('user') || '{}');
                             user.assinatura = true;
@@ -239,11 +254,13 @@ export default {
                         const checkoutStore = useCheckoutStore();
                         checkoutStore.resetCheckout();
 
-                        // Pequeno delay para garantir que as atualizações sejam processadas
-                        console.log('Redirecionando para página inicial em 1 segundo...');
-                        setTimeout(() => {
-                            this.$router.push('/home');
-                        }, 1000);
+                        if (!this.isChatMediaPurchase) {
+                            // Pequeno delay para garantir que as atualizações sejam processadas
+                            console.log('Redirecionando para página inicial em 1 segundo...');
+                            setTimeout(() => {
+                                this.$router.push('/home');
+                            }, 1000);
+                        }
 
                     } else {
                         console.log('Pagamento ainda pendente ou não aprovado');

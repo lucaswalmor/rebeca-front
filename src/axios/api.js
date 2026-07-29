@@ -28,13 +28,34 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
+        // FormData precisa que o browser defina o boundary do multipart
+        if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+            if (config.headers && typeof config.headers.delete === 'function') {
+                config.headers.delete('Content-Type');
+            } else if (config.headers) {
+                delete config.headers['Content-Type'];
+            }
+        }
+
+        try {
+            const echo = window.Echo;
+            if (echo && typeof echo.socketId === 'function') {
+                const socketId = echo.socketId();
+                if (socketId) {
+                    config.headers['X-Socket-ID'] = socketId;
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+
         // Iniciar loading global (exceto se config.skipLoading for true)
         if (!config.skipLoading) {
             const authStore = useAuthStore();
             authStore.startLoading();
         }
-        
+
         return config;
     },
     (error) => {
@@ -61,7 +82,7 @@ api.interceptors.response.use(
             const authStore = useAuthStore();
             authStore.stopLoading();
         }
-        
+
         if (error.response && error.response.status === 401) {
             // Token inválido ou expirado
             localStorage.removeItem('token');
@@ -74,4 +95,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-

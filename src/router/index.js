@@ -38,6 +38,20 @@ const routes = [
     component: () => import('../views/CheckoutSuccessView.vue')
   },
   {
+    path: '/messages',
+    name: 'messages',
+    component: () => import('../pages/Messages.vue'),
+    beforeEnter: (to, from, next) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const token = localStorage.getItem('token');
+      if (token && user.id) {
+        next();
+      } else {
+        next('/home');
+      }
+    }
+  },
+  {
     path: '/user-settings',
     name: 'user-settings',
     component: () => import('../pages/UserSettings.vue'),
