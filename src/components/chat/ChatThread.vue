@@ -60,19 +60,22 @@
                         <span>{{ replyPreview(msg.reply_to) }}</span>
                     </div>
 
-                    <Image
-                        v-if="msg.type === 'image' && msg.media_url"
-                        :src="msg.media_url"
-                        preview
-                        imageClass="bubble-media"
-                        class="bubble-image"
-                    />
-                    <video
-                        v-else-if="msg.type === 'video' && msg.media_url"
-                        :src="msg.media_url"
-                        controls
-                        class="bubble-media"
-                    />
+                    <div v-if="msg.type === 'image' && msg.media_url" class="bubble-media-wrap">
+                        <Image
+                            :src="msg.media_url"
+                            preview
+                            imageClass="bubble-media-img"
+                            class="bubble-image"
+                        />
+                    </div>
+                    <div v-else-if="msg.type === 'video' && msg.media_url" class="bubble-media-wrap">
+                        <video
+                            :src="msg.media_url"
+                            controls
+                            playsinline
+                            class="bubble-media-video"
+                        />
+                    </div>
                     <div v-if="msg.body" class="bubble-text">{{ msg.body }}</div>
 
                     <div class="bubble-meta">
@@ -756,6 +759,7 @@ export default {
 .chat-messages {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -771,6 +775,8 @@ export default {
 .msg-row {
     display: flex;
     justify-content: flex-start;
+    min-width: 0;
+    width: 100%;
 
     &.mine {
         justify-content: flex-end;
@@ -788,6 +794,12 @@ export default {
     &.mine {
         background: #3a1f2e;
         border-radius: 12px 12px 4px 12px;
+    }
+
+    &.media {
+        max-width: min(78%, 280px);
+        padding: 0.35rem;
+        overflow: hidden;
     }
 }
 
@@ -809,19 +821,58 @@ export default {
 .bubble-text {
     white-space: pre-wrap;
     word-break: break-word;
+    padding: 0.2rem 0.35rem 0;
 }
 
-.bubble-media {
+.bubble-media-wrap {
     width: 100%;
-    max-height: 280px;
-    border-radius: 8px;
-    display: block;
-    object-fit: cover;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #121212;
+    line-height: 0;
 }
 
 .bubble-image {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100%;
+}
+
+.bubble-image :deep(.p-image),
+.bubble-image :deep(.p-image-preview-container) {
     display: block;
-    margin-bottom: 0.25rem;
+    width: 100%;
+    max-width: 100%;
+}
+
+.bubble-image :deep(img),
+.bubble-media-img {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: min(52vh, 360px);
+    object-fit: contain;
+    border-radius: 10px;
+    background: #121212;
+}
+
+.bubble-image :deep(.p-image-preview-indicator),
+.bubble-image :deep(.p-image-preview-mask) {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.bubble-media-video {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: min(52vh, 360px);
+    object-fit: contain;
+    border-radius: 10px;
+    background: #000;
 }
 
 .bubble-meta {
@@ -830,6 +881,7 @@ export default {
     gap: 0.35rem;
     align-items: center;
     margin-top: 0.25rem;
+    padding: 0 0.25rem;
     font-size: 0.7rem;
     color: #bbb;
 }
