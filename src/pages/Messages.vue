@@ -12,7 +12,7 @@
             </Card>
         </div>
 
-        <div v-else class="messages-shell">
+        <div v-else class="messages-shell" :class="{ 'is-subscriber': !isAdminUser }">
             <aside
                 v-if="isAdminUser"
                 class="list-pane"
@@ -197,6 +197,10 @@ export default {
     display: grid;
     grid-template-columns: minmax(300px, 380px) 1fr;
     overflow: hidden;
+
+    &.is-subscriber {
+        grid-template-columns: 1fr;
+    }
 }
 
 .list-pane,
