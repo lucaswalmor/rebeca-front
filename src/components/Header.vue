@@ -56,7 +56,7 @@ import Badge from 'primevue/badge';
 import { useAuthStore } from '@/stores/auth';
 import { useChatStore } from '@/stores/chat';
 import { storeToRefs } from 'pinia';
-import { disconnectEcho, refreshEchoAuth } from '@/utils/echo';
+import { disconnectEcho, getEcho } from '@/utils/echo';
 
 export default {
   name: 'Header',
@@ -102,7 +102,8 @@ export default {
         disconnectEcho();
         return;
       }
-      refreshEchoAuth();
+      // Não desconecta o WebSocket a cada update — só garante Echo + inbox
+      getEcho();
       this.chatStore.bindInbox();
       this.chatStore.fetchUnread();
     },

@@ -29,6 +29,13 @@
                 <button class="icon-btn" title="Galeria" @click="showGallery = true">
                     <i class="pi pi-th-large"></i>
                 </button>
+                <button
+                    class="icon-btn"
+                    title="Limpar conversa"
+                    @click="openClearMenu"
+                >
+                    <i class="pi pi-trash"></i>
+                </button>
             </div>
         </div>
 
@@ -136,6 +143,7 @@
         </div>
 
         <Menu ref="msgMenu" :model="menuItems" popup />
+        <Menu ref="clearMenu" :model="clearMenuItems" popup />
 
         <ChatGalleryDialog
             v-model:visible="showGallery"
@@ -197,6 +205,7 @@ export default {
             creditsPerPack: 5,
             packagePrice: null,
             channel: null,
+            pollTimer: null,
             defaultAvatar: 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png',
         };
     },
@@ -216,6 +225,25 @@ export default {
         },
         canSendMedia() {
             return this.isAdminUser || this.mediaCredits > 0;
+        },
+        clearMenuItems() {
+            const items = [
+                {
+                    label: 'Limpar só para mim',
+                    icon: 'pi pi-eye-slash',
+                    command: () => this.clearConversation('me'),
+                },
+            ];
+
+            if (this.isAdminUser) {
+                items.push({
+                    label: 'Limpar para todos',
+                    icon: 'pi pi-trash',
+                    command: () => this.clearConversation('everyone'),
+                });
+            }
+
+            return items;
         },
         menuItems() {
             const msg = this.menuMessage;
@@ -267,6 +295,7 @@ export default {
     },
     beforeUnmount() {
         this.teardownChannel();
+        this.stopPolling();
         if (this.typingTimer) clearTimeout(this.typingTimer);
         if (this.whisperTimer) clearTimeout(this.whisperTimer);
     },
@@ -287,8 +316,59 @@ export default {
         async bootstrap() {
             await Promise.all([this.loadMessages(), this.loadPackageInfo()]);
             this.bindChannel();
+            this.startPolling();
             await this.markRead();
             this.$nextTick(this.scrollToBottom);
+        },
+        startPolling() {
+            this.stopPolling();
+            // Fallback enquanto o WebSocket do Reverb não estiver estável em produção
+            this.pollTimer = setInterval(() => {
+                this.pollMessages();
+            }, 3000);
+        },
+        stopPolling() {
+            if (this.pollTimer) {
+                clearInterval(this.pollTimer);
+                this.pollTimer = null;
+            }
+        },
+        async pollMessages() {
+            if (!this.conversationId || document.hidden) return;
+            try {
+                const { data } = await this.api.get(
+                    `/chat/conversations/${this.conversationId}/messages`,
+                    { skipLoading: true }
+                );
+                const list = data.data || [];
+                if (!Array.isArray(list) || list.length === 0) return;
+
+                const knownIds = new Set(this.messages.map((m) => m.id));
+                let added = false;
+                list.forEach((msg) => {
+                    const idx = this.messages.findIndex((m) => m.id === msg.id);
+                    if (idx >= 0) {
+                        this.messages.splice(idx, 1, msg);
+                    } else if (!knownIds.has(msg.id)) {
+                        this.messages.push(msg);
+                        added = true;
+                    }
+                });
+
+                // Remove mensagens apagadas por outro lado
+                const remoteIds = new Set(list.map((m) => m.id));
+                const before = this.messages.length;
+                this.messages = this.messages.filter((m) => remoteIds.has(m.id));
+                if (this.messages.length !== before || added) {
+                    this.$emit('updated');
+                    if (added) {
+                        this.markRead();
+                        this.$nextTick(this.scrollToBottom);
+                    }
+                }
+            } catch (e) {
+                // silencioso no poll
+            }
         },
         async loadMessages() {
             this.loading = true;
@@ -349,6 +429,11 @@ export default {
                     this.upsertMessage(e.message);
                 })
                 .listen('.conversation.updated', (e) => {
+                    if (e.cleared_for_everyone) {
+                        this.messages = [];
+                        this.$emit('updated');
+                        return;
+                    }
                     if (e.read_by && Number(e.read_by) !== Number(currentUserId())) {
                         this.messages = this.messages.map((m) => (
                             this.isMine(m) ? { ...m, read_at: e.read_at || m.read_at } : m
@@ -365,6 +450,39 @@ export default {
                 });
 
             chatLog('subscribed chat.' + this.conversationId);
+        },
+        openClearMenu(event) {
+            this.$refs.clearMenu.toggle(event);
+        },
+        async clearConversation(scope) {
+            const isEveryone = scope === 'everyone';
+            const ok = window.confirm(
+                isEveryone
+                    ? 'Limpar a conversa para TODOS? As mensagens serão apagadas permanentemente.'
+                    : 'Limpar a conversa só para você? O outro lado continua vendo o histórico.'
+            );
+            if (!ok) return;
+
+            try {
+                await this.api.post(`/chat/conversations/${this.conversationId}/clear`, { scope });
+                this.messages = [];
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Conversa limpa',
+                    detail: isEveryone
+                        ? 'A conversa foi apagada para todos.'
+                        : 'A conversa foi limpa só para você.',
+                    life: 3000,
+                });
+                this.$emit('updated');
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível limpar a conversa',
+                    life: 3500,
+                });
+            }
         },
         upsertMessage(message) {
             if (!message?.id) return;

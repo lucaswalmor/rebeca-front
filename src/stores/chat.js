@@ -27,9 +27,12 @@ export const useChatStore = defineStore('chat', () => {
         }
     }
 
-    function bindInbox() {
+    function bindInbox(force = false) {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!user.id || inboxChannelBound.value) {
+        if (!user.id) {
+            return;
+        }
+        if (inboxChannelBound.value && !force) {
             return;
         }
 
