@@ -209,6 +209,18 @@ export default {
     min-height: 0;
     height: 100%;
     overflow: hidden;
+    position: relative;
+}
+
+.thread-pane {
+    display: flex;
+    flex-direction: column;
+}
+
+.thread-pane > * {
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
 }
 
 .empty-thread {

@@ -61,18 +61,26 @@
                     </div>
 
                     <div v-if="msg.type === 'image' && msg.media_url" class="bubble-media-wrap">
-                        <Image
-                            :src="msg.media_url"
-                            preview
-                            imageClass="bubble-media-img"
-                            class="bubble-image"
-                        />
+                        <button
+                            type="button"
+                            class="bubble-media-btn"
+                            title="Ampliar foto"
+                            @click.stop="openImagePreview(msg.media_url)"
+                        >
+                            <img
+                                :src="msg.media_url"
+                                alt="Foto do chat"
+                                class="bubble-media-img"
+                                loading="lazy"
+                            />
+                        </button>
                     </div>
                     <div v-else-if="msg.type === 'video' && msg.media_url" class="bubble-media-wrap">
                         <video
                             :src="msg.media_url"
                             controls
                             playsinline
+                            preload="metadata"
                             class="bubble-media-video"
                         />
                     </div>
@@ -161,13 +169,30 @@
             :credits-per-pack="creditsPerPack"
             :price="packagePrice"
         />
+
+        <Dialog
+            v-model:visible="showImagePreview"
+            modal
+            dismissableMask
+            :showHeader="false"
+            :style="{ width: 'min(96vw, 920px)' }"
+            contentClass="chat-image-preview-content"
+            @hide="previewImageUrl = null"
+        >
+            <img
+                v-if="previewImageUrl"
+                :src="previewImageUrl"
+                alt="Pré-visualização"
+                class="chat-image-preview-full"
+            />
+        </Dialog>
     </div>
 </template>
 
 <script>
 import Avatar from 'primevue/avatar';
 import InputText from 'primevue/inputtext';
-import Image from 'primevue/image';
+import Dialog from 'primevue/dialog';
 import Menu from 'primevue/menu';
 import EmojiPicker from '@/components/EmojiPicker.vue';
 import ChatGalleryDialog from './ChatGalleryDialog.vue';
@@ -181,7 +206,7 @@ export default {
     components: {
         Avatar,
         InputText,
-        Image,
+        Dialog,
         Menu,
         EmojiPicker,
         ChatGalleryDialog,
@@ -201,6 +226,8 @@ export default {
             showEmoji: false,
             showGallery: false,
             showUnlock: false,
+            showImagePreview: false,
+            previewImageUrl: null,
             replyingTo: null,
             editingMessage: null,
             typingUser: null,
@@ -683,6 +710,11 @@ export default {
             }
         },
         scrollToMessage() {},
+        openImagePreview(url) {
+            if (!url) return;
+            this.previewImageUrl = url;
+            this.showImagePreview = true;
+        },
     },
 };
 </script>
@@ -690,10 +722,13 @@ export default {
 <style scoped lang="scss">
 .chat-thread {
     height: 100%;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
     background: #0d0d0d;
     position: relative;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .chat-header {
@@ -703,6 +738,7 @@ export default {
     padding: 0.75rem 1rem;
     background: #121212;
     border-bottom: 1px solid #2a2a2a;
+    flex-shrink: 0;
 }
 
 .header-info {
@@ -776,7 +812,9 @@ export default {
     display: flex;
     justify-content: flex-start;
     min-width: 0;
+    max-width: 100%;
     width: 100%;
+    box-sizing: border-box;
 
     &.mine {
         justify-content: flex-end;
@@ -785,11 +823,13 @@ export default {
 
 .bubble {
     max-width: min(78%, 420px);
+    min-width: 0;
     background: #1f1f1f;
     color: #fff;
     border-radius: 12px 12px 12px 4px;
     padding: 0.55rem 0.7rem;
     position: relative;
+    box-sizing: border-box;
 
     &.mine {
         background: #3a1f2e;
@@ -797,8 +837,9 @@ export default {
     }
 
     &.media {
-        max-width: min(78%, 280px);
-        padding: 0.35rem;
+        width: min(72vw, 260px);
+        max-width: min(72vw, 260px);
+        padding: 0.3rem;
         overflow: hidden;
     }
 }
@@ -833,35 +874,27 @@ export default {
     line-height: 0;
 }
 
-.bubble-image {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100%;
+.bubble-media-btn {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: zoom-in;
+    line-height: 0;
 }
 
-.bubble-image :deep(.p-image),
-.bubble-image :deep(.p-image-preview-container) {
+.bubble-media-img {
     display: block;
     width: 100%;
     max-width: 100%;
-}
-
-.bubble-image :deep(img),
-.bubble-media-img {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    max-height: min(52vh, 360px);
-    object-fit: contain;
+    height: auto;
+    max-height: 240px;
+    object-fit: cover;
+    object-position: center;
     border-radius: 10px;
-    background: #121212;
-}
-
-.bubble-image :deep(.p-image-preview-indicator),
-.bubble-image :deep(.p-image-preview-mask) {
-    width: 100%;
-    border-radius: 10px;
+    vertical-align: middle;
 }
 
 .bubble-media-video {
@@ -869,7 +902,7 @@ export default {
     width: 100%;
     max-width: 100%;
     height: auto;
-    max-height: min(52vh, 360px);
+    max-height: 240px;
     object-fit: contain;
     border-radius: 10px;
     background: #000;
@@ -925,6 +958,7 @@ export default {
     padding: 0.65rem 0.75rem;
     background: #121212;
     border-top: 1px solid #2a2a2a;
+    flex-shrink: 0;
 }
 
 .composer-input {
@@ -961,5 +995,25 @@ export default {
     border: 1px solid #333;
     border-radius: 12px;
     overflow: hidden;
+}
+</style>
+
+<style lang="scss">
+.chat-image-preview-content {
+    padding: 0.5rem !important;
+    background: #0d0d0d !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.chat-image-preview-full {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: min(82vh, 860px);
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
 }
 </style>
