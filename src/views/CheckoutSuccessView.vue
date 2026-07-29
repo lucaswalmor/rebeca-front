@@ -1,119 +1,122 @@
 <template>
-    <div class="success-container">
-        <div class="p-grid">
-            <div class="p-col-12 p-md-8 p-offset-md-2">
-                <div class="success-card">
-                    <!-- Status de Processamento -->
-                    <div v-if="isProcessing" class="processing-section">
-                        <div class="text-center">
-                            <div class="spinner-container">
-                                <i class="pi pi-spin pi-spinner spinner-icon"></i>
-                            </div>
-                            <h3 class="mt-3">Processando Pagamento...</h3>
-                            <p class="text-muted">Aguarde enquanto verificamos o status do seu pagamento.</p>
-                        </div>
+    <div class="checkout-return">
+        <div class="checkout-return__glow checkout-return__glow--a" aria-hidden="true"></div>
+        <div class="checkout-return__glow checkout-return__glow--b" aria-hidden="true"></div>
+        <div class="checkout-return__grain" aria-hidden="true"></div>
+
+        <div class="checkout-return__stage">
+            <p class="checkout-return__brand">BecaLima007</p>
+
+            <!-- Processando -->
+            <div v-if="isProcessing" class="checkout-return__block" key="processing">
+                <div class="checkout-return__pulse" aria-hidden="true">
+                    <span></span>
+                </div>
+                <h1 class="checkout-return__title">Confirmando seu pagamento</h1>
+                <p class="checkout-return__lead">
+                    Estamos validando com a InfinitePay. Isso leva só alguns segundos.
+                </p>
+            </div>
+
+            <!-- Aprovado -->
+            <div v-else-if="paymentStatus?.paid" class="checkout-return__block is-success" key="success">
+                <div class="checkout-return__mark" aria-hidden="true">
+                    <svg viewBox="0 0 52 52" class="checkout-return__check">
+                        <circle cx="26" cy="26" r="24" fill="none" />
+                        <path fill="none" d="M14.5 27.5 L22.5 35 L37.5 17" />
+                    </svg>
+                </div>
+                <h1 class="checkout-return__title">Pagamento confirmado</h1>
+                <p class="checkout-return__lead">{{ successSubtitle }}</p>
+
+                <dl v-if="hasDetails" class="checkout-return__meta">
+                    <div v-if="displayAmount" class="checkout-return__meta-row">
+                        <dt>Valor</dt>
+                        <dd>{{ displayAmount }}</dd>
                     </div>
-
-                    <!-- Pagamento Aprovado -->
-                    <div v-else-if="paymentStatus?.paid" class="success-section">
-                        <div class="text-center">
-                            <div class="success-icon">
-                                <i class="pi pi-check-circle"></i>
-                            </div>
-                            <h2 class="success-title">Pagamento Confirmado!</h2>
-                            <p class="success-subtitle">
-                                {{ successSubtitle }}
-                            </p>
-                        </div>
+                    <div v-if="paymentStatus.capture_method" class="checkout-return__meta-row">
+                        <dt>Método</dt>
+                        <dd>{{ getPaymentMethodName(paymentStatus.capture_method) }}</dd>
                     </div>
-
-                    <!-- Pagamento Pendente ou Falhou -->
-                    <div v-else-if="paymentStatus && !paymentStatus.paid" class="pending-section">
-                        <div class="text-center">
-                            <div class="pending-icon">
-                                <i class="pi pi-clock"></i>
-                            </div>
-                            <h2 class="pending-title">Pagamento Pendente</h2>
-                            <p class="pending-subtitle">
-                                Seu pagamento ainda não foi confirmado. Isso pode levar alguns minutos.
-                            </p>
-                        </div>
-
-                        <!-- Detalhes -->
-                        <div class="payment-details">
-                            <div v-if="paymentStatus.amount" class="detail-row">
-                                <span class="label">Valor:</span>
-                                <span class="value">{{ formatCurrency(paymentStatus.amount / 100) }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Ações -->
-                        <div class="actions-section">
-                            <Button
-                                label="Verificar Novamente"
-                                icon="pi pi-refresh"
-                                @click="checkPaymentStatus"
-                                :loading="isChecking"
-                                class="p-button-primary mr-2"
-                            />
-                            <Button
-                                label="Voltar ao Checkout"
-                                icon="pi pi-arrow-left"
-                                @click="goToCheckout"
-                                class="p-button-outlined"
-                            />
-                        </div>
+                    <div v-if="paymentTypeLabel" class="checkout-return__meta-row">
+                        <dt>Produto</dt>
+                        <dd>{{ paymentTypeLabel }}</dd>
                     </div>
+                </dl>
 
-                    <!-- Erro ao Verificar Status -->
-                    <div v-else-if="error" class="error-section">
-                        <div class="text-center">
-                            <div class="error-icon">
-                                <i class="pi pi-exclamation-triangle"></i>
-                            </div>
-                            <h2 class="error-title">Erro ao Verificar Pagamento</h2>
-                            <p class="error-subtitle">{{ error }}</p>
-                        </div>
+                <p class="checkout-return__hint">Redirecionando automaticamente…</p>
+            </div>
 
-                        <!-- Ações -->
-                        <div class="actions-section">
-                            <Button
-                                label="Tentar Novamente"
-                                icon="pi pi-refresh"
-                                @click="checkPaymentStatus"
-                                class="p-button-primary mr-2"
-                            />
-                            <Button
-                                label="Voltar ao Checkout"
-                                icon="pi pi-arrow-left"
-                                @click="goToCheckout"
-                                class="p-button-outlined"
-                            />
-                        </div>
+            <!-- Pendente -->
+            <div v-else-if="paymentStatus && !paymentStatus.paid" class="checkout-return__block" key="pending">
+                <div class="checkout-return__status-icon is-pending" aria-hidden="true">
+                    <i class="pi pi-hourglass"></i>
+                </div>
+                <h1 class="checkout-return__title">Ainda estamos confirmando</h1>
+                <p class="checkout-return__lead">
+                    O pagamento pode levar alguns minutos para aparecer. Você pode verificar de novo.
+                </p>
+
+                <dl v-if="displayAmount" class="checkout-return__meta">
+                    <div class="checkout-return__meta-row">
+                        <dt>Valor</dt>
+                        <dd>{{ displayAmount }}</dd>
                     </div>
+                </dl>
 
-                    <!-- Sem parâmetros de URL -->
-                    <div v-else class="no-params-section">
-                        <div class="text-center">
-                            <div class="info-icon">
-                                <i class="pi pi-info-circle"></i>
-                            </div>
-                            <h2 class="info-title">Página de Confirmação</h2>
-                            <p class="info-subtitle">
-                                Esta página é exibida após o processamento do pagamento.
-                            </p>
-                        </div>
+                <div class="checkout-return__actions">
+                    <button
+                        type="button"
+                        class="btn-primary"
+                        :disabled="isChecking"
+                        @click="checkPaymentStatus"
+                    >
+                        <i :class="isChecking ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"></i>
+                        Verificar novamente
+                    </button>
+                    <button type="button" class="btn-ghost" @click="goHome">
+                        Voltar ao início
+                    </button>
+                </div>
+            </div>
 
-                        <!-- Ações -->
-                        <div class="actions-section">
-                            <Button
-                                label="Ir para Checkout"
-                                icon="pi pi-shopping-cart"
-                                @click="goToCheckout"
-                                class="p-button-primary"
-                            />
-                        </div>
-                    </div>
+            <!-- Erro -->
+            <div v-else-if="error" class="checkout-return__block" key="error">
+                <div class="checkout-return__status-icon is-error" aria-hidden="true">
+                    <i class="pi pi-exclamation-circle"></i>
+                </div>
+                <h1 class="checkout-return__title">Não foi possível confirmar</h1>
+                <p class="checkout-return__lead">{{ error }}</p>
+
+                <div class="checkout-return__actions">
+                    <button
+                        type="button"
+                        class="btn-primary"
+                        :disabled="isChecking"
+                        @click="checkPaymentStatus"
+                    >
+                        <i :class="isChecking ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"></i>
+                        Tentar novamente
+                    </button>
+                    <button type="button" class="btn-ghost" @click="goHome">
+                        Voltar ao início
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sem params -->
+            <div v-else class="checkout-return__block" key="empty">
+                <div class="checkout-return__status-icon" aria-hidden="true">
+                    <i class="pi pi-sparkles"></i>
+                </div>
+                <h1 class="checkout-return__title">Confirmação de pagamento</h1>
+                <p class="checkout-return__lead">
+                    Esta página aparece depois que você finaliza um pagamento na InfinitePay.
+                </p>
+                <div class="checkout-return__actions">
+                    <button type="button" class="btn-primary" @click="goHome">
+                        Ir para o início
+                    </button>
                 </div>
             </div>
         </div>
@@ -124,13 +127,9 @@
 import { useCheckoutStore } from '@/stores/checkout';
 import { useAuthStore } from '@/stores/auth';
 import api from '@/axios/api';
-import Button from 'primevue/button';
 
 export default {
     name: 'CheckoutSuccessView',
-    components: {
-        Button
-    },
     setup() {
         const authStore = useAuthStore();
         return { authStore };
@@ -142,20 +141,32 @@ export default {
             error: '',
             paymentStatus: null,
             isPostPurchase: false,
-            isChatMediaPurchase: false
-        }
+            isChatMediaPurchase: false,
+        };
     },
     computed: {
         successSubtitle() {
             if (this.isChatMediaPurchase) {
-                return 'Pacote de mídia liberado. Redirecionando para o chat...';
+                return 'Seus envios de foto e vídeo no chat foram liberados.';
             }
             if (this.isPostPurchase) {
-                return 'Conteúdo liberado com sucesso. Redirecionando...';
+                return 'O conteúdo exclusivo já está disponível para você.';
             }
-            return 'Sua assinatura foi ativada com sucesso. Redirecionando...';
+            return 'Sua assinatura foi ativada. Bem-vinda de volta.';
         },
-        // Parâmetros da URL
+        paymentTypeLabel() {
+            if (this.isChatMediaPurchase) return 'Pacote de mídia do chat';
+            if (this.isPostPurchase) return 'Conteúdo exclusivo';
+            return 'Assinatura';
+        },
+        displayAmount() {
+            const cents = this.paymentStatus?.paid_amount || this.paymentStatus?.amount;
+            if (!cents) return null;
+            return this.formatCurrency(Number(cents) / 100);
+        },
+        hasDetails() {
+            return !!(this.displayAmount || this.paymentStatus?.capture_method);
+        },
         urlParams() {
             return {
                 capture_method: this.$route.query.capture_method,
@@ -163,34 +174,27 @@ export default {
                 transaction_nsu: this.$route.query.transaction_nsu,
                 slug: this.$route.query.slug,
                 order_nsu: this.$route.query.order_nsu,
-                receipt_url: this.$route.query.receipt_url
+                receipt_url: this.$route.query.receipt_url,
             };
-        }
+        },
     },
     methods: {
-        // Formatar moeda
         formatCurrency(value) {
             return new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
-                currency: 'BRL'
+                currency: 'BRL',
             }).format(value);
         },
-
-        // Obter nome do método de pagamento
         getPaymentMethodName(method) {
-        // a
             const methods = {
-                'credit_card': 'Cartão de Crédito',
-                'pix': 'PIX',
-                'boleto': 'Boleto'
+                credit_card: 'Cartão de crédito',
+                pix: 'PIX',
+                boleto: 'Boleto',
             };
             return methods[method] || method || 'Não informado';
         },
-
-        // Verificar status do pagamento
         async checkPaymentStatus() {
             if (!this.urlParams.order_nsu || !this.urlParams.transaction_nsu || !this.urlParams.slug) {
-                console.log('Parâmetros da URL incompletos:', this.urlParams);
                 this.isProcessing = false;
                 return;
             }
@@ -199,16 +203,9 @@ export default {
             this.error = '';
 
             try {
-                console.log('Iniciando processamento do checkout success com parâmetros:', this.urlParams);
-
-                // Primeiro: salvar dados no backend e consultar InfinitePay
-                console.log('Fazendo requisição para o backend...');
                 const backendResponse = await api.post('/assinaturas/processar-checkout-success', this.urlParams);
 
-                console.log('Resposta do backend:', backendResponse.data);
-
                 if (backendResponse.data.success) {
-                    // Usar os dados retornados pelo backend
                     const infinitePayData = backendResponse.data.infinitepay_response;
                     const assinaturaData = backendResponse.data.assinatura;
                     this.isPostPurchase = backendResponse.data.type === 'post_compra'
@@ -217,7 +214,6 @@ export default {
                     this.isChatMediaPurchase = backendResponse.data.type === 'chat_media'
                         || (this.urlParams.order_nsu || '').startsWith('chatmedia-');
 
-                    // Mapear dados para o formato esperado pelo componente
                     this.paymentStatus = {
                         paid: assinaturaData.status === 'aprovado',
                         amount: infinitePayData?.amount || (assinaturaData.paid_amount * 100) || 0,
@@ -229,17 +225,14 @@ export default {
                         order_nsu: assinaturaData.order_nsu || this.urlParams.order_nsu,
                     };
 
-                    if (this.isChatMediaPurchase && assinaturaData.status === 'aprovado') {
-                        setTimeout(() => this.$router.push('/messages'), 1000);
-                    }
-
-                    console.log('Status do pagamento processado:', this.paymentStatus);
-
                     if (this.paymentStatus.paid) {
-                        console.log('Pagamento confirmado com sucesso!');
+                        if (this.isChatMediaPurchase && typeof assinaturaData.media_credits === 'number') {
+                            const user = JSON.parse(localStorage.getItem('user') || '{}');
+                            user.chat_media_credits = assinaturaData.media_credits;
+                            localStorage.setItem('user', JSON.stringify(user));
+                        }
 
                         if (!this.isPostPurchase && !this.isChatMediaPurchase) {
-                            // Atualizar localStorage com assinatura ativa
                             const user = JSON.parse(localStorage.getItem('user') || '{}');
                             user.assinatura = true;
                             user.status_assinatura = 'aprovado';
@@ -247,54 +240,23 @@ export default {
                             localStorage.setItem('user', JSON.stringify(user));
                         }
 
-                        // Disparar atualização do auth store para forçar reatividade
                         this.authStore.triggerUpdate();
+                        useCheckoutStore().resetCheckout();
 
-                        // Atualizar store
-                        const checkoutStore = useCheckoutStore();
-                        checkoutStore.resetCheckout();
-
-                        if (!this.isChatMediaPurchase) {
-                            // Pequeno delay para garantir que as atualizações sejam processadas
-                            console.log('Redirecionando para página inicial em 1 segundo...');
-                            setTimeout(() => {
-                                this.$router.push('/home');
-                            }, 1000);
-                        }
-
+                        const destination = this.isChatMediaPurchase ? '/messages' : '/home';
+                        setTimeout(() => this.$router.push(destination), 2800);
                     } else {
-                        console.log('Pagamento ainda pendente ou não aprovado');
                         this.error = 'Pagamento ainda não foi confirmado pela InfinitePay. Tente novamente em alguns minutos.';
                     }
-
                 } else {
                     throw new Error(backendResponse.data.message || 'Erro ao processar dados do checkout');
                 }
-
             } catch (err) {
-                console.error('Erro ao verificar status do pagamento:', err);
-
                 if (err.response) {
-                    console.error('Erro na resposta da API:', {
-                        status: err.response.status,
-                        data: err.response.data,
-                        headers: err.response.headers
-                    });
-
-                    if (err.response.data?.infinitepay_error) {
-                        console.error('Erro específico da InfinitePay:', err.response.data.infinitepay_error);
-                    }
-
-                    if (err.response.data?.infinitepay_exception) {
-                        console.error('Exceção na InfinitePay:', err.response.data.infinitepay_exception);
-                    }
-
                     this.error = err.response.data?.message || err.response.data?.error || 'Erro na comunicação com o servidor';
                 } else if (err.request) {
-                    console.error('Erro na requisição (sem resposta):', err.request);
                     this.error = 'Erro de conexão com o servidor';
                 } else {
-                    console.error('Erro geral:', err.message);
                     this.error = err.message;
                 }
             } finally {
@@ -302,265 +264,332 @@ export default {
                 this.isChecking = false;
             }
         },
-
-        // Navegação
         goHome() {
             this.$router.push('/home');
         },
-
         goToCheckout() {
             this.$router.push('/checkout');
         },
-
-        newPayment() {
-            const checkoutStore = useCheckoutStore();
-            checkoutStore.resetCheckout();
-            this.$router.push('/checkout');
-        }
     },
-
-    // Verificar automaticamente ao montar o componente
     mounted() {
-        // Simular delay para mostrar o estado de processamento
         setTimeout(() => {
             this.checkPaymentStatus();
-        }, 2000);
-    }
-}
+        }, 900);
+    },
+};
 </script>
 
 <style scoped>
-.success-container {
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;600&display=swap');
+
+.checkout-return {
+    --blush: #f5cee1;
+    --rose: #761c49;
+    --ink: #f8eef3;
+    --muted: rgba(248, 238, 243, 0.62);
+    --line: rgba(245, 206, 225, 0.22);
+    --bg: #0a0608;
+
+    position: relative;
+    isolation: isolate;
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem 1rem;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 2rem 1.25rem;
+    overflow: hidden;
+    background:
+        radial-gradient(120% 80% at 50% -10%, rgba(118, 28, 73, 0.45), transparent 55%),
+        radial-gradient(80% 60% at 100% 100%, rgba(245, 206, 225, 0.08), transparent 50%),
+        var(--bg);
+    color: var(--ink);
+    font-family: 'Manrope', system-ui, sans-serif;
 }
 
-.success-card {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    background: white;
-    padding: 3rem 2rem;
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* Seções de Status */
-.processing-section,
-.success-section,
-.pending-section,
-.error-section,
-.no-params-section {
-    text-align: center;
-}
-
-/* Spinner */
-.spinner-container {
-    display: inline-block;
-    width: 80px;
-    height: 80px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+.checkout-return__glow {
+    position: absolute;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
 }
 
-.spinner-icon {
-    font-size: 2rem;
-    color: #667eea;
+.checkout-return__glow--a {
+    width: min(420px, 70vw);
+    height: min(420px, 70vw);
+    top: 8%;
+    left: -8%;
+    background: rgba(118, 28, 73, 0.55);
+    animation: drift 12s ease-in-out infinite alternate;
 }
 
-/* Ícones de Status */
-.success-icon {
-    font-size: 5rem;
-    color: #4caf50;
-    margin-bottom: 1rem;
+.checkout-return__glow--b {
+    width: min(360px, 60vw);
+    height: min(360px, 60vw);
+    right: -6%;
+    bottom: 5%;
+    background: rgba(245, 206, 225, 0.18);
+    animation: drift 14s ease-in-out infinite alternate-reverse;
 }
 
-.pending-icon {
-    font-size: 5rem;
-    color: #ff9800;
-    margin-bottom: 1rem;
+.checkout-return__grain {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.12;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.error-icon {
-    font-size: 5rem;
-    color: #f44336;
-    margin-bottom: 1rem;
+.checkout-return__stage {
+    position: relative;
+    z-index: 1;
+    width: min(440px, 100%);
+    text-align: center;
+    animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.info-icon {
-    font-size: 5rem;
-    color: #2196f3;
-    margin-bottom: 1rem;
-}
-
-/* Títulos */
-.success-title {
-    color: #2e7d32;
+.checkout-return__brand {
+    margin: 0 0 2.25rem;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    color: var(--blush);
 }
 
-.pending-title {
-    color: #e65100;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+.checkout-return__block {
+    animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.error-title {
-    color: #c62828;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+.checkout-return__title {
+    margin: 0 0 0.75rem;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(1.75rem, 5vw, 2.15rem);
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--ink);
 }
 
-.info-title {
-    color: #1565c0;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+.checkout-return__lead {
+    margin: 0 auto 1.75rem;
+    max-width: 28ch;
+    font-size: 0.98rem;
+    line-height: 1.55;
+    color: var(--muted);
+    font-weight: 400;
 }
 
-/* Subtítulos */
-.success-subtitle,
-.pending-subtitle,
-.error-subtitle,
-.info-subtitle {
-    color: #666;
-    font-size: 1.1rem;
-    margin-bottom: 2rem;
+.checkout-return__hint {
+    margin: 1.5rem 0 0;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(245, 206, 225, 0.55);
 }
 
-/* Detalhes do Pagamento */
-.payment-details {
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 1.5rem;
-    margin: 2rem 0;
+.checkout-return__pulse {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+}
+
+.checkout-return__pulse span {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--blush);
+    animation: breathe 1.4s ease-in-out infinite;
+}
+
+.checkout-return__mark {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.35rem;
+}
+
+.checkout-return__check {
+    width: 72px;
+    height: 72px;
+}
+
+.checkout-return__check circle {
+    stroke: rgba(245, 206, 225, 0.35);
+    stroke-width: 1.5;
+    animation: draw-circle 0.6s ease forwards;
+}
+
+.checkout-return__check path {
+    stroke: var(--blush);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: draw-check 0.45s 0.35s ease forwards;
+}
+
+.checkout-return__status-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.35rem;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    color: var(--blush);
+    font-size: 1.5rem;
+}
+
+.checkout-return__status-icon.is-pending {
+    color: #f0c27a;
+}
+
+.checkout-return__status-icon.is-error {
+    color: #f0a0a8;
+}
+
+.checkout-return__meta {
+    margin: 0 auto 0.5rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    max-width: 320px;
     text-align: left;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
 }
 
-.detail-row {
+.checkout-return__meta-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.detail-row:last-child {
-    border-bottom: none;
-}
-
-.label {
-    font-weight: 600;
-    color: #495057;
-}
-
-.value {
-    color: #212529;
-    font-weight: 500;
-}
-
-.receipt-link {
-    color: #007bff !important;
-    text-decoration: none;
-}
-
-.receipt-link:hover {
-    text-decoration: underline !important;
-}
-
-/* Ações */
-.actions-section {
-    margin-top: 2rem;
-    display: flex;
-    justify-content: center;
     gap: 1rem;
+    padding: 0.45rem 0;
+    font-size: 0.9rem;
 }
 
-/* Debug */
-.debug-section .card {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
+.checkout-return__meta-row dt {
+    color: var(--muted);
+    font-weight: 400;
 }
 
-.debug-section h6 {
-    color: #6c757d;
-    margin-bottom: 1rem;
+.checkout-return__meta-row dd {
+    margin: 0;
+    color: var(--ink);
+    font-weight: 500;
+    text-align: right;
 }
 
-.debug-section pre {
-    background: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    padding: 1rem;
-    font-size: 0.875rem;
-    overflow-x: auto;
+.checkout-return__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+    align-items: stretch;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-    .success-container {
-        padding: 1rem 0.5rem;
-    }
-
-    .success-card {
-        padding: 2rem 1rem;
-    }
-
-    .payment-details {
-        padding: 1rem;
-    }
-
-    .actions-section {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .actions-section .p-button {
-        width: 100%;
-        max-width: 300px;
-    }
-}
-
-/* Animações */
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Cards */
-.card {
+.btn-primary,
+.btn-ghost {
+    appearance: none;
     border: none;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 999px;
+    padding: 0.85rem 1.25rem;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* Texto */
-.text-center {
-    text-align: center;
+.btn-primary {
+    background: var(--blush);
+    color: var(--rose);
 }
 
-.text-muted {
-    color: #6c757d;
+.btn-primary:hover:not(:disabled) {
+    background: var(--rose);
+    color: var(--blush);
+    transform: translateY(-1px);
 }
 
-.mt-3 {
-    margin-top: 1rem;
+.btn-primary:disabled {
+    opacity: 0.65;
+    cursor: wait;
 }
 
-.mt-4 {
-    margin-top: 1.5rem;
+.btn-ghost {
+    background: transparent;
+    color: var(--blush);
+    border: 1px solid var(--line);
 }
 
-.mr-2 {
-    margin-right: 0.5rem;
+.btn-ghost:hover {
+    border-color: var(--blush);
+    background: rgba(245, 206, 225, 0.06);
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes breathe {
+    0%, 100% {
+        transform: scale(0.85);
+        opacity: 0.55;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+}
+
+@keyframes drift {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        transform: translate3d(24px, -18px, 0);
+    }
+}
+
+@keyframes draw-circle {
+    from {
+        stroke-dasharray: 150;
+        stroke-dashoffset: 150;
+    }
+    to {
+        stroke-dasharray: 150;
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes draw-check {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .checkout-return {
+        padding: 1.5rem 1rem;
+    }
+
+    .checkout-return__brand {
+        margin-bottom: 1.75rem;
+    }
 }
 </style>
