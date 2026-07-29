@@ -16,7 +16,7 @@
             <div
                 v-if="isAdminUser"
                 class="list-pane"
-                :class="{ hidden-mobile: !!activeConversation }"
+                :class="{ 'hidden-mobile': Boolean(activeConversation) }"
             >
                 <ChatConversationList
                     :conversations="conversations"
@@ -28,7 +28,7 @@
 
             <div
                 class="thread-pane"
-                :class="{ hidden-mobile: isAdminUser && !activeConversation }"
+                :class="{ 'hidden-mobile': isAdminUser && !activeConversation }"
             >
                 <div v-if="!activeConversation" class="empty-thread">
                     <i class="pi pi-comments"></i>
