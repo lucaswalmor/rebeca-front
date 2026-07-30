@@ -57,7 +57,7 @@
             </div>
 
             <div v-if="selectedPrice" class="summary">
-                <div class="summary-line">
+                <div class="summary-line credits-highlight">
                     <span>Créditos neste pedido</span>
                     <strong>{{ totalCredits }}</strong>
                 </div>
@@ -313,6 +313,19 @@ export default {
     justify-content: space-between;
     margin-bottom: 0.4rem;
     color: #bbb;
+
+    &.credits-highlight {
+        color: #f5cee1;
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-bottom: 0.65rem;
+
+        strong {
+            color: #f5cee1;
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+    }
 
     &.total {
         color: #fff;
