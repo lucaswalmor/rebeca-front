@@ -75,71 +75,70 @@
                         <td>{{ item.vencimento_formatado || '—' }}</td>
                         <td>
                             <div class="acoes">
-                                <Botao
-                                    v-if="item.has_active_subscription"
-                                    texto="Revogar"
-                                    tema="laranja"
-                                    tipo="contorno"
-                                    tamanho="pequeno"
-                                    :carregando="busyId === item.id && busyAction === 'revogar'"
-                                    :desabilitado="busyId === item.id"
-                                    @click="confirmarRevogar(item)"
-                                />
-                                <Botao
-                                    v-if="!item.chat_blocked"
-                                    texto="Bloquear chat"
-                                    tema="roxo"
-                                    tipo="contorno"
-                                    tamanho="pequeno"
-                                    :carregando="busyId === item.id && busyAction === 'bloquear-chat'"
-                                    :desabilitado="busyId === item.id"
-                                    @click="toggleChatBlock(item, true)"
-                                />
-                                <Botao
-                                    v-else
-                                    texto="Liberar chat"
-                                    tema="roxo"
-                                    tipo="contorno"
-                                    tamanho="pequeno"
-                                    :carregando="busyId === item.id && busyAction === 'desbloquear-chat'"
-                                    :desabilitado="busyId === item.id"
-                                    @click="toggleChatBlock(item, false)"
-                                />
-                                <Botao
-                                    v-if="!item.is_blocked"
-                                    texto="Bloquear"
-                                    tema="vermelho"
-                                    tipo="contorno"
-                                    tamanho="pequeno"
-                                    :carregando="busyId === item.id && busyAction === 'bloquear'"
-                                    :desabilitado="busyId === item.id"
-                                    @click="confirmarBloquear(item)"
-                                />
-                                <Botao
-                                    v-else
-                                    texto="Desbloquear"
-                                    tema="sucesso"
-                                    tipo="contorno"
-                                    tamanho="pequeno"
-                                    :carregando="busyId === item.id && busyAction === 'desbloquear'"
-                                    :desabilitado="busyId === item.id"
-                                    @click="desbloquear(item)"
-                                />
-                                <Botao
-                                    texto="Excluir"
-                                    tema="vermelho"
-                                    tipo="contorno"
-                                    tamanho="pequeno"
-                                    :carregando="busyId === item.id && busyAction === 'excluir'"
-                                    :desabilitado="busyId === item.id"
-                                    @click="confirmarExcluir(item)"
-                                />
+                                <button
+                                    type="button"
+                                    class="acoes-trigger"
+                                    title="Ações"
+                                    :disabled="busyId === item.id"
+                                    @click="abrirAcoes($event, item)"
+                                >
+                                    <i v-if="busyId === item.id" class="pi pi-spin pi-spinner"></i>
+                                    <i v-else class="pi pi-ellipsis-v"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+        <Popover ref="acoesPopover" class="acoes-popover">
+            <div v-if="menuItem" class="acoes-menu">
+                <button
+                    v-if="menuItem.has_active_subscription"
+                    type="button"
+                    class="acoes-item is-warn"
+                    @click="runFromMenu(() => confirmarRevogar(menuItem))"
+                >
+                    <i class="pi pi-times-circle"></i>
+                    <span>Revogar assinatura</span>
+                </button>
+                <button
+                    type="button"
+                    class="acoes-item"
+                    @click="runFromMenu(() => toggleChatBlock(menuItem, !menuItem.chat_blocked))"
+                >
+                    <i :class="menuItem.chat_blocked ? 'pi pi-lock-open' : 'pi pi-ban'"></i>
+                    <span>{{ menuItem.chat_blocked ? 'Liberar chat' : 'Bloquear chat' }}</span>
+                </button>
+                <button
+                    v-if="!menuItem.is_blocked"
+                    type="button"
+                    class="acoes-item is-danger"
+                    @click="runFromMenu(() => confirmarBloquear(menuItem))"
+                >
+                    <i class="pi pi-user-minus"></i>
+                    <span>Bloquear cliente</span>
+                </button>
+                <button
+                    v-else
+                    type="button"
+                    class="acoes-item is-ok"
+                    @click="runFromMenu(() => desbloquear(menuItem))"
+                >
+                    <i class="pi pi-user-plus"></i>
+                    <span>Desbloquear cliente</span>
+                </button>
+                <button
+                    type="button"
+                    class="acoes-item is-danger"
+                    @click="runFromMenu(() => confirmarExcluir(menuItem))"
+                >
+                    <i class="pi pi-trash"></i>
+                    <span>Excluir cliente</span>
+                </button>
+            </div>
+        </Popover>
 
         <div v-if="meta.last_page > 1" class="pager">
             <Botao
@@ -188,11 +187,12 @@
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Dialog from 'primevue/dialog';
+import Popover from 'primevue/popover';
 import Botao from '@/components/ui/Botao.vue';
 
 export default {
     name: 'AssinantesList',
-    components: { InputText, Select, Dialog, Botao },
+    components: { InputText, Select, Dialog, Popover, Botao },
     data() {
         return {
             search: '',
@@ -217,6 +217,7 @@ export default {
             confirmVisible: false,
             confirmItem: null,
             confirmAction: null,
+            menuItem: null,
         };
     },
     computed: {
@@ -301,6 +302,14 @@ export default {
             this.confirmItem = item;
             this.confirmAction = 'excluir';
             this.confirmVisible = true;
+        },
+        abrirAcoes(event, item) {
+            this.menuItem = item;
+            this.$refs.acoesPopover.toggle(event);
+        },
+        runFromMenu(fn) {
+            this.$refs.acoesPopover?.hide?.();
+            fn();
         },
         async executarConfirmacao() {
             const item = this.confirmItem;
@@ -535,8 +544,88 @@ export default {
 
 .acoes {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+    justify-content: flex-end;
+}
+
+.acoes-trigger {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #1a1a1a;
+    color: #ddd;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.acoes-trigger:hover:not(:disabled) {
+    background: #222;
+    border-color: #f5cee1;
+    color: #f5cee1;
+}
+
+.acoes-trigger:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.acoes-menu {
+    display: flex;
+    flex-direction: column;
+    min-width: 12.5rem;
+    padding: 0.25rem;
+}
+
+.acoes-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #e8e8e8;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.acoes-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.acoes-item i {
+    font-size: 0.9rem;
+    width: 1rem;
+    text-align: center;
+}
+
+.acoes-item.is-warn {
+    color: #fdba74;
+}
+
+.acoes-item.is-danger {
+    color: #fca5a5;
+}
+
+.acoes-item.is-ok {
+    color: #86efac;
+}
+
+:deep(.acoes-popover.p-popover) {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+:deep(.acoes-popover .p-popover-content) {
+    padding: 0.2rem;
 }
 
 .empty {
