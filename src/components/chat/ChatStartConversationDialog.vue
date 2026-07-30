@@ -38,11 +38,22 @@
                 <div class="user-meta">
                     <div class="name">{{ displayName(user) }}</div>
                     <div class="sub">
-                        <span v-if="user.has_active_subscription" class="ok">Assinatura ativa</span>
+                        <span v-if="user.chat_blocked" class="blocked">Chat bloqueado</span>
+                        <span v-else-if="user.has_active_subscription" class="ok">Assinatura ativa</span>
                         <span v-else class="warn">Sem assinatura ativa</span>
                         <span v-if="user.has_conversation"> · Já conversou</span>
                     </div>
                 </div>
+                <button
+                    type="button"
+                    class="block-chat-btn"
+                    :title="user.chat_blocked ? 'Desbloquear chat' : 'Bloquear chat'"
+                    :disabled="blockingId === user.id"
+                    @click.stop="toggleChatBlock(user)"
+                >
+                    <i v-if="blockingId === user.id" class="pi pi-spin pi-spinner"></i>
+                    <i v-else :class="user.chat_blocked ? 'pi pi-lock-open' : 'pi pi-ban'"></i>
+                </button>
                 <i v-if="startingId === user.id" class="pi pi-spin pi-spinner"></i>
                 <i v-else class="pi pi-comments"></i>
             </button>
@@ -75,6 +86,7 @@ export default {
             loading: false,
             loadingMore: false,
             startingId: null,
+            blockingId: null,
             searchTimer: null,
             defaultAvatar: 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png',
         };
@@ -165,6 +177,34 @@ export default {
                 this.startingId = null;
             }
         },
+        async toggleChatBlock(user) {
+            this.blockingId = user.id;
+            const block = !user.chat_blocked;
+            try {
+                const path = block ? 'bloquear-chat' : 'desbloquear-chat';
+                const { data } = await this.api.post(`/admin/assinantes/${user.id}/${path}`);
+                this.users = this.users.map((u) => (
+                    u.id === user.id
+                        ? { ...u, chat_blocked: data.data?.chat_blocked ?? block }
+                        : u
+                ));
+                this.$toast.add({
+                    severity: 'success',
+                    summary: block ? 'Chat bloqueado' : 'Chat liberado',
+                    detail: data.message,
+                    life: 3000,
+                });
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível atualizar o chat',
+                    life: 3500,
+                });
+            } finally {
+                this.blockingId = null;
+            }
+        },
     },
 };
 </script>
@@ -241,5 +281,33 @@ export default {
 
 .warn {
     color: #e8b86d;
+}
+
+.blocked {
+    color: #f87171;
+}
+
+.block-chat-btn {
+    appearance: none;
+    border: 1px solid #444;
+    background: #1a1a1a;
+    color: #f5cee1;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+
+    &:hover {
+        border-color: #f5cee1;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: wait;
+    }
 }
 </style>

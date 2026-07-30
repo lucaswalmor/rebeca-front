@@ -78,7 +78,12 @@
                         </div>
                     </div>
                     <div class="chat-list-bottom">
-                        <span class="preview">{{ previewText(item) }}</span>
+                        <span class="preview">
+                            <template v-if="item.chat_blocked || item.other_user?.chat_blocked">
+                                <i class="pi pi-ban preview-ban"></i> Chat bloqueado
+                            </template>
+                            <template v-else>{{ previewText(item) }}</template>
+                        </span>
                         <Badge v-if="item.unread_count > 0" :value="item.unread_count" severity="danger" />
                     </div>
                 </div>
@@ -166,7 +171,7 @@ export default {
         loading: { type: Boolean, default: false },
         showNewButton: { type: Boolean, default: false },
     },
-    emits: ['select', 'new-conversation', 'broadcast', 'deleted', 'cleared-all'],
+    emits: ['select', 'new-conversation', 'broadcast', 'deleted', 'cleared-all', 'updated'],
     data() {
         return {
             search: '',
@@ -190,7 +195,16 @@ export default {
             });
         },
         menuItems() {
+            const blocked = Boolean(
+                this.menuConversation?.chat_blocked
+                || this.menuConversation?.other_user?.chat_blocked
+            );
             return [
+                {
+                    label: blocked ? 'Desbloquear chat' : 'Bloquear chat',
+                    icon: blocked ? 'pi pi-lock-open' : 'pi pi-ban',
+                    command: () => this.toggleChatBlock(!blocked),
+                },
                 {
                     label: 'Excluir só para mim',
                     icon: 'pi pi-eye-slash',
@@ -255,6 +269,29 @@ export default {
             if (!this.menuConversation) return;
             this.confirmScope = scope;
             this.confirmVisible = true;
+        },
+        async toggleChatBlock(block) {
+            const conversation = this.menuConversation;
+            if (!conversation?.id) return;
+            try {
+                const path = block ? 'bloquear-chat' : 'desbloquear-chat';
+                const { data } = await this.api.post(`/chat/conversations/${conversation.id}/${path}`);
+                const updated = data.data || data;
+                this.$toast.add({
+                    severity: 'success',
+                    summary: block ? 'Chat bloqueado' : 'Chat liberado',
+                    detail: data.message || (block ? 'Cliente não pode mais enviar mensagens.' : 'Cliente pode enviar mensagens novamente.'),
+                    life: 3000,
+                });
+                this.$emit('updated', updated);
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível atualizar o bloqueio do chat',
+                    life: 3500,
+                });
+            }
         },
         async confirmDelete() {
             if (!this.menuConversation || !this.confirmScope) return;
@@ -437,6 +474,11 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.preview-ban {
+    margin-right: 0.25rem;
+    color: #f87171;
 }
 
 .confirm-text {

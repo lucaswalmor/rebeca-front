@@ -4,7 +4,7 @@
         <div class="container px-6 settings-content">
             <div class="row">
                 <div class="col-12 text-center text-white">
-                    <h3>Configurar Perfil</h3>
+                    <h3>Painel de Admin</h3>
                 </div>
             </div>
 
@@ -22,6 +22,14 @@
                                 >
                                     <i class="pi pi-user me-2"></i>
                                     <span>Editar Perfil</span>
+                                </div>
+                                <div
+                                    class="menu-item"
+                                    :class="{ 'menu-item-active': activeMenu === 'assinantes' }"
+                                    @click="activeMenu = 'assinantes'"
+                                >
+                                    <i class="pi pi-users me-2"></i>
+                                    <span>Assinantes</span>
                                 </div>
                                 <div
                                     class="menu-item"
@@ -80,6 +88,10 @@
                         </div>
                     </div>
 
+                    <div v-show="activeMenu === 'assinantes'">
+                        <AssinantesList />
+                    </div>
+
                     <div v-show="activeMenu === 'post'">
                         <CreatePostForm ref="createPostFormRef" @post-created="handlePostCreated" />
                     </div>
@@ -133,6 +145,7 @@ import SobreForm from '@/components/forms/profile/SobreForm.vue';
 import CreatePostForm from '@/components/forms/profile/CreatePostForm.vue';
 import ChatConfigForm from '@/components/forms/profile/ChatConfigForm.vue';
 import WelcomeMessageForm from '@/components/forms/profile/WelcomeMessageForm.vue';
+import AssinantesList from '@/components/forms/profile/AssinantesList.vue';
 import Divider from 'primevue/divider';
 import Botao from '@/components/ui/Botao.vue';
 import Card from 'primevue/card';
@@ -148,6 +161,7 @@ export default {
         CreatePostForm,
         ChatConfigForm,
         WelcomeMessageForm,
+        AssinantesList,
         Divider,
         Botao,
         Card,

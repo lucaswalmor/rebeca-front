@@ -11,12 +11,22 @@
             <div class="header-info">
                 <div class="header-name">{{ otherName }}</div>
                 <div class="header-status">
-                    <span v-if="typingUser">digitando...</span>
+                    <span v-if="chatBlocked" class="status-blocked">chat bloqueado</span>
+                    <span v-else-if="typingUser">digitando...</span>
                     <span v-else-if="otherUser?.is_online">online</span>
                     <span v-else>offline</span>
                 </div>
             </div>
             <div class="header-actions">
+                <button
+                    v-if="isAdminUser"
+                    type="button"
+                    class="icon-btn"
+                    :title="chatBlocked ? 'Desbloquear chat' : 'Bloquear chat'"
+                    @click="toggleChatBlock"
+                >
+                    <i :class="chatBlocked ? 'pi pi-lock-open' : 'pi pi-ban'"></i>
+                </button>
                 <button
                     v-if="!isAdminUser"
                     type="button"
@@ -207,7 +217,11 @@
             <button class="icon-btn" @click="cancelEdit"><i class="pi pi-times"></i></button>
         </div>
 
-        <div v-if="isRecording" class="chat-composer is-recording">
+        <div v-if="!isAdminUser && chatBlocked" class="chat-blocked-banner">
+            Seu chat está bloqueado. Você pode ler as mensagens, mas não pode enviar.
+        </div>
+
+        <div v-if="isRecording && canCompose" class="chat-composer is-recording">
             <ChatVoiceRecorder
                 :elapsed-ms="recordElapsedMs"
                 :max-seconds="audioMaxSeconds"
@@ -221,7 +235,7 @@
             />
         </div>
 
-        <div v-else class="chat-composer">
+        <div v-else-if="canCompose" class="chat-composer">
             <div class="composer-left">
                 <div class="composer-menu-wrap" ref="composerMenuWrap">
                     <button
@@ -511,6 +525,15 @@ export default {
         },
         otherUser() {
             return this.conversation?.other_user || null;
+        },
+        chatBlocked() {
+            return Boolean(
+                this.conversation?.chat_blocked
+                || this.otherUser?.chat_blocked
+            );
+        },
+        canCompose() {
+            return this.isAdminUser || !this.chatBlocked;
         },
         otherName() {
             const u = this.otherUser || {};
@@ -855,6 +878,29 @@ export default {
                     severity: 'error',
                     summary: 'Erro',
                     detail: e.response?.data?.message || 'Não foi possível limpar a conversa',
+                    life: 3500,
+                });
+            }
+        },
+        async toggleChatBlock() {
+            if (!this.isAdminUser || !this.conversationId) return;
+            const block = !this.chatBlocked;
+            try {
+                const path = block ? 'bloquear-chat' : 'desbloquear-chat';
+                const { data } = await this.api.post(`/chat/conversations/${this.conversationId}/${path}`);
+                const updated = data.data || data;
+                this.$toast.add({
+                    severity: 'success',
+                    summary: block ? 'Chat bloqueado' : 'Chat liberado',
+                    detail: data.message,
+                    life: 3000,
+                });
+                this.$emit('updated', updated);
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível atualizar o bloqueio do chat',
                     life: 3500,
                 });
             }
@@ -1464,6 +1510,20 @@ export default {
 .header-status {
     color: #f5cee1;
     font-size: 0.8rem;
+}
+
+.status-blocked {
+    color: #f87171;
+}
+
+.chat-blocked-banner {
+    flex-shrink: 0;
+    padding: 0.65rem 1rem;
+    background: rgba(127, 29, 29, 0.35);
+    border-bottom: 1px solid #7f1d1d;
+    color: #fecaca;
+    font-size: 0.85rem;
+    text-align: center;
 }
 
 .header-actions {

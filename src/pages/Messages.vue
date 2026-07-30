@@ -28,6 +28,7 @@
                     @broadcast="showBroadcastDialog = true"
                     @deleted="onConversationDeleted"
                     @cleared-all="onConversationsClearedAll"
+                    @updated="onConversationUpdated"
                 />
             </aside>
 
@@ -193,6 +194,15 @@ export default {
             await this.loadConversations();
             useChatStore().fetchUnread();
         },
+        onConversationUpdated(updated) {
+            if (!updated?.id) return;
+            this.conversations = this.conversations.map((c) => (
+                Number(c.id) === Number(updated.id) ? { ...c, ...updated } : c
+            ));
+            if (Number(this.activeConversation?.id) === Number(updated.id)) {
+                this.activeConversation = { ...this.activeConversation, ...updated };
+            }
+        },
         selectConversation(item) {
             this.activeConversation = item;
         },
@@ -206,7 +216,10 @@ export default {
                 await this.loadConversations();
             }
         },
-        async onThreadUpdated() {
+        async onThreadUpdated(updated) {
+            if (updated?.id) {
+                this.onConversationUpdated(updated);
+            }
             if (this.isAdminUser) {
                 await this.loadConversations();
             }
