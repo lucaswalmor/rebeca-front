@@ -51,75 +51,81 @@
                 v-for="msg in messages"
                 :key="msg.id"
                 class="msg-row"
-                :class="{ mine: isMine(msg) }"
+                :class="{
+                    mine: isMine(msg),
+                    'has-like': msg.likes_count > 0 || msg.liked_by_me,
+                }"
                 @contextmenu.prevent="openMenu($event, msg)"
             >
-                <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text' }">
-                    <div v-if="msg.reply_to" class="reply-quote" @click="scrollToMessage(msg.reply_to.id)">
-                        <strong>{{ msg.reply_to.user?.apelido || 'Mensagem' }}</strong>
-                        <span>{{ replyPreview(msg.reply_to) }}</span>
-                    </div>
-
-                    <div v-if="msg.type === 'image' && msg.media_url" class="bubble-media-wrap">
+                <div class="msg-cluster">
+                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text' }">
                         <button
                             type="button"
-                            class="bubble-media-btn"
-                            title="Ampliar foto"
-                            @click.stop="openImagePreview(msg.media_url)"
+                            class="bubble-menu-btn"
+                            title="Opções da mensagem"
+                            @click.stop="openMenu($event, msg)"
                         >
-                            <img
-                                :src="msg.media_url"
-                                alt="Foto do chat"
-                                class="bubble-media-img"
-                                loading="lazy"
-                            />
+                            <i class="pi pi-chevron-down"></i>
                         </button>
-                    </div>
-                    <div v-else-if="msg.type === 'video' && msg.media_url" class="bubble-media-wrap">
-                        <video
-                            :src="msg.media_url"
-                            controls
-                            playsinline
-                            preload="metadata"
-                            class="bubble-media-video"
-                        />
-                    </div>
-                    <div v-if="msg.body" class="bubble-text">{{ msg.body }}</div>
 
-                    <div class="bubble-meta">
-                        <div class="bubble-actions">
+                        <div v-if="msg.reply_to" class="reply-quote" @click="scrollToMessage(msg.reply_to.id)">
+                            <strong>{{ msg.reply_to.user?.apelido || 'Mensagem' }}</strong>
+                            <span>{{ replyPreview(msg.reply_to) }}</span>
+                        </div>
+
+                        <div v-if="msg.type === 'image' && msg.media_url" class="bubble-media-wrap">
                             <button
                                 type="button"
-                                class="meta-action"
-                                title="Responder"
-                                @click.stop="startReply(msg)"
+                                class="bubble-media-btn"
+                                title="Ampliar foto"
+                                @click.stop="openImagePreview(msg.media_url)"
                             >
-                                <i class="pi pi-reply"></i>
-                            </button>
-                            <button
-                                type="button"
-                                class="meta-action"
-                                title="Mais opções"
-                                @click.stop="openMenu($event, msg)"
-                            >
-                                <i class="pi pi-ellipsis-h"></i>
+                                <img
+                                    :src="msg.media_url"
+                                    alt="Foto do chat"
+                                    class="bubble-media-img"
+                                    loading="lazy"
+                                />
                             </button>
                         </div>
-                        <span v-if="msg.edited_at" class="edited">editada</span>
-                        <span class="time">{{ formatTime(msg.created_at) }}</span>
-                        <span v-if="isMine(msg)" class="ticks">
-                            <i v-if="msg.read_at" class="pi pi-check-circle read"></i>
-                            <i v-else-if="msg.delivered_at" class="pi pi-check"></i>
-                            <i v-else class="pi pi-check"></i>
-                        </span>
+                        <div v-else-if="msg.type === 'video' && msg.media_url" class="bubble-media-wrap">
+                            <video
+                                :src="msg.media_url"
+                                controls
+                                playsinline
+                                preload="metadata"
+                                class="bubble-media-video"
+                            />
+                        </div>
+                        <div v-if="msg.body" class="bubble-text">{{ msg.body }}</div>
+
+                        <div class="bubble-meta">
+                            <span v-if="msg.edited_at" class="edited">editada</span>
+                            <span class="time">{{ formatTime(msg.created_at) }}</span>
+                            <span v-if="isMine(msg)" class="ticks">
+                                <i v-if="msg.read_at" class="pi pi-check-circle read"></i>
+                                <i v-else-if="msg.delivered_at" class="pi pi-check"></i>
+                                <i v-else class="pi pi-check"></i>
+                            </span>
+                        </div>
                     </div>
 
                     <button
+                        type="button"
+                        class="side-reply-btn"
+                        title="Responder"
+                        @click.stop="startReply(msg)"
+                    >
+                        <i class="pi pi-reply"></i>
+                    </button>
+
+                    <button
                         v-if="msg.likes_count > 0 || msg.liked_by_me"
+                        type="button"
                         class="like-badge"
                         @click.stop="toggleLike(msg)"
                     >
-                        ❤️ {{ msg.likes_count || '' }}
+                        ❤️ <span v-if="msg.likes_count > 1">{{ msg.likes_count }}</span>
                     </button>
                 </div>
             </div>
@@ -848,6 +854,59 @@ export default {
     &.mine {
         justify-content: flex-end;
     }
+
+    &.has-like {
+        margin-bottom: 0.85rem;
+    }
+}
+
+.msg-cluster {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    max-width: min(88%, 480px);
+    min-width: 0;
+}
+
+.msg-row.mine .msg-cluster {
+    flex-direction: row-reverse;
+}
+
+.side-reply-btn {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 50%;
+    background: #1c1c1c;
+    color: #f5cee1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+
+    &:hover {
+        background: #761c49;
+        transform: scale(1.05);
+    }
+}
+
+.msg-row:hover .side-reply-btn,
+.msg-row:focus-within .side-reply-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (hover: none) {
+    .side-reply-btn {
+        opacity: 0.9;
+        pointer-events: auto;
+    }
 }
 
 .bubble-meta {
@@ -855,46 +914,20 @@ export default {
     justify-content: flex-end;
     align-items: center;
     gap: 0.35rem;
-    margin-top: 0.25rem;
-    padding: 0 0.25rem;
+    margin-top: 0.2rem;
+    padding: 0 0.2rem;
     font-size: 0.7rem;
     color: #bbb;
 }
 
-.bubble-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.15rem;
-    margin-right: auto;
-}
-
-.meta-action {
-    width: 1.45rem;
-    height: 1.45rem;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: #f5cee1;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.75;
-    padding: 0;
-
-    &:hover {
-        opacity: 1;
-        background: rgba(245, 206, 225, 0.12);
-    }
-}
-
 .bubble {
-    max-width: min(78%, 420px);
+    max-width: min(78vw, 420px);
     min-width: 0;
     background: #1f1f1f;
     color: #fff;
     border-radius: 12px 12px 12px 4px;
     padding: 0.55rem 0.7rem;
+    padding-top: 0.7rem;
     position: relative;
     box-sizing: border-box;
 
@@ -907,7 +940,46 @@ export default {
         width: min(72vw, 260px);
         max-width: min(72vw, 260px);
         padding: 0.3rem;
-        overflow: hidden;
+        padding-top: 0.55rem;
+        overflow: visible;
+    }
+}
+
+.bubble-menu-btn {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.25rem;
+    width: 1.45rem;
+    height: 1.45rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(245, 206, 225, 0.55);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    z-index: 3;
+    padding: 0;
+    font-size: 0.7rem;
+    transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.35);
+        color: #f5cee1;
+    }
+}
+
+.msg-row:hover .bubble-menu-btn,
+.msg-row:focus-within .bubble-menu-btn,
+.bubble:hover .bubble-menu-btn {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .bubble-menu-btn {
+        opacity: 0.7;
     }
 }
 
@@ -985,15 +1057,26 @@ export default {
 
 .like-badge {
     position: absolute;
-    bottom: -10px;
-    left: 8px;
-    border: none;
-    background: #121212;
+    bottom: -0.7rem;
+    left: 0.65rem;
+    z-index: 4;
+    border: 1px solid #2a2a2a;
+    background: #161616;
     color: #fff;
     border-radius: 999px;
-    padding: 0 6px;
-    font-size: 0.75rem;
+    padding: 0.15rem 0.45rem;
+    font-size: 0.78rem;
+    line-height: 1;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.msg-row.mine .like-badge {
+    left: auto;
+    right: 0.65rem;
 }
 
 .reply-bar {
