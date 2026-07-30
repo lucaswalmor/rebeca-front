@@ -14,8 +14,6 @@
             v-if="!isPaid && payload.payment_link"
             class="card-action pay"
             :href="payload.payment_link"
-            target="_blank"
-            rel="noopener noreferrer"
         >
             PAGUE AQUI
         </a>
