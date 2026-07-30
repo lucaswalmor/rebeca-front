@@ -54,6 +54,25 @@
                 :class="{ mine: isMine(msg) }"
                 @contextmenu.prevent="openMenu($event, msg)"
             >
+                <div class="msg-actions" :class="{ mine: isMine(msg) }">
+                    <button
+                        type="button"
+                        class="msg-action-btn"
+                        title="Responder"
+                        @click.stop="startReply(msg)"
+                    >
+                        <i class="pi pi-reply"></i>
+                    </button>
+                    <button
+                        type="button"
+                        class="msg-action-btn"
+                        title="Mais opções"
+                        @click.stop="openMenu($event, msg)"
+                    >
+                        <i class="pi pi-ellipsis-v"></i>
+                    </button>
+                </div>
+
                 <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text' }">
                     <div v-if="msg.reply_to" class="reply-quote" @click="scrollToMessage(msg.reply_to.id)">
                         <strong>{{ msg.reply_to.user?.apelido || 'Mensagem' }}</strong>
@@ -170,29 +189,29 @@
             :price="packagePrice"
         />
 
-        <Dialog
-            v-model:visible="showImagePreview"
-            modal
-            dismissableMask
-            :showHeader="false"
-            :style="{ width: 'min(96vw, 920px)' }"
-            contentClass="chat-image-preview-content"
-            @hide="previewImageUrl = null"
-        >
-            <img
-                v-if="previewImageUrl"
-                :src="previewImageUrl"
-                alt="Pré-visualização"
-                class="chat-image-preview-full"
-            />
-        </Dialog>
+        <Teleport to="body">
+            <div
+                v-if="showImagePreview && previewImageUrl"
+                class="chat-lightbox"
+                @click.self="closeImagePreview"
+                @keydown.esc="closeImagePreview"
+            >
+                <button type="button" class="chat-lightbox-close" title="Fechar" @click="closeImagePreview">
+                    <i class="pi pi-times"></i>
+                </button>
+                <img
+                    :src="previewImageUrl"
+                    alt="Pré-visualização"
+                    class="chat-lightbox-img"
+                />
+            </div>
+        </Teleport>
     </div>
 </template>
 
 <script>
 import Avatar from 'primevue/avatar';
 import InputText from 'primevue/inputtext';
-import Dialog from 'primevue/dialog';
 import Menu from 'primevue/menu';
 import EmojiPicker from '@/components/EmojiPicker.vue';
 import ChatGalleryDialog from './ChatGalleryDialog.vue';
@@ -206,7 +225,6 @@ export default {
     components: {
         Avatar,
         InputText,
-        Dialog,
         Menu,
         EmojiPicker,
         ChatGalleryDialog,
@@ -288,10 +306,7 @@ export default {
                 {
                     label: 'Responder',
                     icon: 'pi pi-reply',
-                    command: () => {
-                        this.replyingTo = msg;
-                        this.editingMessage = null;
-                    },
+                    command: () => this.startReply(msg),
                 },
             ];
             if (mine && msg.type === 'text') {
@@ -326,6 +341,7 @@ export default {
     beforeUnmount() {
         this.teardownChannel();
         this.stopPolling();
+        this.closeImagePreview();
         if (this.typingTimer) clearTimeout(this.typingTimer);
         if (this.whisperTimer) clearTimeout(this.whisperTimer);
     },
@@ -542,7 +558,15 @@ export default {
         onScroll() {},
         openMenu(event, msg) {
             this.menuMessage = msg;
-            this.$refs.msgMenu.toggle(event);
+            this.$nextTick(() => this.$refs.msgMenu.toggle(event));
+        },
+        startReply(msg) {
+            this.replyingTo = msg;
+            this.editingMessage = null;
+            this.$nextTick(() => {
+                const input = this.$el?.querySelector?.('.composer-input input, .composer-input');
+                if (input && typeof input.focus === 'function') input.focus();
+            });
         },
         insertEmoji(emoji) {
             this.draft += emoji;
@@ -714,6 +738,12 @@ export default {
             if (!url) return;
             this.previewImageUrl = url;
             this.showImagePreview = true;
+            document.body.style.overflow = 'hidden';
+        },
+        closeImagePreview() {
+            this.showImagePreview = false;
+            this.previewImageUrl = null;
+            document.body.style.overflow = '';
         },
     },
 };
@@ -811,6 +841,8 @@ export default {
 .msg-row {
     display: flex;
     justify-content: flex-start;
+    align-items: flex-end;
+    gap: 0.35rem;
     min-width: 0;
     max-width: 100%;
     width: 100%;
@@ -818,6 +850,35 @@ export default {
 
     &.mine {
         justify-content: flex-end;
+        flex-direction: row-reverse;
+    }
+}
+
+.msg-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    opacity: 1;
+    flex-shrink: 0;
+    padding-bottom: 0.15rem;
+}
+
+.msg-action-btn {
+    width: 1.85rem;
+    height: 1.85rem;
+    border: none;
+    border-radius: 50%;
+    background: #1a1a1a;
+    color: #f5cee1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+
+    &:hover {
+        background: #761c49;
+        color: #f5cee1;
     }
 }
 
@@ -999,6 +1060,51 @@ export default {
 </style>
 
 <style lang="scss">
+.chat-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    background: rgba(0, 0, 0, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.chat-lightbox-img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(98vw, 1400px);
+    max-height: 94vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.chat-lightbox-close {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 2.6rem;
+    height: 2.6rem;
+    border: none;
+    border-radius: 50%;
+    background: rgba(30, 30, 30, 0.9);
+    color: #f5cee1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    z-index: 12001;
+
+    &:hover {
+        background: #761c49;
+    }
+}
+
 .chat-image-preview-content {
     padding: 0.5rem !important;
     background: #0d0d0d !important;
