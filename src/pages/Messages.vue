@@ -216,6 +216,16 @@ export default {
     }
 }
 
+@media (max-width: 768px) {
+    .messages-page {
+        padding-bottom: 0;
+    }
+
+    .messages-shell {
+        height: calc(100dvh - 60px - env(safe-area-inset-bottom, 0px));
+    }
+}
+
 .list-pane,
 .thread-pane {
     min-width: 0;
