@@ -8,7 +8,6 @@
 import GlobalLoading from '@/components/GlobalLoading.vue';
 import Toast from 'primevue/toast';
 import api from '@/axios/api';
-import { chatLog } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 
 export default {
@@ -71,8 +70,7 @@ export default {
             if (!token) return;
             try {
                 await api.post('/chat/heartbeat', {}, { skipLoading: true });
-                chatLog('heartbeat ok');
-            } catch (e) {
+            } catch {
                 // silencioso
             }
         },

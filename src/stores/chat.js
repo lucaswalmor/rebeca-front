@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import api from '@/axios/api';
-import { getEcho, chatLog, chatWarn } from '@/utils/echo';
+import { getEcho } from '@/utils/echo';
 
 function currentUser() {
     try {
@@ -41,9 +41,8 @@ export const useChatStore = defineStore('chat', () => {
             unreadCount.value = data.unread_count || 0;
             mediaCredits.value = data.media_credits || 0;
             canAccessChat.value = !!data.can_access_chat;
-            chatLog('unread', data);
-        } catch (e) {
-            chatWarn('fetchUnread failed', e);
+        } catch {
+            // silencioso
         }
     }
 
@@ -120,7 +119,6 @@ export const useChatStore = defineStore('chat', () => {
 
         inboxChannel = echo.private(`chat.inbox.${user.id}`)
             .listen('.message.sent', (e) => {
-                chatLog('inbox message.sent', e?.message?.id);
                 handleIncomingMessage(e.message);
             })
             .listen('.conversation.updated', (e) => {
@@ -140,7 +138,6 @@ export const useChatStore = defineStore('chat', () => {
             });
 
         inboxChannelBound.value = true;
-        chatLog('inbox bound', user.id);
     }
 
     function reset() {

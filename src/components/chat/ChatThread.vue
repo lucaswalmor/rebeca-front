@@ -324,7 +324,7 @@ import ChatAudioBubble from './ChatAudioBubble.vue';
 import ChatVoiceRecorder from './ChatVoiceRecorder.vue';
 import ChatVideoCallCard from './ChatVideoCallCard.vue';
 import ChatVideoCallDialog from './ChatVideoCallDialog.vue';
-import { getEcho, chatLog, chatWarn, isEchoConnected } from '@/utils/echo';
+import { getEcho, isEchoConnected } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 import { isAdmin, currentUserId } from '@/utils/global';
 
@@ -574,7 +574,6 @@ export default {
         async pollMessages() {
             if (!this.conversationId || document.hidden) return;
             if (isEchoConnected()) return;
-            chatWarn('ws offline — poll fallback');
             try {
                 const { data } = await this.api.get(
                     `/chat/conversations/${this.conversationId}/messages`,
@@ -616,9 +615,7 @@ export default {
                 const { data } = await this.api.get(`/chat/conversations/${this.conversationId}/messages`);
                 const list = data.data || [];
                 this.messages = Array.isArray(list) ? list : [];
-                chatLog('messages loaded', this.messages.length);
             } catch (e) {
-                chatWarn('load messages failed', e);
                 if (e.response?.data?.requires_subscription) {
                     this.$emit('back');
                 }
@@ -639,16 +636,16 @@ export default {
                 this.wallpaperDesktop = data.wallpaper_desktop || null;
                 this.wallpaperMobile = data.wallpaper_mobile || null;
                 useChatStore().mediaCredits = this.mediaCredits;
-            } catch (e) {
-                chatWarn('package info failed', e);
+            } catch {
+                // silencioso
             }
         },
         teardownChannel() {
             if (this.channel && this.conversationId) {
                 try {
                     getEcho()?.leave(`chat.${this.conversationId}`);
-                } catch (e) {
-                    chatWarn('leave channel', e);
+                } catch {
+                    // ignore
                 }
             }
             this.channel = null;
@@ -660,7 +657,6 @@ export default {
 
             this.channel = echo.private(`chat.${this.conversationId}`)
                 .listen('.message.sent', (e) => {
-                    chatLog('event message.sent', e);
                     this.upsertMessage(e.message);
                     this.markRead();
                     this.$emit('updated');
@@ -694,8 +690,6 @@ export default {
                         this.typingUser = null;
                     }, 2000);
                 });
-
-            chatLog('subscribed chat.' + this.conversationId);
         },
         openClearMenu(event) {
             this.$refs.clearMenu.toggle(event);
@@ -744,8 +738,8 @@ export default {
             try {
                 await this.api.post(`/chat/conversations/${this.conversationId}/read`, {}, { skipLoading: true });
                 useChatStore().fetchUnread();
-            } catch (e) {
-                chatWarn('markRead failed', e);
+            } catch {
+                // silencioso
             }
         },
         scrollToBottom() {

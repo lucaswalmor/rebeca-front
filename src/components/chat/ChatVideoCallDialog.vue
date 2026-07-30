@@ -36,6 +36,7 @@
                         />
                         <label for="vc_valor">Valor</label>
                     </IftaLabel>
+                    <p class="hint">Mínimo R$ 1,01 (exigência da InfinitePay).</p>
                 </div>
                 <div class="field">
                     <IftaLabel>
@@ -139,6 +140,16 @@ export default {
                 return;
             }
 
+            if (valor <= 1) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Valor inválido',
+                    detail: 'O valor mínimo é R$ 1,01 (limite da InfinitePay).',
+                    life: 4000,
+                });
+                return;
+            }
+
             this.loading = true;
             try {
                 const payload = {
@@ -164,10 +175,12 @@ export default {
                     life: 3000,
                 });
             } catch (e) {
+                const errors = e.response?.data?.errors;
+                const validationMsg = errors?.valor?.[0];
                 this.$toast.add({
                     severity: 'error',
                     summary: 'Erro',
-                    detail: e.response?.data?.message || 'Não foi possível agendar a chamada',
+                    detail: validationMsg || e.response?.data?.message || 'Não foi possível agendar a chamada',
                     life: 4000,
                 });
             } finally {

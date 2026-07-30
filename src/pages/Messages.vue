@@ -70,7 +70,7 @@ import ChatStartConversationDialog from '@/components/chat/ChatStartConversation
 import Card from 'primevue/card';
 import Button from 'primevue/button';
 import { isAdmin, hasAssinaturaAtiva } from '@/utils/global';
-import { getEcho, chatLog, chatWarn } from '@/utils/echo';
+import { getEcho } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 
 export default {
@@ -130,9 +130,7 @@ export default {
             try {
                 const { data } = await this.api.get('/chat/conversations');
                 this.conversations = data.data || data || [];
-                chatLog('conversations', this.conversations.length);
             } catch (e) {
-                chatWarn('load conversations', e);
                 this.$toast.add({
                     severity: 'error',
                     summary: 'Erro',
@@ -159,7 +157,6 @@ export default {
             try {
                 const { data } = await this.api.post('/chat/conversations/open');
                 this.activeConversation = data.data || data;
-                chatLog('opened conversation', this.activeConversation?.id);
             } catch (e) {
                 if (e.response?.data?.requires_subscription) {
                     this.blocked = true;
