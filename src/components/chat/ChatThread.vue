@@ -18,6 +18,17 @@
             </div>
             <div class="header-actions">
                 <button
+                    v-if="!isAdminUser"
+                    type="button"
+                    class="presentinho-chip"
+                    title="Dar presentinho"
+                    @click="showPresentinhoDialog = true"
+                >
+                    <i class="pi pi-gift"></i>
+                    <span class="chip-sep" aria-hidden="true">|</span>
+                    <span>Presentinho</span>
+                </button>
+                <button
                     class="icon-btn"
                     title="Galeria"
                     @click="showGallery = true"
@@ -69,7 +80,7 @@
                 @contextmenu.prevent="openMenu($event, msg)"
             >
                 <div class="msg-cluster">
-                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text', audio: msg.type === 'audio', 'video-call': msg.type === 'video_call', presentinho: msg.type === 'presentinho', exclusive: msg.type === 'conteudo_exclusivo' }">
+                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text', audio: msg.type === 'audio', 'video-call': msg.type === 'video_call', presentinho: msg.type === 'presentinho' || msg.type === 'presentinho_offer', exclusive: msg.type === 'conteudo_exclusivo' }">
                         <button
                             type="button"
                             class="bubble-menu-btn"
@@ -264,14 +275,6 @@
                             >
                                 <i class="pi pi-paperclip"></i>
                                 <span>Enviar Imagem/vídeo</span>
-                            </button>
-                            <button
-                                type="button"
-                                class="composer-menu-item gift"
-                                @click="onComposerPresentinho"
-                            >
-                                <i class="pi pi-gift"></i>
-                                <span>Dar Presentinho</span>
                             </button>
                             <button
                                 type="button"
@@ -982,10 +985,6 @@ export default {
             this.showComposerMenu = false;
             this.showVideoCallDialog = true;
         },
-        onComposerPresentinho() {
-            this.showComposerMenu = false;
-            this.showPresentinhoDialog = true;
-        },
         onComposerExclusive() {
             this.showComposerMenu = false;
             this.showExclusiveDialog = true;
@@ -1471,6 +1470,95 @@ export default {
     display: flex;
     gap: 0.35rem;
     align-items: center;
+}
+
+.presentinho-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid rgba(245, 206, 225, 0.55);
+    background: linear-gradient(135deg, rgba(117, 28, 73, 0.55), rgba(245, 206, 225, 0.18));
+    color: #fce7f3;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(245, 206, 225, 0.18);
+    animation: chip-pulse 2.4s ease-in-out infinite;
+    white-space: nowrap;
+
+    i {
+        color: #f5cee1;
+        font-size: 0.85rem;
+    }
+
+    .chip-sep {
+        opacity: 0.55;
+        font-weight: 500;
+    }
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            110deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.22) 48%,
+            transparent 62%
+        );
+        transform: translateX(-120%);
+        animation: chip-shine 2.8s ease-in-out 0.4s infinite;
+        pointer-events: none;
+    }
+
+    &:hover {
+        border-color: #f5cee1;
+        background: linear-gradient(135deg, rgba(117, 28, 73, 0.75), rgba(245, 206, 225, 0.28));
+        box-shadow: 0 0 16px rgba(245, 206, 225, 0.32);
+    }
+}
+
+@keyframes chip-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 10px rgba(245, 206, 225, 0.15);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 18px rgba(245, 206, 225, 0.35);
+        transform: scale(1.03);
+    }
+}
+
+@keyframes chip-shine {
+    0%,
+    55% {
+        transform: translateX(-120%);
+    }
+    80%,
+    100% {
+        transform: translateX(120%);
+    }
+}
+
+@media (max-width: 420px) {
+    .presentinho-chip {
+        padding: 0.35rem 0.55rem;
+        font-size: 0.72rem;
+        gap: 0.28rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .presentinho-chip,
+    .presentinho-chip::before {
+        animation: none !important;
+    }
 }
 
 .icon-btn {

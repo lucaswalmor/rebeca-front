@@ -14,13 +14,13 @@
             <IftaLabel>
                 <InputText
                     id="gerar_pix_valor"
-                    v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ ####,##', 'R$ #####,##']"
+                    v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ #.###,##', 'R$ ##.###,##', 'R$ ###.###,##', 'R$ #.###.###,##']"
                     v-model="valorMasked"
                     class="w-full"
                 />
                 <label for="gerar_pix_valor">Valor</label>
             </IftaLabel>
-            <p class="hint">Mínimo R$ 1,01 · Máximo R$ 5.000,00</p>
+            <p class="hint">Mínimo R$ 1,01</p>
         </div>
 
         <template #footer>
@@ -73,11 +73,11 @@ export default {
         },
         async confirmar() {
             const valor = this.parseValor(this.valorMasked);
-            if (!valor || valor < 1.01 || valor > 5000) {
+            if (!valor || valor < 1.01) {
                 this.$toast.add({
                     severity: 'warn',
                     summary: 'Valor inválido',
-                    detail: 'Informe um valor entre R$ 1,01 e R$ 5.000,00.',
+                    detail: 'Informe um valor de no mínimo R$ 1,01.',
                     life: 3500,
                 });
                 return;

@@ -52,6 +52,55 @@
                             <h4>Dados Pessoais</h4>
                         </div>
 
+                        <div class="avatar-section mb-4">
+                            <div class="avatar-preview-wrap">
+                                <Avatar
+                                    :image="avatarPreview || userData.path_img_avatar || defaultAvatar"
+                                    shape="circle"
+                                    size="xlarge"
+                                    class="avatar-preview"
+                                />
+                            </div>
+                            <div class="avatar-actions">
+                                <p class="avatar-hint">
+                                    Esta foto aparece para a Beca na lista de conversas e no chat.
+                                </p>
+                                <input
+                                    ref="avatarInput"
+                                    type="file"
+                                    class="hidden-file"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    @change="onAvatarSelected"
+                                />
+                                <Button
+                                    label="Escolher foto"
+                                    icon="pi pi-camera"
+                                    size="small"
+                                    :loading="uploadingAvatar"
+                                    @click="$refs.avatarInput.click()"
+                                />
+                                <Button
+                                    v-if="selectedAvatarFile"
+                                    label="Salvar foto"
+                                    icon="pi pi-check"
+                                    size="small"
+                                    class="save-avatar-btn"
+                                    :loading="uploadingAvatar"
+                                    @click="saveAvatar"
+                                />
+                                <Button
+                                    v-if="selectedAvatarFile"
+                                    label="Cancelar"
+                                    icon="pi pi-times"
+                                    size="small"
+                                    severity="secondary"
+                                    text
+                                    :disabled="uploadingAvatar"
+                                    @click="cancelAvatarSelect"
+                                />
+                            </div>
+                        </div>
+
                         <!-- Nome Completo -->
                         <div class="col-md-12 mb-3">
                             <IftaLabel>
@@ -194,6 +243,7 @@ import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import Card from 'primevue/card';
+import Avatar from 'primevue/avatar';
 import { performLogout } from '@/utils/logout';
 
 export default {
@@ -208,17 +258,24 @@ export default {
         Column,
         Button,
         Badge,
-        Card
+        Card,
+        Avatar,
     },
     data() {
         return {
             activeMenu: 'dados',
             userData: {
+                id: null,
                 name: '',
                 email: '',
                 apelido: '',
-                telefone: ''
+                telefone: '',
+                path_img_avatar: null,
             },
+            defaultAvatar: 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png',
+            selectedAvatarFile: null,
+            avatarPreview: null,
+            uploadingAvatar: false,
             assinaturas: [],
             loading: false,
             showReciboDialog: false,
@@ -229,23 +286,41 @@ export default {
         await this.carregarDadosUsuario();
         await this.carregarAssinaturas();
     },
+    beforeUnmount() {
+        this.revokeAvatarPreview();
+    },
     methods: {
-        carregarDadosUsuario() {
+        async carregarDadosUsuario() {
             try {
-                // Usar dados já disponíveis no localStorage (vêm do login)
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 if (!user.id) {
                     this.$router.push('/home');
                     return;
                 }
 
-                // Concatenar nome + sobrenome e usar campos corretos
                 this.userData = {
+                    id: user.id,
                     name: user.nome && user.sobrenome ? `${user.nome} ${user.sobrenome}` : '',
                     email: user.email || '',
                     apelido: user.apelido || '',
-                    telefone: user.telefone || ''
+                    telefone: user.telefone || '',
+                    path_img_avatar: user.path_img_avatar || null,
                 };
+
+                // Atualiza avatar a partir da API (fonte da verdade)
+                try {
+                    const { data } = await this.api.get(`/users/${user.id}`, { skipLoading: true });
+                    const fresh = data.data || data;
+                    if (fresh?.path_img_avatar) {
+                        this.userData.path_img_avatar = fresh.path_img_avatar;
+                        localStorage.setItem('user', JSON.stringify({
+                            ...user,
+                            path_img_avatar: fresh.path_img_avatar,
+                        }));
+                    }
+                } catch {
+                    // mantém localStorage
+                }
             } catch (error) {
                 this.$toast.add({
                     severity: 'error',
@@ -254,11 +329,97 @@ export default {
                     life: 3000
                 });
                 this.userData = {
+                    id: null,
                     name: '',
                     email: '',
                     apelido: '',
-                    telefone: ''
+                    telefone: '',
+                    path_img_avatar: null,
                 };
+            }
+        },
+
+        revokeAvatarPreview() {
+            if (this.avatarPreview) {
+                URL.revokeObjectURL(this.avatarPreview);
+                this.avatarPreview = null;
+            }
+        },
+
+        onAvatarSelected(event) {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Arquivo inválido',
+                    detail: 'Selecione uma imagem (JPG, PNG, WEBP ou GIF).',
+                    life: 3000,
+                });
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Arquivo grande',
+                    detail: 'A foto deve ter no máximo 2MB.',
+                    life: 3000,
+                });
+                return;
+            }
+
+            this.revokeAvatarPreview();
+            this.selectedAvatarFile = file;
+            this.avatarPreview = URL.createObjectURL(file);
+        },
+
+        cancelAvatarSelect() {
+            this.selectedAvatarFile = null;
+            this.revokeAvatarPreview();
+        },
+
+        async saveAvatar() {
+            if (!this.selectedAvatarFile || !this.userData.id) return;
+
+            this.uploadingAvatar = true;
+            try {
+                const form = new FormData();
+                form.append('avatar', this.selectedAvatarFile);
+
+                const { data } = await this.api.post(
+                    `/users/${this.userData.id}/upload-avatar`,
+                    form,
+                    { headers: { 'Content-Type': 'multipart/form-data' } }
+                );
+
+                const url = data.url || data.data?.path_img_avatar;
+                this.userData.path_img_avatar = url;
+                this.cancelAvatarSelect();
+
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                localStorage.setItem('user', JSON.stringify({
+                    ...user,
+                    path_img_avatar: url,
+                }));
+
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Sucesso',
+                    detail: 'Foto de perfil atualizada!',
+                    life: 3000,
+                });
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível salvar a foto',
+                    life: 3500,
+                });
+            } finally {
+                this.uploadingAvatar = false;
             }
         },
 
@@ -373,10 +534,65 @@ export default {
     margin-top: 1.5rem;
 }
 
+.avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    padding: 1rem;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    background: #121212;
+}
+
+.avatar-preview-wrap {
+    flex-shrink: 0;
+}
+
+.avatar-preview {
+    width: 5.5rem !important;
+    height: 5.5rem !important;
+}
+
+.avatar-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.55rem;
+}
+
+.avatar-hint {
+    margin: 0;
+    color: #999;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    max-width: 22rem;
+}
+
+.hidden-file {
+    display: none;
+}
+
+.save-avatar-btn {
+    background: #f5cee1 !important;
+    border-color: #f5cee1 !important;
+    color: #761c49 !important;
+}
+
 @media (max-width: 768px) {
     .settings-content {
         margin-top: 0.75rem;
         padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .avatar-section {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .avatar-actions {
+        align-items: center;
     }
 }
 

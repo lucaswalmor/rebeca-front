@@ -17,19 +17,18 @@
                 Escolha um valor com carinho — cada gesto faz a diferença e ela vai ficar muito feliz.
             </p>
 
-            <div class="gift-amount">{{ formatPrice(valor) }}</div>
-
-            <Slider
-                v-model="valor"
-                :min="50"
-                :max="5000"
-                :step="20"
-                class="gift-slider w-full"
-            />
-
-            <div class="gift-range">
-                <span>R$ 50</span>
-                <span>R$ 5.000</span>
+            <div class="gift-input-wrap">
+                <IftaLabel>
+                    <InputText
+                        id="presentinho_valor"
+                        v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ #.###,##', 'R$ ##.###,##', 'R$ ###.###,##', 'R$ #.###.###,##']"
+                        v-model="valorMasked"
+                        class="w-full gift-input"
+                        inputmode="decimal"
+                    />
+                    <label for="presentinho_valor">Valor do presentinho</label>
+                </IftaLabel>
+                <p class="gift-hint">Mínimo R$ 1,01</p>
             </div>
         </div>
 
@@ -49,11 +48,12 @@
 <script>
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
-import Slider from 'primevue/slider';
+import InputText from 'primevue/inputtext';
+import IftaLabel from 'primevue/iftalabel';
 
 export default {
     name: 'ChatPresentinhoDialog',
-    components: { Dialog, Button, Slider },
+    components: { Dialog, Button, InputText, IftaLabel },
     props: {
         visible: Boolean,
         conversationId: { type: [Number, String], required: true },
@@ -62,27 +62,31 @@ export default {
     data() {
         return {
             loading: false,
-            valor: 50,
+            valorMasked: '',
         };
     },
     watch: {
         visible(val) {
-            if (val) this.valor = 50;
+            if (val) this.valorMasked = '';
         },
     },
     methods: {
-        formatPrice(value) {
-            return new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-            }).format(Number(value || 0));
+        parseValor(valorFormatado) {
+            if (!valorFormatado) return null;
+            const limpo = String(valorFormatado)
+                .replace(/R\$\s*/g, '')
+                .replace(/\./g, '')
+                .replace(',', '.');
+            const n = parseFloat(limpo);
+            return Number.isFinite(n) ? n : null;
         },
         async confirmar() {
-            if (this.valor < 50 || this.valor > 5000) {
+            const valor = this.parseValor(this.valorMasked);
+            if (!valor || valor < 1.01) {
                 this.$toast.add({
                     severity: 'warn',
                     summary: 'Valor inválido',
-                    detail: 'Escolha um valor entre R$ 50 e R$ 5.000.',
+                    detail: 'Informe um valor de no mínimo R$ 1,01.',
                     life: 3500,
                 });
                 return;
@@ -92,7 +96,7 @@ export default {
             try {
                 const { data } = await this.api.post(
                     `/chat/conversations/${this.conversationId}/presentinhos`,
-                    { valor: this.valor }
+                    { valor }
                 );
 
                 if (!data?.link) {
@@ -158,38 +162,29 @@ export default {
     max-width: 22rem;
 }
 
-.gift-amount {
-    margin-top: 0.35rem;
-    font-size: 1.85rem;
-    font-weight: 700;
-    color: #f5cee1;
-    letter-spacing: 0.02em;
-}
-
-.gift-slider {
-    margin-top: 0.5rem;
-}
-
-.gift-range {
+.gift-input-wrap {
     width: 100%;
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
+    margin-top: 0.35rem;
+    text-align: left;
+}
+
+.gift-input {
+    text-align: center;
+    font-size: 1.35rem !important;
+    font-weight: 700;
+    color: #f5cee1 !important;
+}
+
+.gift-hint {
+    margin: 0.45rem 0 0;
+    font-size: 0.78rem;
     color: #888;
+    text-align: center;
 }
 
 .confirm-btn {
     background: #f5cee1 !important;
     border-color: #f5cee1 !important;
     color: #761c49 !important;
-}
-
-:deep(.gift-slider .p-slider-range) {
-    background: #f5cee1;
-}
-
-:deep(.gift-slider .p-slider-handle) {
-    border-color: #f5cee1;
-    background: #f5cee1;
 }
 </style>

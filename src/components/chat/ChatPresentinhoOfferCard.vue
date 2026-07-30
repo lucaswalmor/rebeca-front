@@ -83,9 +83,11 @@ export default {
 
 <style scoped lang="scss">
 .offer-card {
-    min-width: 220px;
-    max-width: 290px;
-    padding: 1rem 1.05rem;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 210px;
+    max-width: 280px;
+    padding: 1.05rem 1rem 1rem;
     border-radius: 16px;
     border: 1px solid rgba(245, 206, 225, 0.55);
     background:
@@ -96,57 +98,72 @@ export default {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 0.35rem;
+    gap: 0.55rem;
 }
 
 .offer-icon {
-    width: 2.8rem;
-    height: 2.8rem;
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(145deg, #fce7f3, #f5cee1);
     color: #761c49;
-    font-size: 1.2rem;
-    margin-bottom: 0.2rem;
+    font-size: 1.15rem;
 }
 
 .offer-title {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
     font-weight: 700;
-    font-size: 0.8rem;
-    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #f9a8d4;
 }
 
 .offer-amount {
-    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0.15rem 0 0;
+    font-size: clamp(1.15rem, 4.5vw, 1.45rem);
     font-weight: 800;
+    line-height: 1.2;
     color: #fff;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .offer-text {
-    font-size: 0.86rem;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 0.84rem;
     line-height: 1.4;
     color: rgba(252, 231, 243, 0.9);
     max-width: 15rem;
 }
 
 .offer-btn {
-    margin-top: 0.55rem;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
     width: 100%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
     border: none;
-    border-radius: 10px;
-    padding: 0.65rem 0.85rem;
+    border-radius: 999px;
+    padding: 0.7rem 0.85rem;
     background: #f5cee1;
     color: #761c49;
     font-weight: 700;
     font-size: 0.9rem;
+    line-height: 1.2;
     cursor: pointer;
 
     &:hover:not(:disabled) {
@@ -160,8 +177,10 @@ export default {
 }
 
 .offer-admin-hint {
-    margin-top: 0.45rem;
+    flex-shrink: 0;
+    margin: 0.15rem 0 0;
     font-size: 0.75rem;
+    line-height: 1.3;
     color: #f9a8d4;
 }
 </style>
