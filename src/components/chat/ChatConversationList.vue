@@ -52,7 +52,7 @@
                                 title="Opções"
                                 @click.stop="openItemMenu($event, item)"
                             >
-                                <i class="pi pi-ellipsis-v"></i>
+                                <i class="pi pi-ellipsis-h"></i>
                             </button>
                         </div>
                     </div>
@@ -292,23 +292,28 @@ export default {
 
 .top-right {
     display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
     flex-shrink: 0;
 }
 
 .item-menu-btn {
-    width: 1.7rem;
-    height: 1.7rem;
+    width: auto;
+    min-width: 1.5rem;
+    height: 1.2rem;
     border: none;
-    border-radius: 50%;
+    border-radius: 4px;
     background: transparent;
     color: #f5cee1;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.75;
+    opacity: 0.7;
+    padding: 0 0.15rem;
+    font-size: 0.85rem;
+    line-height: 1;
 
     &:hover {
         opacity: 1;
