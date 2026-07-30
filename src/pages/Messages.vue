@@ -222,7 +222,7 @@ export default {
     }
 
     .messages-shell {
-        height: calc(100dvh - 60px - env(safe-area-inset-bottom, 0px));
+        height: calc(100dvh - 56px - 60px - env(safe-area-inset-bottom, 0px));
     }
 }
 

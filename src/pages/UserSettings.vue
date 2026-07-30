@@ -32,6 +32,13 @@
                                     <i class="pi pi-credit-card me-2"></i>
                                     <span>Minhas Assinaturas</span>
                                 </div>
+                                <div
+                                    class="menu-item menu-item-logout"
+                                    @click="handleLogout"
+                                >
+                                    <i class="pi pi-sign-out me-2"></i>
+                                    <span>Sair da conta</span>
+                                </div>
                             </div>
                         </template>
                     </Card>
@@ -187,6 +194,7 @@ import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import Card from 'primevue/card';
+import { performLogout } from '@/utils/logout';
 
 export default {
     name: 'UserSettings',
@@ -351,7 +359,11 @@ export default {
                 'semestral': 'Semestral'
             };
             return labels[tipo] || tipo;
-        }
+        },
+
+        async handleLogout() {
+            await performLogout({ toast: this.$toast, router: this.$router });
+        },
     }
 }
 </script>
@@ -390,6 +402,17 @@ export default {
         background-color: #1a1a1a;
         color: #f5cee1;
         border-left-color: #f5cee1;
+    }
+
+    &.menu-item-logout {
+        color: #ef4444;
+        margin-top: 0.5rem;
+        border-top: 1px solid #2a2a2a;
+
+        &:hover {
+            color: #f87171;
+            background-color: #1a1a1a;
+        }
     }
 
     i {

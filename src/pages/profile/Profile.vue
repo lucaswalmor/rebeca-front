@@ -39,6 +39,13 @@
                                     <i class="pi pi-comments me-2"></i>
                                     <span>Configurar chat</span>
                                 </div>
+                                <div
+                                    class="menu-item menu-item-logout"
+                                    @click="handleLogout"
+                                >
+                                    <i class="pi pi-sign-out me-2"></i>
+                                    <span>Sair da conta</span>
+                                </div>
                             </div>
                         </template>
                     </Card>
@@ -102,6 +109,7 @@ import ChatConfigForm from '@/components/forms/profile/ChatConfigForm.vue';
 import Divider from 'primevue/divider';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
+import { performLogout } from '@/utils/logout';
 
 export default {
     name: 'Profile',
@@ -293,6 +301,9 @@ export default {
                 life: 3000,
             });
         },
+        async handleLogout() {
+            await performLogout({ toast: this.$toast, router: this.$router });
+        },
     },
 };
 </script>
@@ -331,6 +342,17 @@ export default {
         background-color: #1a1a1a;
         color: #f5cee1;
         border-left-color: #f5cee1;
+    }
+
+    &.menu-item-logout {
+        color: #ef4444;
+        margin-top: 0.5rem;
+        border-top: 1px solid #2a2a2a;
+
+        &:hover {
+            color: #f87171;
+            background-color: #1a1a1a;
+        }
     }
 
     i {
