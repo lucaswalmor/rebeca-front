@@ -163,6 +163,7 @@ export default {
             if (m.type === 'video') return 'Vídeo';
             if (m.type === 'audio') return 'Áudio';
             if (m.type === 'video_call') return 'Chamada de vídeo';
+            if (m.type === 'presentinho') return 'Presentinho';
             return m.body || '';
         },
         formatTime(iso) {

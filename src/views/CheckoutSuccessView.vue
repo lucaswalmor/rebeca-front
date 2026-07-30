@@ -143,10 +143,14 @@ export default {
             isPostPurchase: false,
             isChatMediaPurchase: false,
             isVideoCallPurchase: false,
+            isPresentinhoPurchase: false,
         };
     },
     computed: {
         successSubtitle() {
+            if (this.isPresentinhoPurchase) {
+                return 'Seu presentinho foi confirmado. A Beca vai adorar!';
+            }
             if (this.isVideoCallPurchase) {
                 return 'Pagamento da chamada de vídeo confirmado. Veja os detalhes no chat.';
             }
@@ -159,6 +163,7 @@ export default {
             return 'Sua assinatura foi ativada. Bem-vinda de volta.';
         },
         paymentTypeLabel() {
+            if (this.isPresentinhoPurchase) return 'Presentinho';
             if (this.isVideoCallPurchase) return 'Chamada de vídeo';
             if (this.isChatMediaPurchase) return 'Pacote do chat';
             if (this.isPostPurchase) return 'Conteúdo exclusivo';
@@ -243,6 +248,9 @@ export default {
                     this.isVideoCallPurchase = backendResponse.data.type === 'video_call'
                         || (this.urlParams.order_nsu || '').startsWith('videocal-');
 
+                    this.isPresentinhoPurchase = backendResponse.data.type === 'presentinho'
+                        || (this.urlParams.order_nsu || '').startsWith('presentinho-');
+
                     this.paymentStatus = {
                         paid: assinaturaData.status === 'aprovado',
                         amount: infinitePayData?.amount || (assinaturaData.paid_amount * 100) || 0,
@@ -270,7 +278,7 @@ export default {
                             }
                         }
 
-                        if (!this.isPostPurchase && !this.isChatMediaPurchase && !this.isVideoCallPurchase) {
+                        if (!this.isPostPurchase && !this.isChatMediaPurchase && !this.isVideoCallPurchase && !this.isPresentinhoPurchase) {
                             const user = JSON.parse(localStorage.getItem('user') || '{}');
                             if (user.id) {
                                 user.assinatura = true;
@@ -283,7 +291,7 @@ export default {
                         this.authStore.triggerUpdate();
                         useCheckoutStore().resetCheckout();
 
-                        const destination = (this.isChatMediaPurchase || this.isVideoCallPurchase)
+                        const destination = (this.isChatMediaPurchase || this.isVideoCallPurchase || this.isPresentinhoPurchase)
                             ? '/messages'
                             : '/home';
                         setTimeout(() => this.$router.push(destination), 2800);

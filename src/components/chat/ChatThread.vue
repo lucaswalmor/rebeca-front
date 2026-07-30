@@ -69,7 +69,7 @@
                 @contextmenu.prevent="openMenu($event, msg)"
             >
                 <div class="msg-cluster">
-                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text', audio: msg.type === 'audio', 'video-call': msg.type === 'video_call' }">
+                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text', audio: msg.type === 'audio', 'video-call': msg.type === 'video_call', presentinho: msg.type === 'presentinho' }">
                         <button
                             type="button"
                             class="bubble-menu-btn"
@@ -118,6 +118,12 @@
                         <div v-else-if="msg.type === 'video_call'" class="bubble-media-wrap">
                             <ChatVideoCallCard
                                 :payload="parseVideoCallPayload(msg)"
+                                :mine="isMine(msg)"
+                            />
+                        </div>
+                        <div v-else-if="msg.type === 'presentinho'" class="bubble-media-wrap">
+                            <ChatPresentinhoCard
+                                :payload="parsePresentinhoPayload(msg)"
                                 :mine="isMine(msg)"
                             />
                         </div>
@@ -222,6 +228,14 @@
                 >
                     <i class="pi pi-paperclip"></i>
                 </button>
+                <button
+                    v-if="!isAdminUser"
+                    class="icon-btn gift-btn"
+                    title="Presentinho"
+                    @click="showPresentinhoDialog = true"
+                >
+                    <i class="pi pi-gift"></i>
+                </button>
                 <button class="icon-btn" title="Emoji" @click="showEmoji = !showEmoji">
                     <i class="pi pi-face-smile"></i>
                 </button>
@@ -292,6 +306,11 @@
             :conversation-id="conversationId"
             @created="onVideoCallCreated"
         />
+        <ChatPresentinhoDialog
+            v-if="!isAdminUser && conversationId"
+            v-model:visible="showPresentinhoDialog"
+            :conversation-id="conversationId"
+        />
 
         <Teleport to="body">
             <div
@@ -324,6 +343,8 @@ import ChatAudioBubble from './ChatAudioBubble.vue';
 import ChatVoiceRecorder from './ChatVoiceRecorder.vue';
 import ChatVideoCallCard from './ChatVideoCallCard.vue';
 import ChatVideoCallDialog from './ChatVideoCallDialog.vue';
+import ChatPresentinhoCard from './ChatPresentinhoCard.vue';
+import ChatPresentinhoDialog from './ChatPresentinhoDialog.vue';
 import { getEcho, isEchoConnected } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 import { isAdmin, currentUserId } from '@/utils/global';
@@ -341,6 +362,8 @@ export default {
         ChatVoiceRecorder,
         ChatVideoCallCard,
         ChatVideoCallDialog,
+        ChatPresentinhoCard,
+        ChatPresentinhoDialog,
     },
     props: {
         conversation: { type: Object, required: true },
@@ -358,6 +381,7 @@ export default {
             showUnlock: false,
             unlockPackage: 'media',
             showVideoCallDialog: false,
+            showPresentinhoDialog: false,
             showComposerMenu: false,
             showImagePreview: false,
             previewImageUrl: null,
@@ -519,9 +543,19 @@ export default {
             if (msg.type === 'video') return 'Vídeo';
             if (msg.type === 'audio') return 'Áudio';
             if (msg.type === 'video_call') return 'Chamada de vídeo';
+            if (msg.type === 'presentinho') return 'Presentinho';
             return msg.body || '';
         },
         parseVideoCallPayload(msg) {
+            if (!msg?.body) return {};
+            if (typeof msg.body === 'object') return msg.body;
+            try {
+                return JSON.parse(msg.body);
+            } catch (e) {
+                return {};
+            }
+        },
+        parsePresentinhoPayload(msg) {
             if (!msg?.body) return {};
             if (typeof msg.body === 'object') return msg.body;
             try {
@@ -1316,6 +1350,10 @@ export default {
     &:hover {
         background: #1a1a1a;
     }
+}
+
+.gift-btn {
+    color: #f9a8d4;
 }
 
 .credit-pill {
