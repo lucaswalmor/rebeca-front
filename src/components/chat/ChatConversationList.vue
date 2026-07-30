@@ -12,6 +12,14 @@
                 size="small"
                 @click="$emit('new-conversation')"
             />
+            <Button
+                v-if="showNewButton"
+                label="Mensagem em massa"
+                icon="pi pi-megaphone"
+                class="w-full broadcast-btn"
+                size="small"
+                @click="$emit('broadcast')"
+            />
             <InputText
                 v-model="search"
                 placeholder="Pesquisar conversas..."
@@ -104,7 +112,7 @@ export default {
         loading: { type: Boolean, default: false },
         showNewButton: { type: Boolean, default: false },
     },
-    emits: ['select', 'new-conversation', 'deleted'],
+    emits: ['select', 'new-conversation', 'broadcast', 'deleted'],
     data() {
         return {
             search: '',
@@ -251,6 +259,12 @@ export default {
     background: #f5cee1 !important;
     border-color: #f5cee1 !important;
     color: #761c49 !important;
+}
+
+.broadcast-btn {
+    background: #7c3aed !important;
+    border-color: #7c3aed !important;
+    color: #fff !important;
 }
 
 .search-input {

@@ -25,6 +25,7 @@
                     :show-new-button="true"
                     @select="selectConversation"
                     @new-conversation="showStartDialog = true"
+                    @broadcast="showBroadcastDialog = true"
                     @deleted="onConversationDeleted"
                 />
             </aside>
@@ -59,6 +60,11 @@
             v-model:visible="showStartDialog"
             @started="onConversationStarted"
         />
+        <ChatBroadcastDialog
+            v-if="isAdminUser"
+            v-model:visible="showBroadcastDialog"
+            @sent="onBroadcastSent"
+        />
     </div>
 </template>
 
@@ -67,6 +73,7 @@ import Header from '@/components/Header.vue';
 import ChatConversationList from '@/components/chat/ChatConversationList.vue';
 import ChatThread from '@/components/chat/ChatThread.vue';
 import ChatStartConversationDialog from '@/components/chat/ChatStartConversationDialog.vue';
+import ChatBroadcastDialog from '@/components/chat/ChatBroadcastDialog.vue';
 import Card from 'primevue/card';
 import Button from 'primevue/button';
 import { isAdmin, hasAssinaturaAtiva } from '@/utils/global';
@@ -80,6 +87,7 @@ export default {
         ChatConversationList,
         ChatThread,
         ChatStartConversationDialog,
+        ChatBroadcastDialog,
         Card,
         Button,
     },
@@ -90,6 +98,7 @@ export default {
             loadingList: false,
             blocked: false,
             showStartDialog: false,
+            showBroadcastDialog: false,
         };
     },
     computed: {
@@ -184,6 +193,11 @@ export default {
             await this.loadConversations();
             const found = this.conversations.find((c) => c.id === conversation.id);
             this.activeConversation = found || conversation;
+        },
+        async onBroadcastSent() {
+            if (this.isAdminUser) {
+                await this.loadConversations();
+            }
         },
         async onThreadUpdated() {
             if (this.isAdminUser) {
