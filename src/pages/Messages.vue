@@ -112,14 +112,16 @@ export default {
         }
     },
     beforeUnmount() {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (user.id) {
-            try {
-                getEcho()?.leave(`chat.inbox.${user.id}`);
-            } catch (e) {
-                chatWarn('leave inbox', e);
-            }
-        }
+        // Não sai do canal inbox aqui — ele precisa ficar ativo nas outras telas (badge/toast)
+        useChatStore().setActiveConversation(null);
+    },
+    watch: {
+        activeConversation: {
+            immediate: true,
+            handler(val) {
+                useChatStore().setActiveConversation(val?.id || null);
+            },
+        },
     },
     methods: {
         async loadConversations() {
@@ -146,6 +148,9 @@ export default {
             if (!echo || !user.id) return;
             echo.private(`chat.inbox.${user.id}`)
                 .listen('.conversation.updated', () => {
+                    this.loadConversations();
+                })
+                .listen('.message.sent', () => {
                     this.loadConversations();
                 });
         },

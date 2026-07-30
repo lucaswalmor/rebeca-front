@@ -54,25 +54,6 @@
                 :class="{ mine: isMine(msg) }"
                 @contextmenu.prevent="openMenu($event, msg)"
             >
-                <div class="msg-actions" :class="{ mine: isMine(msg) }">
-                    <button
-                        type="button"
-                        class="msg-action-btn"
-                        title="Responder"
-                        @click.stop="startReply(msg)"
-                    >
-                        <i class="pi pi-reply"></i>
-                    </button>
-                    <button
-                        type="button"
-                        class="msg-action-btn"
-                        title="Mais opções"
-                        @click.stop="openMenu($event, msg)"
-                    >
-                        <i class="pi pi-ellipsis-v"></i>
-                    </button>
-                </div>
-
                 <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text' }">
                     <div v-if="msg.reply_to" class="reply-quote" @click="scrollToMessage(msg.reply_to.id)">
                         <strong>{{ msg.reply_to.user?.apelido || 'Mensagem' }}</strong>
@@ -106,6 +87,24 @@
                     <div v-if="msg.body" class="bubble-text">{{ msg.body }}</div>
 
                     <div class="bubble-meta">
+                        <div class="bubble-actions">
+                            <button
+                                type="button"
+                                class="meta-action"
+                                title="Responder"
+                                @click.stop="startReply(msg)"
+                            >
+                                <i class="pi pi-reply"></i>
+                            </button>
+                            <button
+                                type="button"
+                                class="meta-action"
+                                title="Mais opções"
+                                @click.stop="openMenu($event, msg)"
+                            >
+                                <i class="pi pi-ellipsis-h"></i>
+                            </button>
+                        </div>
                         <span v-if="msg.edited_at" class="edited">editada</span>
                         <span class="time">{{ formatTime(msg.created_at) }}</span>
                         <span v-if="isMine(msg)" class="ticks">
@@ -841,8 +840,6 @@ export default {
 .msg-row {
     display: flex;
     justify-content: flex-start;
-    align-items: flex-end;
-    gap: 0.35rem;
     min-width: 0;
     max-width: 100%;
     width: 100%;
@@ -850,35 +847,44 @@ export default {
 
     &.mine {
         justify-content: flex-end;
-        flex-direction: row-reverse;
     }
 }
 
-.msg-actions {
+.bubble-meta {
     display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    opacity: 1;
-    flex-shrink: 0;
-    padding-bottom: 0.15rem;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+    padding: 0 0.25rem;
+    font-size: 0.7rem;
+    color: #bbb;
 }
 
-.msg-action-btn {
-    width: 1.85rem;
-    height: 1.85rem;
+.bubble-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-right: auto;
+}
+
+.meta-action {
+    width: 1.45rem;
+    height: 1.45rem;
     border: none;
     border-radius: 50%;
-    background: #1a1a1a;
+    background: transparent;
     color: #f5cee1;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    opacity: 0.75;
+    padding: 0;
 
     &:hover {
-        background: #761c49;
-        color: #f5cee1;
+        opacity: 1;
+        background: rgba(245, 206, 225, 0.12);
     }
 }
 
@@ -967,17 +973,6 @@ export default {
     object-fit: contain;
     border-radius: 10px;
     background: #000;
-}
-
-.bubble-meta {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.35rem;
-    align-items: center;
-    margin-top: 0.25rem;
-    padding: 0 0.25rem;
-    font-size: 0.7rem;
-    color: #bbb;
 }
 
 .edited {
