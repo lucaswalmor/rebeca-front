@@ -98,7 +98,7 @@
                     v-if="menuItem.has_active_subscription"
                     type="button"
                     class="acoes-item is-warn"
-                    @click="runFromMenu(() => confirmarRevogar(menuItem))"
+                    @click="pedirConfirmacao(menuItem, 'revogar')"
                 >
                     <i class="pi pi-times-circle"></i>
                     <span>Revogar assinatura</span>
@@ -106,7 +106,7 @@
                 <button
                     type="button"
                     class="acoes-item"
-                    @click="runFromMenu(() => toggleChatBlock(menuItem, !menuItem.chat_blocked))"
+                    @click="pedirConfirmacao(menuItem, menuItem.chat_blocked ? 'desbloquear-chat' : 'bloquear-chat')"
                 >
                     <i :class="menuItem.chat_blocked ? 'pi pi-lock-open' : 'pi pi-ban'"></i>
                     <span>{{ menuItem.chat_blocked ? 'Liberar chat' : 'Bloquear chat' }}</span>
@@ -115,7 +115,7 @@
                     v-if="!menuItem.is_blocked"
                     type="button"
                     class="acoes-item is-danger"
-                    @click="runFromMenu(() => confirmarBloquear(menuItem))"
+                    @click="pedirConfirmacao(menuItem, 'bloquear')"
                 >
                     <i class="pi pi-user-minus"></i>
                     <span>Bloquear cliente</span>
@@ -124,7 +124,7 @@
                     v-else
                     type="button"
                     class="acoes-item is-ok"
-                    @click="runFromMenu(() => desbloquear(menuItem))"
+                    @click="pedirConfirmacao(menuItem, 'desbloquear')"
                 >
                     <i class="pi pi-user-plus"></i>
                     <span>Desbloquear cliente</span>
@@ -132,7 +132,7 @@
                 <button
                     type="button"
                     class="acoes-item is-danger"
-                    @click="runFromMenu(() => confirmarExcluir(menuItem))"
+                    @click="pedirConfirmacao(menuItem, 'excluir')"
                 >
                     <i class="pi pi-trash"></i>
                     <span>Excluir cliente</span>
@@ -222,32 +222,45 @@ export default {
     },
     computed: {
         confirmTitle() {
-            if (this.confirmAction === 'revogar') return 'Revogar assinatura?';
-            if (this.confirmAction === 'bloquear') return 'Bloquear cliente?';
-            if (this.confirmAction === 'excluir') return 'Excluir cliente?';
-            return 'Confirmar';
+            const map = {
+                revogar: 'Revogar assinatura?',
+                'bloquear-chat': 'Bloquear chat?',
+                'desbloquear-chat': 'Liberar chat?',
+                bloquear: 'Bloquear cliente?',
+                desbloquear: 'Desbloquear cliente?',
+                excluir: 'Excluir cliente?',
+            };
+            return map[this.confirmAction] || 'Confirmar';
         },
         confirmMessage() {
             const nome = this.confirmItem?.nome || this.confirmItem?.email || 'este cliente';
-            if (this.confirmAction === 'revogar') {
-                return `A assinatura ativa de ${nome} será revogada imediatamente.`;
-            }
-            if (this.confirmAction === 'bloquear') {
-                return `${nome} não poderá mais entrar no sistema até ser desbloqueado.`;
-            }
-            if (this.confirmAction === 'excluir') {
-                return `${nome} será excluído permanentemente. Se houver assinatura ativa, ela será revogada antes.`;
-            }
-            return '';
+            const map = {
+                revogar: `A assinatura ativa de ${nome} será revogada imediatamente.`,
+                'bloquear-chat': `${nome} não poderá mais enviar mensagens no chat até ser liberado.`,
+                'desbloquear-chat': `${nome} poderá voltar a enviar mensagens no chat.`,
+                bloquear: `${nome} não poderá mais entrar no sistema até ser desbloqueado.`,
+                desbloquear: `${nome} poderá voltar a entrar no sistema.`,
+                excluir: `${nome} será excluído permanentemente. Se houver assinatura ativa, ela será revogada antes.`,
+            };
+            return map[this.confirmAction] || '';
         },
         confirmActionLabel() {
-            if (this.confirmAction === 'revogar') return 'Revogar';
-            if (this.confirmAction === 'bloquear') return 'Bloquear';
-            if (this.confirmAction === 'excluir') return 'Excluir';
-            return 'Confirmar';
+            const map = {
+                revogar: 'Revogar',
+                'bloquear-chat': 'Bloquear chat',
+                'desbloquear-chat': 'Liberar chat',
+                bloquear: 'Bloquear',
+                desbloquear: 'Desbloquear',
+                excluir: 'Excluir',
+            };
+            return map[this.confirmAction] || 'Confirmar';
         },
         confirmTema() {
             if (this.confirmAction === 'revogar') return 'laranja';
+            if (this.confirmAction === 'desbloquear' || this.confirmAction === 'desbloquear-chat') {
+                return 'sucesso';
+            }
+            if (this.confirmAction === 'bloquear-chat') return 'roxo';
             return 'vermelho';
         },
     },
@@ -288,28 +301,15 @@ export default {
                 this.loading = false;
             }
         },
-        confirmarRevogar(item) {
-            this.confirmItem = item;
-            this.confirmAction = 'revogar';
-            this.confirmVisible = true;
-        },
-        confirmarBloquear(item) {
-            this.confirmItem = item;
-            this.confirmAction = 'bloquear';
-            this.confirmVisible = true;
-        },
-        confirmarExcluir(item) {
-            this.confirmItem = item;
-            this.confirmAction = 'excluir';
-            this.confirmVisible = true;
-        },
         abrirAcoes(event, item) {
             this.menuItem = item;
             this.$refs.acoesPopover.toggle(event);
         },
-        runFromMenu(fn) {
+        pedirConfirmacao(item, action) {
             this.$refs.acoesPopover?.hide?.();
-            fn();
+            this.confirmItem = item;
+            this.confirmAction = action;
+            this.confirmVisible = true;
         },
         async executarConfirmacao() {
             const item = this.confirmItem;
@@ -323,10 +323,23 @@ export default {
                     const { data } = await this.api.post(`/admin/assinantes/${item.id}/revogar`);
                     this.upsertItem(data.data);
                     this.$toast.add({ severity: 'success', summary: 'Revogado', detail: data.message, life: 3000 });
+                } else if (action === 'bloquear-chat' || action === 'desbloquear-chat') {
+                    const { data } = await this.api.post(`/admin/assinantes/${item.id}/${action}`);
+                    this.upsertItem(data.data);
+                    this.$toast.add({
+                        severity: 'success',
+                        summary: action === 'bloquear-chat' ? 'Chat bloqueado' : 'Chat liberado',
+                        detail: data.message,
+                        life: 3000,
+                    });
                 } else if (action === 'bloquear') {
                     const { data } = await this.api.post(`/admin/assinantes/${item.id}/bloquear`);
                     this.upsertItem(data.data);
                     this.$toast.add({ severity: 'success', summary: 'Bloqueado', detail: data.message, life: 3000 });
+                } else if (action === 'desbloquear') {
+                    const { data } = await this.api.post(`/admin/assinantes/${item.id}/desbloquear`);
+                    this.upsertItem(data.data);
+                    this.$toast.add({ severity: 'success', summary: 'Desbloqueado', detail: data.message, life: 3000 });
                 } else if (action === 'excluir') {
                     const { data } = await this.api.delete(`/admin/assinantes/${item.id}`);
                     this.items = this.items.filter((i) => i.id !== item.id);
@@ -338,50 +351,6 @@ export default {
                     severity: 'error',
                     summary: 'Erro',
                     detail: e.response?.data?.message || 'Não foi possível concluir a ação',
-                    life: 3500,
-                });
-            } finally {
-                this.busyId = null;
-                this.busyAction = null;
-            }
-        },
-        async desbloquear(item) {
-            this.busyId = item.id;
-            this.busyAction = 'desbloquear';
-            try {
-                const { data } = await this.api.post(`/admin/assinantes/${item.id}/desbloquear`);
-                this.upsertItem(data.data);
-                this.$toast.add({ severity: 'success', summary: 'Desbloqueado', detail: data.message, life: 3000 });
-            } catch (e) {
-                this.$toast.add({
-                    severity: 'error',
-                    summary: 'Erro',
-                    detail: e.response?.data?.message || 'Não foi possível desbloquear',
-                    life: 3500,
-                });
-            } finally {
-                this.busyId = null;
-                this.busyAction = null;
-            }
-        },
-        async toggleChatBlock(item, block) {
-            this.busyId = item.id;
-            this.busyAction = block ? 'bloquear-chat' : 'desbloquear-chat';
-            try {
-                const path = block ? 'bloquear-chat' : 'desbloquear-chat';
-                const { data } = await this.api.post(`/admin/assinantes/${item.id}/${path}`);
-                this.upsertItem(data.data);
-                this.$toast.add({
-                    severity: 'success',
-                    summary: block ? 'Chat bloqueado' : 'Chat liberado',
-                    detail: data.message,
-                    life: 3000,
-                });
-            } catch (e) {
-                this.$toast.add({
-                    severity: 'error',
-                    summary: 'Erro',
-                    detail: e.response?.data?.message || 'Não foi possível atualizar o chat',
                     life: 3500,
                 });
             } finally {
@@ -572,62 +541,6 @@ export default {
     cursor: not-allowed;
 }
 
-.acoes-menu {
-    display: flex;
-    flex-direction: column;
-    min-width: 12.5rem;
-    padding: 0.25rem;
-}
-
-.acoes-item {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    width: 100%;
-    padding: 0.55rem 0.7rem;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: #e8e8e8;
-    font-size: 0.875rem;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.12s ease;
-}
-
-.acoes-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.acoes-item i {
-    font-size: 0.9rem;
-    width: 1rem;
-    text-align: center;
-}
-
-.acoes-item.is-warn {
-    color: #fdba74;
-}
-
-.acoes-item.is-danger {
-    color: #fca5a5;
-}
-
-.acoes-item.is-ok {
-    color: #86efac;
-}
-
-:deep(.acoes-popover.p-popover) {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-}
-
-:deep(.acoes-popover .p-popover-content) {
-    padding: 0.2rem;
-}
-
 .empty {
     text-align: center;
     padding: 2.5rem 1rem;
@@ -657,5 +570,72 @@ export default {
     .filters {
         grid-template-columns: 1fr;
     }
+}
+</style>
+
+<style lang="scss">
+/* Popover sobe para o body — precisa de estilo não-scoped */
+.acoes-popover.p-popover {
+    --p-popover-background: #1a1a1a;
+    --p-popover-color: #e8e8e8;
+    --p-popover-border-color: #333333;
+    --p-popover-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+
+    background: #1a1a1a;
+    color: #e8e8e8;
+    border: 1px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+.acoes-popover.p-popover .p-popover-content {
+    padding: 0.2rem;
+    background: #1a1a1a;
+    color: #e8e8e8;
+}
+
+.acoes-popover .acoes-menu {
+    display: flex;
+    flex-direction: column;
+    min-width: 12.5rem;
+    padding: 0.25rem;
+}
+
+.acoes-popover .acoes-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #e8e8e8;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.acoes-popover .acoes-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.acoes-popover .acoes-item i {
+    font-size: 0.9rem;
+    width: 1rem;
+    text-align: center;
+}
+
+.acoes-popover .acoes-item.is-warn {
+    color: #fdba74;
+}
+
+.acoes-popover .acoes-item.is-danger {
+    color: #fca5a5;
+}
+
+.acoes-popover .acoes-item.is-ok {
+    color: #86efac;
 }
 </style>
