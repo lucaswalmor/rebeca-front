@@ -47,15 +47,6 @@
             </IftaLabel>
         </div>
     </div>
-
-    <!-- Pacote de mídia do chat -->
-    <div class="col-md-12 mb-3">
-        <IftaLabel>
-            <InputText id="pacote_midia_chat" v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ ####,##']"
-                v-model="dados.pacote_midia_chat" class="w-full" size="small" />
-            <label for="pacote_midia_chat">Pacote chat (5 envios foto/vídeo)</label>
-        </IftaLabel>
-    </div>
 </template>
 
 <script>
@@ -78,7 +69,6 @@ export default {
                 desconto_semestral: 0,
                 valor_trimestral: 'R$ 0,00',
                 valor_semestral: 'R$ 0,00',
-                pacote_midia_chat: 'R$ 0,00',
             }
         }
     },

@@ -43,7 +43,16 @@
             </div>
         </div>
 
-        <div ref="messagesEl" class="chat-messages" @scroll="onScroll">
+        <div
+            ref="messagesEl"
+            class="chat-messages"
+            :class="{
+                'has-wallpaper-desktop': !!wallpaperDesktop,
+                'has-wallpaper-mobile': !!wallpaperMobile,
+            }"
+            :style="messagesStyle"
+            @scroll="onScroll"
+        >
             <div v-if="loading" class="center-msg">
                 <i class="pi pi-spin pi-spinner"></i>
             </div>
@@ -260,6 +269,8 @@ export default {
             mediaCredits: 0,
             creditsPerPack: 5,
             packagePrice: null,
+            wallpaperDesktop: null,
+            wallpaperMobile: null,
             channel: null,
             pollTimer: null,
             defaultAvatar: 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png',
@@ -278,6 +289,16 @@ export default {
         otherName() {
             const u = this.otherUser || {};
             return u.apelido || `${u.nome || ''} ${u.sobrenome || ''}`.trim() || 'Conversa';
+        },
+        messagesStyle() {
+            const style = {};
+            if (this.wallpaperDesktop) {
+                style['--chat-wallpaper-desktop'] = `url("${this.wallpaperDesktop}")`;
+            }
+            if (this.wallpaperMobile) {
+                style['--chat-wallpaper-mobile'] = `url("${this.wallpaperMobile}")`;
+            }
+            return style;
         },
         clearMenuItems() {
             const items = [
@@ -446,6 +467,8 @@ export default {
                 this.mediaCredits = data.media_credits || 0;
                 this.creditsPerPack = data.credits_per_pack || 5;
                 this.packagePrice = data.price;
+                this.wallpaperDesktop = data.wallpaper_desktop || null;
+                this.wallpaperMobile = data.wallpaper_mobile || null;
                 useChatStore().mediaCredits = this.mediaCredits;
             } catch (e) {
                 chatWarn('package info failed', e);
@@ -835,6 +858,27 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+    background-color: #0d0d0d;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.chat-messages.has-wallpaper-desktop {
+    background-image: var(--chat-wallpaper-desktop);
+}
+
+.chat-messages.has-wallpaper-mobile {
+    @media (max-width: 768px) {
+        background-image: var(--chat-wallpaper-mobile);
+    }
+}
+
+/* Se só tiver mobile, usa no mobile; no desktop fica sólido se não houver desktop */
+.chat-messages.has-wallpaper-mobile:not(.has-wallpaper-desktop) {
+    @media (max-width: 768px) {
+        background-image: var(--chat-wallpaper-mobile);
+    }
 }
 
 .center-msg {
