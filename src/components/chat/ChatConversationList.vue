@@ -162,6 +162,7 @@ export default {
             if (m.type === 'image') return 'Foto';
             if (m.type === 'video') return 'Vídeo';
             if (m.type === 'audio') return 'Áudio';
+            if (m.type === 'video_call') return 'Chamada de vídeo';
             return m.body || '';
         },
         formatTime(iso) {

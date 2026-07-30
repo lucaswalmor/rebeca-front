@@ -115,6 +115,12 @@
                                 :mine="isMine(msg)"
                             />
                         </div>
+                        <div v-else-if="msg.type === 'video_call'" class="bubble-media-wrap">
+                            <ChatVideoCallCard
+                                :payload="parseVideoCallPayload(msg)"
+                                :mine="isMine(msg)"
+                            />
+                        </div>
                         <div v-if="msg.body && msg.type === 'text'" class="bubble-text">{{ msg.body }}</div>
 
                         <div class="bubble-meta">
@@ -179,9 +185,23 @@
         </div>
 
         <div v-else class="chat-composer">
-            <button class="icon-btn" @click="showEmoji = !showEmoji">
-                <i class="pi pi-face-smile"></i>
-            </button>
+            <div class="composer-left">
+                <div class="speeddial-wrap">
+                    <SpeedDial
+                        :model="speedDialItems"
+                        direction="up"
+                        :transition-delay="40"
+                        show-icon="pi pi-plus"
+                        hide-icon="pi pi-times"
+                        class="composer-speeddial"
+                        button-class="composer-speeddial-btn"
+                    />
+                </div>
+                <button class="icon-btn" title="Emoji" @click="showEmoji = !showEmoji">
+                    <i class="pi pi-face-smile"></i>
+                </button>
+            </div>
+
             <input
                 ref="fileInput"
                 type="file"
@@ -189,20 +209,17 @@
                 accept="image/*,video/*"
                 @change="onFileSelected"
             />
-            <button
-                class="icon-btn"
-                title="Enviar mídia"
-                @click="onAttachClick"
-            >
-                <i class="pi pi-paperclip"></i>
-            </button>
-            <InputText
+
+            <textarea
+                ref="draftInput"
                 v-model="draft"
                 class="composer-input"
+                rows="1"
                 placeholder="Mensagem"
                 @keydown.enter.exact.prevent="sendText"
-                @input="onTyping"
+                @input="onDraftInput"
             />
+
             <button
                 v-if="hasDraft"
                 class="send-btn"
@@ -244,6 +261,12 @@
             :audio-price="audioPackagePrice"
             :initial-package="unlockPackage"
         />
+        <ChatVideoCallDialog
+            v-if="isAdminUser"
+            v-model:visible="showVideoCallDialog"
+            :conversation-id="conversationId"
+            @created="onVideoCallCreated"
+        />
 
         <Teleport to="body">
             <div
@@ -269,11 +292,14 @@
 import Avatar from 'primevue/avatar';
 import InputText from 'primevue/inputtext';
 import Menu from 'primevue/menu';
+import SpeedDial from 'primevue/speeddial';
 import EmojiPicker from '@/components/EmojiPicker.vue';
 import ChatGalleryDialog from './ChatGalleryDialog.vue';
 import ChatMediaUnlockDialog from './ChatMediaUnlockDialog.vue';
 import ChatAudioBubble from './ChatAudioBubble.vue';
 import ChatVoiceRecorder from './ChatVoiceRecorder.vue';
+import ChatVideoCallCard from './ChatVideoCallCard.vue';
+import ChatVideoCallDialog from './ChatVideoCallDialog.vue';
 import { getEcho, chatLog, chatWarn, isEchoConnected } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 import { isAdmin, currentUserId } from '@/utils/global';
@@ -284,11 +310,14 @@ export default {
         Avatar,
         InputText,
         Menu,
+        SpeedDial,
         EmojiPicker,
         ChatGalleryDialog,
         ChatMediaUnlockDialog,
         ChatAudioBubble,
         ChatVoiceRecorder,
+        ChatVideoCallCard,
+        ChatVideoCallDialog,
     },
     props: {
         conversation: { type: Object, required: true },
@@ -305,6 +334,7 @@ export default {
             showGallery: false,
             showUnlock: false,
             unlockPackage: 'media',
+            showVideoCallDialog: false,
             showImagePreview: false,
             previewImageUrl: null,
             replyingTo: null,
@@ -352,6 +382,25 @@ export default {
         },
         canSendRecording() {
             return this.recordElapsedMs >= 800 && !this.sending;
+        },
+        speedDialItems() {
+            const items = [
+                {
+                    label: 'Anexar',
+                    icon: 'pi pi-paperclip',
+                    command: () => this.onAttachClick(),
+                },
+            ];
+            if (this.isAdminUser) {
+                items.push({
+                    label: 'Chamada de vídeo',
+                    icon: 'pi pi-video',
+                    command: () => {
+                        this.showVideoCallDialog = true;
+                    },
+                });
+            }
+            return items;
         },
         otherUser() {
             return this.conversation?.other_user || null;
@@ -451,7 +500,33 @@ export default {
             if (msg.type === 'image') return 'Foto';
             if (msg.type === 'video') return 'Vídeo';
             if (msg.type === 'audio') return 'Áudio';
+            if (msg.type === 'video_call') return 'Chamada de vídeo';
             return msg.body || '';
+        },
+        parseVideoCallPayload(msg) {
+            if (!msg?.body) return {};
+            if (typeof msg.body === 'object') return msg.body;
+            try {
+                return JSON.parse(msg.body);
+            } catch (e) {
+                return {};
+            }
+        },
+        onDraftInput() {
+            this.onTyping();
+            this.$nextTick(this.autoResizeDraft);
+        },
+        autoResizeDraft() {
+            const el = this.$refs.draftInput;
+            if (!el) return;
+            el.style.height = 'auto';
+            const max = 140;
+            el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+        },
+        onVideoCallCreated(message) {
+            this.upsertMessage(message);
+            this.$emit('updated');
+            this.$nextTick(this.scrollToBottom);
         },
         formatTime(iso) {
             if (!iso) return '';
@@ -675,6 +750,7 @@ export default {
         insertEmoji(emoji) {
             this.draft += emoji;
             this.showEmoji = false;
+            this.$nextTick(this.autoResizeDraft);
         },
         onTyping() {
             if (!this.channel) return;
@@ -690,6 +766,7 @@ export default {
         cancelEdit() {
             this.editingMessage = null;
             this.draft = '';
+            this.$nextTick(this.autoResizeDraft);
         },
         async sendText() {
             const text = this.draft.trim();
@@ -729,6 +806,7 @@ export default {
                 this.draft = '';
                 this.replyingTo = null;
                 this.showEmoji = false;
+                this.$nextTick(this.autoResizeDraft);
                 this.$emit('updated');
                 this.$nextTick(this.scrollToBottom);
             } catch (e) {
@@ -1164,7 +1242,7 @@ export default {
     flex-direction: column;
     background: #0d0d0d;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     min-width: 0;
 }
 
@@ -1516,20 +1594,75 @@ export default {
 .chat-composer {
     display: flex;
     gap: 0.4rem;
-    align-items: center;
+    align-items: flex-end;
     padding: 0.65rem 0.75rem;
     background: #121212;
     border-top: 1px solid #2a2a2a;
     flex-shrink: 0;
+    position: relative;
+    overflow: visible;
+    z-index: 20;
 
     &.is-recording {
         padding-bottom: 1.35rem;
+        align-items: center;
+        z-index: 2;
     }
+}
+
+.composer-left {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.speeddial-wrap {
+    position: relative;
+    width: 2.4rem;
+    height: 2.4rem;
+}
+
+.composer-speeddial {
+    position: absolute !important;
+    left: 0;
+    bottom: 0;
+}
+
+:deep(.composer-speeddial-btn) {
+    width: 2.4rem !important;
+    height: 2.4rem !important;
+    background: transparent !important;
+    border: none !important;
+    color: #f5cee1 !important;
+    box-shadow: none !important;
+}
+
+:deep(.composer-speeddial .p-speeddial-action) {
+    background: #1f1f1f !important;
+    color: #f5cee1 !important;
+    border: 1px solid #333 !important;
 }
 
 .composer-input {
     flex: 1;
-    border-radius: 999px !important;
+    border-radius: 18px !important;
+    resize: none;
+    overflow-y: auto;
+    min-height: 2.4rem;
+    max-height: 140px;
+    padding: 0.55rem 0.9rem;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #fff;
+    font: inherit;
+    line-height: 1.35;
+
+    &:focus {
+        outline: none;
+        border-color: #f5cee1;
+    }
 }
 
 .send-btn,

@@ -142,12 +142,16 @@ export default {
             paymentStatus: null,
             isPostPurchase: false,
             isChatMediaPurchase: false,
+            isVideoCallPurchase: false,
         };
     },
     computed: {
         successSubtitle() {
+            if (this.isVideoCallPurchase) {
+                return 'Pagamento da chamada de vídeo confirmado. Veja os detalhes no chat.';
+            }
             if (this.isChatMediaPurchase) {
-                return 'Seus envios de foto e vídeo no chat foram liberados.';
+                return 'Seus envios de foto, vídeo ou áudio no chat foram liberados.';
             }
             if (this.isPostPurchase) {
                 return 'O conteúdo exclusivo já está disponível para você.';
@@ -155,7 +159,8 @@ export default {
             return 'Sua assinatura foi ativada. Bem-vinda de volta.';
         },
         paymentTypeLabel() {
-            if (this.isChatMediaPurchase) return 'Pacote de mídia do chat';
+            if (this.isVideoCallPurchase) return 'Chamada de vídeo';
+            if (this.isChatMediaPurchase) return 'Pacote do chat';
             if (this.isPostPurchase) return 'Conteúdo exclusivo';
             return 'Assinatura';
         },
@@ -215,6 +220,9 @@ export default {
                         || (this.urlParams.order_nsu || '').startsWith('chatmedia-')
                         || (this.urlParams.order_nsu || '').startsWith('chataudio-');
 
+                    this.isVideoCallPurchase = backendResponse.data.type === 'video_call'
+                        || (this.urlParams.order_nsu || '').startsWith('videocal-');
+
                     this.paymentStatus = {
                         paid: assinaturaData.status === 'aprovado',
                         amount: infinitePayData?.amount || (assinaturaData.paid_amount * 100) || 0,
@@ -238,7 +246,7 @@ export default {
                             localStorage.setItem('user', JSON.stringify(user));
                         }
 
-                        if (!this.isPostPurchase && !this.isChatMediaPurchase) {
+                        if (!this.isPostPurchase && !this.isChatMediaPurchase && !this.isVideoCallPurchase) {
                             const user = JSON.parse(localStorage.getItem('user') || '{}');
                             user.assinatura = true;
                             user.status_assinatura = 'aprovado';
@@ -249,7 +257,9 @@ export default {
                         this.authStore.triggerUpdate();
                         useCheckoutStore().resetCheckout();
 
-                        const destination = this.isChatMediaPurchase ? '/messages' : '/home';
+                        const destination = (this.isChatMediaPurchase || this.isVideoCallPurchase)
+                            ? '/messages'
+                            : '/home';
                         setTimeout(() => this.$router.push(destination), 2800);
                     } else {
                         this.error = 'Pagamento ainda não foi confirmado pela InfinitePay. Tente novamente em alguns minutos.';
