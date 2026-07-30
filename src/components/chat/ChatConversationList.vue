@@ -164,7 +164,9 @@ export default {
             if (m.type === 'audio') return 'Áudio';
             if (m.type === 'video_call') return 'Chamada de vídeo';
             if (m.type === 'presentinho') return 'Presentinho';
+            if (m.type === 'presentinho_offer') return 'Presentinho';
             if (m.type === 'conteudo_exclusivo') return 'Conteúdo exclusivo';
+            if (m.type === 'pix_key') return 'Chave Pix';
             return m.body || '';
         },
         formatTime(iso) {

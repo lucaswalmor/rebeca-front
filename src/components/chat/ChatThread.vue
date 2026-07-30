@@ -127,9 +127,23 @@
                                 :mine="isMine(msg)"
                             />
                         </div>
+                        <div v-else-if="msg.type === 'presentinho_offer'" class="bubble-media-wrap">
+                            <ChatPresentinhoOfferCard
+                                :payload="parsePresentinhoPayload(msg)"
+                                :message-id="msg.id"
+                                :conversation-id="conversationId"
+                                :mine="isMine(msg)"
+                            />
+                        </div>
                         <div v-else-if="msg.type === 'conteudo_exclusivo'" class="bubble-media-wrap">
                             <ChatConteudoExclusivoCard
                                 :payload="parseExclusivePayload(msg)"
+                                :mine="isMine(msg)"
+                            />
+                        </div>
+                        <div v-else-if="msg.type === 'pix_key'" class="bubble-media-wrap">
+                            <ChatPixKeyCard
+                                :payload="parsePixKeyPayload(msg)"
                                 :mine="isMine(msg)"
                             />
                         </div>
@@ -198,7 +212,7 @@
 
         <div v-else class="chat-composer">
             <div class="composer-left">
-                <div v-if="isAdminUser" class="composer-menu-wrap" ref="composerMenuWrap">
+                <div class="composer-menu-wrap" ref="composerMenuWrap">
                     <button
                         type="button"
                         class="icon-btn"
@@ -208,48 +222,68 @@
                         <i :class="showComposerMenu ? 'pi pi-times' : 'pi pi-plus'"></i>
                     </button>
                     <div v-if="showComposerMenu" class="composer-menu" role="menu">
-                        <button
-                            type="button"
-                            class="composer-menu-item"
-                            title="Anexar"
-                            @click="onComposerAttach"
-                        >
-                            <i class="pi pi-paperclip"></i>
-                        </button>
-                        <button
-                            type="button"
-                            class="composer-menu-item"
-                            title="Chamada de vídeo"
-                            @click="onComposerVideoCall"
-                        >
-                            <i class="pi pi-video"></i>
-                        </button>
+                        <template v-if="isAdminUser">
+                            <button
+                                type="button"
+                                class="composer-menu-item"
+                                @click="onComposerAttach"
+                            >
+                                <i class="pi pi-paperclip"></i>
+                                <span>Enviar Imagem/vídeo</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="composer-menu-item"
+                                @click="onComposerVideoCall"
+                            >
+                                <i class="pi pi-video"></i>
+                                <span>Chamada de vídeo</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="composer-menu-item pix"
+                                @click="onComposerPixKey"
+                            >
+                                <i class="pi pi-wallet"></i>
+                                <span>Enviar Chave Pix</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="composer-menu-item gerar-pix"
+                                @click="onComposerGerarPix"
+                            >
+                                <i class="pi pi-qrcode"></i>
+                                <span>Gerar Pix</span>
+                            </button>
+                        </template>
+                        <template v-else>
+                            <button
+                                type="button"
+                                class="composer-menu-item"
+                                @click="onComposerAttach"
+                            >
+                                <i class="pi pi-paperclip"></i>
+                                <span>Enviar Imagem/vídeo</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="composer-menu-item gift"
+                                @click="onComposerPresentinho"
+                            >
+                                <i class="pi pi-gift"></i>
+                                <span>Dar Presentinho</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="composer-menu-item exclusive"
+                                @click="onComposerExclusive"
+                            >
+                                <i class="pi pi-star"></i>
+                                <span>Conteúdo exclusivo</span>
+                            </button>
+                        </template>
                     </div>
                 </div>
-                <button
-                    v-else
-                    class="icon-btn"
-                    title="Enviar mídia"
-                    @click="onAttachClick"
-                >
-                    <i class="pi pi-paperclip"></i>
-                </button>
-                <button
-                    v-if="!isAdminUser"
-                    class="icon-btn gift-btn"
-                    title="Presentinho"
-                    @click="showPresentinhoDialog = true"
-                >
-                    <i class="pi pi-gift"></i>
-                </button>
-                <button
-                    v-if="!isAdminUser"
-                    class="icon-btn exclusive-btn"
-                    title="Conteúdo exclusivo"
-                    @click="showExclusiveDialog = true"
-                >
-                    <i class="pi pi-star"></i>
-                </button>
                 <button class="icon-btn" title="Emoji" @click="showEmoji = !showEmoji">
                     <i class="pi pi-face-smile"></i>
                 </button>
@@ -325,6 +359,12 @@
             v-model:visible="showPresentinhoDialog"
             :conversation-id="conversationId"
         />
+        <ChatGerarPixDialog
+            v-if="isAdminUser && conversationId"
+            v-model:visible="showGerarPixDialog"
+            :conversation-id="conversationId"
+            @created="onGerarPixCreated"
+        />
         <ChatConteudoExclusivoDialog
             v-if="!isAdminUser && conversationId"
             v-model:visible="showExclusiveDialog"
@@ -366,8 +406,11 @@ import ChatVideoCallCard from './ChatVideoCallCard.vue';
 import ChatVideoCallDialog from './ChatVideoCallDialog.vue';
 import ChatPresentinhoCard from './ChatPresentinhoCard.vue';
 import ChatPresentinhoDialog from './ChatPresentinhoDialog.vue';
+import ChatPresentinhoOfferCard from './ChatPresentinhoOfferCard.vue';
+import ChatGerarPixDialog from './ChatGerarPixDialog.vue';
 import ChatConteudoExclusivoCard from './ChatConteudoExclusivoCard.vue';
 import ChatConteudoExclusivoDialog from './ChatConteudoExclusivoDialog.vue';
+import ChatPixKeyCard from './ChatPixKeyCard.vue';
 import { getEcho, isEchoConnected } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 import { isAdmin, currentUserId } from '@/utils/global';
@@ -387,8 +430,11 @@ export default {
         ChatVideoCallDialog,
         ChatPresentinhoCard,
         ChatPresentinhoDialog,
+        ChatPresentinhoOfferCard,
+        ChatGerarPixDialog,
         ChatConteudoExclusivoCard,
         ChatConteudoExclusivoDialog,
+        ChatPixKeyCard,
     },
     props: {
         conversation: { type: Object, required: true },
@@ -407,6 +453,7 @@ export default {
             unlockPackage: 'media',
             showVideoCallDialog: false,
             showPresentinhoDialog: false,
+            showGerarPixDialog: false,
             showExclusiveDialog: false,
             showComposerMenu: false,
             showImagePreview: false,
@@ -572,7 +619,9 @@ export default {
             if (msg.type === 'audio') return 'Áudio';
             if (msg.type === 'video_call') return 'Chamada de vídeo';
             if (msg.type === 'presentinho') return 'Presentinho';
+            if (msg.type === 'presentinho_offer') return 'Presentinho';
             if (msg.type === 'conteudo_exclusivo') return 'Conteúdo exclusivo';
+            if (msg.type === 'pix_key') return 'Chave Pix';
             return msg.body || '';
         },
         parseVideoCallPayload(msg) {
@@ -600,6 +649,15 @@ export default {
                 return JSON.parse(msg.body);
             } catch (e) {
                 return {};
+            }
+        },
+        parsePixKeyPayload(msg) {
+            if (!msg?.body) return {};
+            if (typeof msg.body === 'object') return msg.body;
+            try {
+                return JSON.parse(msg.body);
+            } catch (e) {
+                return { chave: String(msg.body) };
             }
         },
         onDraftInput() {
@@ -923,6 +981,47 @@ export default {
         onComposerVideoCall() {
             this.showComposerMenu = false;
             this.showVideoCallDialog = true;
+        },
+        onComposerPresentinho() {
+            this.showComposerMenu = false;
+            this.showPresentinhoDialog = true;
+        },
+        onComposerExclusive() {
+            this.showComposerMenu = false;
+            this.showExclusiveDialog = true;
+        },
+        onComposerGerarPix() {
+            this.showComposerMenu = false;
+            this.showGerarPixDialog = true;
+        },
+        onGerarPixCreated(message) {
+            this.upsertMessage(message);
+            this.$emit('updated');
+            this.$nextTick(this.scrollToBottom);
+        },
+        async onComposerPixKey() {
+            this.showComposerMenu = false;
+            try {
+                const { data } = await this.api.post(
+                    `/chat/conversations/${this.conversationId}/pix-key`
+                );
+                this.upsertMessage(data.data || data);
+                this.$emit('updated');
+                this.$nextTick(this.scrollToBottom);
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Enviado',
+                    detail: 'Chave Pix enviada no chat.',
+                    life: 2500,
+                });
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível enviar a chave Pix',
+                    life: 3500,
+                });
+            }
         },
         openUnlock(packageType = 'media') {
             this.unlockPackage = packageType === 'audio' ? 'audio' : 'media';
@@ -1392,14 +1491,6 @@ export default {
     }
 }
 
-.gift-btn {
-    color: #f9a8d4;
-}
-
-.exclusive-btn {
-    color: #fbbf24;
-}
-
 .credit-pill {
     position: absolute;
     top: -4px;
@@ -1758,30 +1849,78 @@ export default {
 
 .composer-menu {
     position: absolute;
-    left: 50%;
+    left: 0;
     bottom: calc(100% + 0.45rem);
-    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
     z-index: 40;
+    min-width: 13.5rem;
 }
 
 .composer-menu-item {
-    width: 2.2rem;
-    height: 2.2rem;
-    border-radius: 50%;
+    width: auto;
+    min-height: 2.35rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
     border: 1px solid #333;
     background: #1f1f1f;
     color: #f5cee1;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    gap: 0.55rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    i {
+        font-size: 0.95rem;
+        width: 1rem;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    span {
+        line-height: 1.2;
+    }
 
     &:hover {
         background: #2a2a2a;
+    }
+
+    &.gift {
+        color: #f9a8d4;
+
+        i {
+            color: #f9a8d4;
+        }
+    }
+
+    &.exclusive {
+        color: #fde68a;
+
+        i {
+            color: #fbbf24;
+        }
+    }
+
+    &.pix {
+        color: #a7f3d0;
+
+        i {
+            color: #34d399;
+        }
+    }
+
+    &.gerar-pix {
+        color: #86efac;
+
+        i {
+            color: #22c55e;
+        }
     }
 }
 

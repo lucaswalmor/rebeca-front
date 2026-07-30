@@ -22,14 +22,14 @@
             <Slider
                 v-model="valor"
                 :min="50"
-                :max="50000"
+                :max="5000"
                 :step="20"
                 class="gift-slider w-full"
             />
 
             <div class="gift-range">
                 <span>R$ 50</span>
-                <span>R$ 50.000</span>
+                <span>R$ 5.000</span>
             </div>
         </div>
 
@@ -78,11 +78,11 @@ export default {
             }).format(Number(value || 0));
         },
         async confirmar() {
-            if (this.valor < 50 || this.valor > 50000) {
+            if (this.valor < 50 || this.valor > 5000) {
                 this.$toast.add({
                     severity: 'warn',
                     summary: 'Valor inválido',
-                    detail: 'Escolha um valor entre R$ 50 e R$ 50.000.',
+                    detail: 'Escolha um valor entre R$ 50 e R$ 5.000.',
                     life: 3500,
                 });
                 return;
