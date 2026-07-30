@@ -25,6 +25,7 @@
                     :show-new-button="true"
                     @select="selectConversation"
                     @new-conversation="showStartDialog = true"
+                    @deleted="onConversationDeleted"
                 />
             </aside>
 
@@ -171,6 +172,13 @@ export default {
                     life: 4000,
                 });
             }
+        },
+        async onConversationDeleted({ conversation }) {
+            if (Number(this.activeConversation?.id) === Number(conversation?.id)) {
+                this.activeConversation = null;
+            }
+            await this.loadConversations();
+            useChatStore().fetchUnread();
         },
         selectConversation(item) {
             this.activeConversation = item;

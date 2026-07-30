@@ -44,7 +44,17 @@
                 <div class="chat-list-meta">
                     <div class="chat-list-top">
                         <span class="name">{{ displayName(item) }}</span>
-                        <span class="time">{{ formatTime(item.last_message_at || item.latest_message?.created_at) }}</span>
+                        <div class="top-right">
+                            <span class="time">{{ formatTime(item.last_message_at || item.latest_message?.created_at) }}</span>
+                            <button
+                                type="button"
+                                class="item-menu-btn"
+                                title="Opções"
+                                @click.stop="openItemMenu($event, item)"
+                            >
+                                <i class="pi pi-ellipsis-v"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="chat-list-bottom">
                         <span class="preview">{{ previewText(item) }}</span>
@@ -53,6 +63,27 @@
                 </div>
             </div>
         </div>
+
+        <Menu ref="itemMenu" :model="menuItems" popup />
+
+        <Dialog
+            v-model:visible="confirmVisible"
+            modal
+            :header="confirmTitle"
+            :style="{ width: 'min(92vw, 420px)' }"
+            dismissableMask
+        >
+            <p class="confirm-text">{{ confirmMessage }}</p>
+            <template #footer>
+                <Button label="Cancelar" text @click="confirmVisible = false" />
+                <Button
+                    :label="confirmScope === 'everyone' ? 'Excluir para todos' : 'Excluir só para mim'"
+                    severity="danger"
+                    :loading="deleting"
+                    @click="confirmDelete"
+                />
+            </template>
+        </Dialog>
     </div>
 </template>
 
@@ -61,21 +92,27 @@ import Avatar from 'primevue/avatar';
 import Badge from 'primevue/badge';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
+import Menu from 'primevue/menu';
+import Dialog from 'primevue/dialog';
 
 export default {
     name: 'ChatConversationList',
-    components: { Avatar, Badge, InputText, Button },
+    components: { Avatar, Badge, InputText, Button, Menu, Dialog },
     props: {
         conversations: { type: Array, default: () => [] },
         selectedId: { type: [Number, String], default: null },
         loading: { type: Boolean, default: false },
         showNewButton: { type: Boolean, default: false },
     },
-    emits: ['select', 'new-conversation'],
+    emits: ['select', 'new-conversation', 'deleted'],
     data() {
         return {
             search: '',
             defaultAvatar: 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png',
+            menuConversation: null,
+            confirmVisible: false,
+            confirmScope: null,
+            deleting: false,
         };
     },
     computed: {
@@ -87,10 +124,36 @@ export default {
                 return name.includes(q);
             });
         },
+        menuItems() {
+            return [
+                {
+                    label: 'Excluir só para mim',
+                    icon: 'pi pi-eye-slash',
+                    command: () => this.askDelete('me'),
+                },
+                {
+                    label: 'Excluir para todos',
+                    icon: 'pi pi-trash',
+                    command: () => this.askDelete('everyone'),
+                },
+            ];
+        },
+        confirmTitle() {
+            return this.confirmScope === 'everyone'
+                ? 'Excluir conversa para todos?'
+                : 'Excluir conversa só para você?';
+        },
+        confirmMessage() {
+            const name = this.displayName(this.menuConversation || {});
+            if (this.confirmScope === 'everyone') {
+                return `A conversa com ${name} será apagada permanentemente para você e para a outra pessoa. Esta ação não pode ser desfeita.`;
+            }
+            return `A conversa com ${name} sai da sua lista. A outra pessoa continua vendo o histórico. Se alguém mandar mensagem nova, ela pode voltar a aparecer.`;
+        },
     },
     methods: {
         displayName(item) {
-            const u = item.other_user || {};
+            const u = item?.other_user || {};
             return u.apelido || `${u.nome || ''} ${u.sobrenome || ''}`.trim() || 'Assinante';
         },
         previewText(item) {
@@ -112,6 +175,43 @@ export default {
             yesterday.setDate(now.getDate() - 1);
             if (d.toDateString() === yesterday.toDateString()) return 'Ontem';
             return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        },
+        openItemMenu(event, item) {
+            this.menuConversation = item;
+            this.$refs.itemMenu.toggle(event);
+        },
+        askDelete(scope) {
+            if (!this.menuConversation) return;
+            this.confirmScope = scope;
+            this.confirmVisible = true;
+        },
+        async confirmDelete() {
+            if (!this.menuConversation || !this.confirmScope) return;
+            this.deleting = true;
+            const conversation = this.menuConversation;
+            const scope = this.confirmScope;
+            try {
+                await this.api.post(`/chat/conversations/${conversation.id}/clear`, { scope });
+                this.confirmVisible = false;
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Conversa excluída',
+                    detail: scope === 'everyone'
+                        ? 'A conversa foi apagada para todos.'
+                        : 'A conversa foi removida da sua lista.',
+                    life: 3000,
+                });
+                this.$emit('deleted', { conversation, scope });
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível excluir a conversa',
+                    life: 3500,
+                });
+            } finally {
+                this.deleting = false;
+            }
         },
     },
 };
@@ -190,6 +290,32 @@ export default {
     align-items: center;
 }
 
+.top-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.item-menu-btn {
+    width: 1.7rem;
+    height: 1.7rem;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #f5cee1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.75;
+
+    &:hover {
+        opacity: 1;
+        background: rgba(245, 206, 225, 0.12);
+    }
+}
+
 .name {
     color: #fff;
     font-weight: 600;
@@ -210,5 +336,11 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.confirm-text {
+    color: #ddd;
+    line-height: 1.5;
+    margin: 0;
 }
 </style>
