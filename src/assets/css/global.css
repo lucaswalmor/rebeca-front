@@ -23,51 +23,6 @@ a {
     color: #ef4444 !important;
 }
 
-.botao-assinatura {
-    width: 100%;
-    padding: 10px;
-    border-radius: 50px;
-    font-size: 18px;
-    font-weight: 500;
-    letter-spacing: 1px;
-    background-color: #f5cee1;
-    color: #761c49;
-    outline: none;
-    border: none;
-    transition: background-color 0.55s ease, color 0.55s ease, transform 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.botao-assinatura:hover {
-    background-color: #761c49;
-    color: #f5cee1;
-    transform: translateY(-1px);
-}
-
-/* Texto rosa escuro no estado normal (mesma cor do hover de fundo) */
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined),
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined) .p-button-label,
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined) .p-button-icon,
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined) span {
-    color: #761c49 !important;
-}
-
-/* No hover: fundo escuro + texto rosa claro (contraste legível) */
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover,
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):enabled:hover {
-    background-color: #761c49 !important;
-    border-color: #761c49 !important;
-}
-
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover,
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover .p-button-label,
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover .p-button-icon,
-.p-button:not(.p-button-success):not(.p-button-danger):not(.p-button-text):not(.p-button-outlined):hover span {
-    color: #f5cee1 !important;
-}
-
 @media (max-width: 768px) {
     .mobile-display-none {
         display: none !important;

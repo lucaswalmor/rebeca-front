@@ -104,17 +104,18 @@
         </div>
 
         <div class="flex justify-content-end gap-2">
-            <Button 
-                label="Cancelar" 
-                severity="secondary"
+            <Botao
+                texto="Cancelar"
+                tipo="texto"
+                tema="branco"
                 @click="$emit('cancel')"
-                :disabled="loading"
+                :desabilitado="loading"
             />
-            <Button 
-                label="Concluir Cadastro" 
-                severity="primary"
+            <Botao
+                texto="Concluir Cadastro"
+                tema="rosa"
                 @click="handleRegister"
-                :loading="loading"
+                :carregando="loading"
             />
         </div>
     </div>
@@ -124,7 +125,7 @@
 import IftaLabel from 'primevue/iftalabel';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 
 export default {
     name: 'RegisterForm',
@@ -132,7 +133,7 @@ export default {
         IftaLabel,
         InputText,
         Password,
-        Button
+        Botao
     },
     emits: ['register', 'cancel'],
     props: {

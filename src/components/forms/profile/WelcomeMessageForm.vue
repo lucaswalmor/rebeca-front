@@ -32,22 +32,23 @@
         <div class="media-block mb-3">
             <label class="field-label">Imagem (opcional)</label>
             <div class="media-row">
-                <Button
-                    label="Escolher imagem"
-                    icon="pi pi-image"
-                    size="small"
-                    outlined
-                    :loading="uploadingImage"
+                <Botao
+                    texto="Escolher imagem"
+                    icone="pi pi-image"
+                    tamanho="pequeno"
+                    tipo="contorno"
+                    tema="rosa"
+                    :carregando="uploadingImage"
                     @click="$refs.imageInput.click()"
                 />
-                <Button
+                <Botao
                     v-if="dados.image_url"
-                    label="Remover"
-                    icon="pi pi-trash"
-                    size="small"
-                    text
-                    severity="danger"
-                    :loading="removingImage"
+                    texto="Remover"
+                    icone="pi pi-trash"
+                    tamanho="pequeno"
+                    tipo="texto"
+                    tema="vermelho"
+                    :carregando="removingImage"
                     @click="removeMedia('image')"
                 />
                 <input
@@ -64,22 +65,23 @@
         <div class="media-block mb-3">
             <label class="field-label">Vídeo (opcional)</label>
             <div class="media-row">
-                <Button
-                    label="Escolher vídeo"
-                    icon="pi pi-video"
-                    size="small"
-                    outlined
-                    :loading="uploadingVideo"
+                <Botao
+                    texto="Escolher vídeo"
+                    icone="pi pi-video"
+                    tamanho="pequeno"
+                    tipo="contorno"
+                    tema="rosa"
+                    :carregando="uploadingVideo"
                     @click="$refs.videoInput.click()"
                 />
-                <Button
+                <Botao
                     v-if="dados.video_url"
-                    label="Remover"
-                    icon="pi pi-trash"
-                    size="small"
-                    text
-                    severity="danger"
-                    :loading="removingVideo"
+                    texto="Remover"
+                    icone="pi pi-trash"
+                    tamanho="pequeno"
+                    tipo="texto"
+                    tema="vermelho"
+                    :carregando="removingVideo"
                     @click="removeMedia('video')"
                 />
                 <input
@@ -96,39 +98,41 @@
         <div class="media-block mb-2">
             <label class="field-label">Áudio (opcional)</label>
             <div class="media-row">
-                <Button
+                <Botao
                     v-if="!isRecording && !dados.audio_url && !pendingAudioBlob"
-                    label="Gravar áudio"
-                    icon="pi pi-microphone"
-                    size="small"
-                    outlined
+                    texto="Gravar áudio"
+                    icone="pi pi-microphone"
+                    tamanho="pequeno"
+                    tipo="contorno"
+                    tema="rosa"
                     @click="startRecording"
                 />
-                <Button
+                <Botao
                     v-if="isRecording"
-                    :label="`Parar (${recordLabel})`"
-                    icon="pi pi-stop"
-                    size="small"
-                    severity="danger"
+                    :texto="`Parar (${recordLabel})`"
+                    icone="pi pi-stop"
+                    tamanho="pequeno"
+                    tema="vermelho"
                     @click="stopRecording"
                 />
-                <Button
+                <Botao
                     v-if="!isRecording"
-                    label="Enviar arquivo"
-                    icon="pi pi-upload"
-                    size="small"
-                    outlined
-                    :loading="uploadingAudio"
+                    texto="Enviar arquivo"
+                    icone="pi pi-upload"
+                    tamanho="pequeno"
+                    tipo="contorno"
+                    tema="rosa"
+                    :carregando="uploadingAudio"
                     @click="$refs.audioInput.click()"
                 />
-                <Button
+                <Botao
                     v-if="dados.audio_url || pendingAudioBlob"
-                    label="Remover áudio"
-                    icon="pi pi-trash"
-                    size="small"
-                    text
-                    severity="danger"
-                    :loading="removingAudio"
+                    texto="Remover áudio"
+                    icone="pi pi-trash"
+                    tamanho="pequeno"
+                    tipo="texto"
+                    tema="vermelho"
+                    :carregando="removingAudio"
                     @click="removeAudio"
                 />
                 <input
@@ -161,11 +165,11 @@
 import IftaLabel from 'primevue/iftalabel';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 
 export default {
     name: 'WelcomeMessageForm',
-    components: { IftaLabel, InputText, Textarea, Button },
+    components: { IftaLabel, InputText, Textarea, Botao },
     props: {
         userId: { type: [Number, String], default: null },
     },

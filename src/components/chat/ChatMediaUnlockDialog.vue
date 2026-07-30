@@ -69,13 +69,13 @@
         </div>
 
         <template #footer>
-            <Button label="Cancelar" text @click="$emit('update:visible', false)" />
-            <Button
-                class="pay-btn"
-                label="Gerar pagamento"
-                icon="pi pi-credit-card"
-                :loading="loading"
-                :disabled="!canPay"
+            <Botao texto="Cancelar" tipo="texto" tema="rosa" @click="$emit('update:visible', false)" />
+            <Botao
+                texto="Gerar pagamento"
+                icone="pi pi-credit-card"
+                tema="rosa"
+                :carregando="loading"
+                :desabilitado="!canPay"
                 @click="gerarLink"
             />
         </template>
@@ -84,11 +84,11 @@
 
 <script>
 import Dialog from 'primevue/dialog';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 
 export default {
     name: 'ChatMediaUnlockDialog',
-    components: { Dialog, Button },
+    components: { Dialog, Botao },
     props: {
         visible: Boolean,
         mediaCredits: { type: Number, default: 0 },
@@ -336,32 +336,6 @@ export default {
 
 .warn {
     color: #f5cee1;
-}
-
-.pay-btn {
-    background: #f5cee1 !important;
-    border-color: #f5cee1 !important;
-    color: #761c49 !important;
-
-    :deep(.p-button-label),
-    :deep(.p-button-icon) {
-        color: #761c49 !important;
-    }
-
-    &:enabled:hover {
-        background: #761c49 !important;
-        border-color: #761c49 !important;
-        color: #f5cee1 !important;
-
-        :deep(.p-button-label),
-        :deep(.p-button-icon) {
-            color: #f5cee1 !important;
-        }
-    }
-
-    &:disabled {
-        opacity: 0.55;
-    }
 }
 
 @media (max-width: 520px) {

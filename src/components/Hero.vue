@@ -72,49 +72,36 @@
                     <span class="text-white font-bold">Assinatura</span>
 
                     <div class="p-2 d-flex flex-wrap gap-2">
-                        <Button
-                            severity="primary"
-                            class="d-flex justify-content-between align-items-center w-full"
+                        <Botao
+                            tipo="pilula"
+                            tema="rosa"
+                            :bloco="true"
+                            :carregando="loadingPagamento"
                             @click="gerarLinkPagamento('1_mes')"
-                            :loading="loadingPagamento"
                         >
                             <span class="ms-4 font-bold">1 mês</span>
                             <span class="me-4 font-bold">{{ valorMensal }}</span>
-                        </Button>
-                        <Button
-                            severity="primary"
-                            class="d-flex justify-content-between align-items-center w-full"
+                        </Botao>
+                        <Botao
+                            tipo="pilula"
+                            tema="rosa"
+                            :bloco="true"
+                            :carregando="loadingPagamento"
                             @click="gerarLinkPagamento('3_meses')"
-                            :loading="loadingPagamento"
                         >
                             <span class="ms-4 font-bold">3 meses</span>
                             <span class="me-4 font-bold">{{ valorTrimestral }}</span>
-                        </Button>
-                        <Button
-                            severity="primary"
-                            class="d-flex justify-content-between align-items-center w-full"
+                        </Botao>
+                        <Botao
+                            tipo="pilula"
+                            tema="rosa"
+                            :bloco="true"
+                            :carregando="loadingPagamento"
                             @click="gerarLinkPagamento('6_meses')"
-                            :loading="loadingPagamento"
                         >
                             <span class="ms-4 font-bold">6 meses</span>
                             <span class="me-4 font-bold">{{ valorSemestral }}</span>
-                        </Button>
-                    </div>
-                </div>
-
-                <!-- Botão para dashboard da enquete (apenas para admin) -->
-                <div v-if="isAdmin()" class="row mt-3">
-                    <span class="text-white font-bold">Administração</span>
-
-                    <div class="p-2 d-flex flex-wrap gap-2">
-                        <Button
-                            severity="warning"
-                            class="d-flex justify-content-center align-items-center w-full"
-                            @click="irParaDashboardEnquete"
-                        >
-                            <i class="pi pi-chart-bar me-2"></i>
-                            <span class="font-bold">Dashboard Enquete Chat</span>
-                        </Button>
+                        </Botao>
                     </div>
                 </div>
 
@@ -144,8 +131,8 @@
             <img :src="previewBanner" alt="Preview" class="preview-image" />
         </div>
         <div class="flex justify-content-end gap-2">
-            <Button label="Cancelar" severity="secondary" @click="closeBannerDialog" />
-            <Button label="Salvar" severity="primary" @click="saveBanner" :disabled="!previewBanner" />
+            <Botao texto="Cancelar" tipo="texto" tema="rosa" @click="closeBannerDialog" />
+            <Botao texto="Salvar" tema="rosa" @click="saveBanner" :desabilitado="!previewBanner" />
         </div>
     </Dialog>
 
@@ -171,8 +158,8 @@
             <Avatar :image="previewAvatar" shape="circle" size="xlarge" />
         </div>
         <div class="flex justify-content-end gap-2">
-            <Button label="Cancelar" severity="secondary" @click="closeAvatarDialog" />
-            <Button label="Salvar" severity="primary" @click="saveAvatar" :disabled="!previewAvatar" />
+            <Botao texto="Cancelar" tipo="texto" tema="rosa" @click="closeAvatarDialog" />
+            <Botao texto="Salvar" tema="rosa" @click="saveAvatar" :desabilitado="!previewAvatar" />
         </div>
     </Dialog>
 
@@ -197,7 +184,7 @@
 <script>
 import Card from 'primevue/card';
 import SelectButton from 'primevue/selectbutton';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
 import Avatar from 'primevue/avatar';
@@ -220,7 +207,7 @@ export default {
     components: {
         Card,
         SelectButton,
-        Button,
+        Botao,
         Dialog,
         FileUpload,
         Avatar,
@@ -685,9 +672,6 @@ export default {
             this.updateUserState();
             this.carregarStatusAssinaturaUsuario();
         },
-        irParaDashboardEnquete() {
-            this.$router.push('/admin/enquete');
-        }
     }
 }
 </script>

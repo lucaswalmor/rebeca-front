@@ -14,22 +14,30 @@
       </div>
 
       <div class="buttons-container d-flex justify-content-between gap-2">
-        <Button label="Tenho menos de 18 anos - SAIR" class="p-button-danger p-button-lg text-xs" @click="sair"
-          size="small" />
-        <Button label="Tenho 18 anos ou mais - ENTRAR" class="p-button-success p-button-lg text-xs" @click="entrar"
-          size="small" />
+        <Botao
+          texto="Tenho menos de 18 anos - SAIR"
+          tema="vermelho"
+          tamanho="pequeno"
+          @click="sair"
+        />
+        <Botao
+          texto="Tenho 18 anos ou mais - ENTRAR"
+          tema="sucesso"
+          tamanho="pequeno"
+          @click="entrar"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 
 export default {
   name: 'SiteAdulto',
   components: {
-    Button
+    Botao
   },
   methods: {
     entrar() {

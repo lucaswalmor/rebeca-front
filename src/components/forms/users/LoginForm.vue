@@ -41,11 +41,11 @@
         </div>
 
         <div class="flex justify-content-end">
-            <Button 
-                label="Login" 
-                severity="primary"
+            <Botao
+                texto="Login"
+                tema="rosa"
                 @click="handleLogin"
-                :loading="loading"
+                :carregando="loading"
             />
         </div>
     </div>
@@ -55,7 +55,7 @@
 import IftaLabel from 'primevue/iftalabel';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 
 export default {
     name: 'LoginForm',
@@ -63,7 +63,7 @@ export default {
         IftaLabel,
         InputText,
         Password,
-        Button
+        Botao
     },
     emits: ['login', 'open-register'],
     props: {

@@ -4,30 +4,33 @@
             <div class="header-top">
                 <h3>Conversas</h3>
             </div>
-            <Button
+            <Botao
                 v-if="showNewButton"
-                label="Iniciar nova conversa"
-                icon="pi pi-plus"
-                class="w-full new-chat-btn"
-                size="small"
+                texto="Iniciar nova conversa"
+                icone="pi pi-plus"
+                tema="rosa"
+                tamanho="pequeno"
+                :bloco="true"
                 @click="$emit('new-conversation')"
             />
-            <Button
+            <Botao
                 v-if="showNewButton"
-                label="Mensagem em massa"
-                icon="pi pi-megaphone"
-                class="w-full broadcast-btn"
-                size="small"
+                texto="Mensagem em massa"
+                icone="pi pi-megaphone"
+                tema="roxo"
+                variante="invertida"
+                tamanho="pequeno"
+                :bloco="true"
                 @click="$emit('broadcast')"
             />
-            <Button
+            <Botao
                 v-if="showNewButton && conversations.length > 0"
-                label="Apagar todas as conversas"
-                icon="pi pi-trash"
-                class="w-full clear-all-btn"
-                size="small"
-                outlined
-                severity="danger"
+                texto="Apagar todas as conversas"
+                icone="pi pi-trash"
+                tema="vermelho"
+                tipo="contorno"
+                tamanho="pequeno"
+                :bloco="true"
                 @click="askClearAll"
             />
             <InputText
@@ -93,11 +96,11 @@
         >
             <p class="confirm-text">{{ confirmMessage }}</p>
             <template #footer>
-                <Button label="Cancelar" text @click="confirmVisible = false" />
-                <Button
-                    :label="confirmScope === 'everyone' ? 'Excluir para todos' : 'Excluir só para mim'"
-                    severity="danger"
-                    :loading="deleting"
+                <Botao texto="Cancelar" tipo="texto" tema="rosa" @click="confirmVisible = false" />
+                <Botao
+                    :texto="confirmScope === 'everyone' ? 'Excluir para todos' : 'Excluir só para mim'"
+                    tema="vermelho"
+                    :carregando="deleting"
                     @click="confirmDelete"
                 />
             </template>
@@ -116,22 +119,23 @@
                 conversa(s).
             </p>
             <div class="clear-all-actions">
-                <Button
-                    label="Só para mim"
-                    icon="pi pi-eye-slash"
-                    outlined
-                    class="w-full"
-                    :loading="clearingAll && clearAllScope === 'me'"
-                    :disabled="clearingAll"
+                <Botao
+                    texto="Só para mim"
+                    icone="pi pi-eye-slash"
+                    tipo="contorno"
+                    tema="rosa"
+                    :bloco="true"
+                    :carregando="clearingAll && clearAllScope === 'me'"
+                    :desabilitado="clearingAll"
                     @click="confirmClearAll('me')"
                 />
-                <Button
-                    label="Para todos (permanente)"
-                    icon="pi pi-trash"
-                    severity="danger"
-                    class="w-full"
-                    :loading="clearingAll && clearAllScope === 'everyone'"
-                    :disabled="clearingAll"
+                <Botao
+                    texto="Para todos (permanente)"
+                    icone="pi pi-trash"
+                    tema="vermelho"
+                    :bloco="true"
+                    :carregando="clearingAll && clearAllScope === 'everyone'"
+                    :desabilitado="clearingAll"
                     @click="confirmClearAll('everyone')"
                 />
             </div>
@@ -139,7 +143,7 @@
                 “Só para mim” esconde as conversas da sua lista. “Para todos” apaga o histórico permanentemente para você e para os clientes.
             </p>
             <template #footer>
-                <Button label="Cancelar" text :disabled="clearingAll" @click="clearAllVisible = false" />
+                <Botao texto="Cancelar" tipo="texto" tema="rosa" :desabilitado="clearingAll" @click="clearAllVisible = false" />
             </template>
         </Dialog>
     </div>
@@ -149,13 +153,13 @@
 import Avatar from 'primevue/avatar';
 import Badge from 'primevue/badge';
 import InputText from 'primevue/inputtext';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import Menu from 'primevue/menu';
 import Dialog from 'primevue/dialog';
 
 export default {
     name: 'ChatConversationList',
-    components: { Avatar, Badge, InputText, Button, Menu, Dialog },
+    components: { Avatar, Badge, InputText, Botao, Menu, Dialog },
     props: {
         conversations: { type: Array, default: () => [] },
         selectedId: { type: [Number, String], default: null },
@@ -337,28 +341,6 @@ export default {
     color: #f5cee1;
     margin: 0;
     font-size: 1.25rem;
-}
-
-.new-chat-btn {
-    background: #f5cee1 !important;
-    border-color: #f5cee1 !important;
-    color: #761c49 !important;
-}
-
-.broadcast-btn {
-    background: #7c3aed !important;
-    border-color: #7c3aed !important;
-    color: #fff !important;
-
-    :deep(.p-button-label),
-    :deep(.p-button-icon) {
-        color: #fff !important;
-    }
-}
-
-.clear-all-btn {
-    border-color: #ef4444 !important;
-    color: #fca5a5 !important;
 }
 
 .search-input {

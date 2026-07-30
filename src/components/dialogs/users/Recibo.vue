@@ -87,10 +87,10 @@
             <!-- Link do Recibo Original -->
             <div v-if="assinatura.receipt_url" class="recibo-actions">
                 <div class="text-center">
-                    <Button
-                        label="Ver Recibo Original"
-                        icon="pi pi-external-link"
-                        class="p-button-info"
+                    <Botao
+                        texto="Ver Recibo Original"
+                        icone="pi pi-external-link"
+                        tema="azul"
                         @click="abrirReciboOriginal"
                     />
                 </div>
@@ -109,10 +109,11 @@
         </div>
 
         <template #footer>
-            <Button
-                label="Fechar"
-                icon="pi pi-times"
-                class="p-button-text"
+            <Botao
+                texto="Fechar"
+                icone="pi pi-times"
+                tipo="texto"
+                tema="branco"
                 @click="$emit('update:modelValue', false)"
             />
         </template>
@@ -122,7 +123,7 @@
 <script>
 import Dialog from 'primevue/dialog';
 import Divider from 'primevue/divider';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import Badge from 'primevue/badge';
 
 export default {
@@ -130,7 +131,7 @@ export default {
     components: {
         Dialog,
         Divider,
-        Button,
+        Botao,
         Badge
     },
     props: {

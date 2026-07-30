@@ -65,18 +65,23 @@
                 </dl>
 
                 <div class="checkout-return__actions">
-                    <button
-                        type="button"
-                        class="btn-primary"
-                        :disabled="isChecking"
+                    <Botao
+                        texto="Verificar novamente"
+                        :icone="isChecking ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"
+                        tema="rosa"
+                        tipo="pilula"
+                        :bloco="true"
+                        :carregando="isChecking"
+                        :desabilitado="isChecking"
                         @click="checkPaymentStatus"
-                    >
-                        <i :class="isChecking ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"></i>
-                        Verificar novamente
-                    </button>
-                    <button type="button" class="btn-ghost" @click="goHome">
-                        Voltar ao início
-                    </button>
+                    />
+                    <Botao
+                        texto="Voltar ao início"
+                        tipo="texto"
+                        tema="rosa"
+                        :bloco="true"
+                        @click="goHome"
+                    />
                 </div>
             </div>
 
@@ -89,18 +94,23 @@
                 <p class="checkout-return__lead">{{ error }}</p>
 
                 <div class="checkout-return__actions">
-                    <button
-                        type="button"
-                        class="btn-primary"
-                        :disabled="isChecking"
+                    <Botao
+                        texto="Tentar novamente"
+                        :icone="isChecking ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"
+                        tema="rosa"
+                        tipo="pilula"
+                        :bloco="true"
+                        :carregando="isChecking"
+                        :desabilitado="isChecking"
                         @click="checkPaymentStatus"
-                    >
-                        <i :class="isChecking ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"></i>
-                        Tentar novamente
-                    </button>
-                    <button type="button" class="btn-ghost" @click="goHome">
-                        Voltar ao início
-                    </button>
+                    />
+                    <Botao
+                        texto="Voltar ao início"
+                        tipo="texto"
+                        tema="rosa"
+                        :bloco="true"
+                        @click="goHome"
+                    />
                 </div>
             </div>
 
@@ -114,9 +124,7 @@
                     Esta página aparece depois que você finaliza um pagamento na InfinitePay.
                 </p>
                 <div class="checkout-return__actions">
-                    <button type="button" class="btn-primary" @click="goHome">
-                        Ir para o início
-                    </button>
+                    <Botao texto="Ir para o início" tema="rosa" tipo="pilula" :bloco="true" @click="goHome" />
                 </div>
             </div>
         </div>
@@ -127,9 +135,11 @@
 import { useCheckoutStore } from '@/stores/checkout';
 import { useAuthStore } from '@/stores/auth';
 import api from '@/axios/api';
+import Botao from '@/components/ui/Botao.vue';
 
 export default {
     name: 'CheckoutSuccessView',
+    components: { Botao },
     setup() {
         const authStore = useAuthStore();
         return { authStore };
@@ -547,50 +557,6 @@ export default {
     gap: 0.75rem;
     margin-top: 1.75rem;
     align-items: stretch;
-}
-
-.btn-primary,
-.btn-ghost {
-    appearance: none;
-    border: none;
-    border-radius: 999px;
-    padding: 0.85rem 1.25rem;
-    font-family: inherit;
-    font-size: 0.92rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease, opacity 0.2s ease;
-}
-
-.btn-primary {
-    background: var(--blush);
-    color: var(--rose);
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: var(--rose);
-    color: var(--blush);
-    transform: translateY(-1px);
-}
-
-.btn-primary:disabled {
-    opacity: 0.65;
-    cursor: wait;
-}
-
-.btn-ghost {
-    background: transparent;
-    color: var(--blush);
-    border: 1px solid var(--line);
-}
-
-.btn-ghost:hover {
-    border-color: var(--blush);
-    background: rgba(245, 206, 225, 0.06);
 }
 
 @keyframes rise {

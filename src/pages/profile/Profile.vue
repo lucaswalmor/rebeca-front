@@ -75,7 +75,7 @@
 
                         <div class="row d-flex justify-content-end">
                             <div class="col-md-3">
-                                <Button label="Salvar" severity="primary" class="w-full" @click="salvar" :loading="loading" />
+                                <Botao texto="Salvar" tema="rosa" :bloco="true" @click="salvar" :carregando="loading" />
                             </div>
                         </div>
                     </div>
@@ -91,12 +91,12 @@
 
                         <div class="row d-flex justify-content-end">
                             <div class="col-md-3">
-                                <Button
-                                    label="Salvar pacote"
-                                    severity="primary"
-                                    class="w-full"
+                                <Botao
+                                    texto="Salvar pacote"
+                                    tema="rosa"
+                                    :bloco="true"
                                     @click="salvarChat"
-                                    :loading="loadingChat"
+                                    :carregando="loadingChat"
                                 />
                             </div>
                         </div>
@@ -109,12 +109,12 @@
 
                         <div class="row d-flex justify-content-end">
                             <div class="col-md-3">
-                                <Button
-                                    label="Salvar mensagem"
-                                    severity="primary"
-                                    class="w-full"
+                                <Botao
+                                    texto="Salvar mensagem"
+                                    tema="rosa"
+                                    :bloco="true"
                                     @click="salvarWelcome"
-                                    :loading="loadingWelcome"
+                                    :carregando="loadingWelcome"
                                 />
                             </div>
                         </div>
@@ -134,7 +134,7 @@ import CreatePostForm from '@/components/forms/profile/CreatePostForm.vue';
 import ChatConfigForm from '@/components/forms/profile/ChatConfigForm.vue';
 import WelcomeMessageForm from '@/components/forms/profile/WelcomeMessageForm.vue';
 import Divider from 'primevue/divider';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import Card from 'primevue/card';
 import { performLogout } from '@/utils/logout';
 
@@ -149,7 +149,7 @@ export default {
         ChatConfigForm,
         WelcomeMessageForm,
         Divider,
-        Button,
+        Botao,
         Card,
     },
     data() {

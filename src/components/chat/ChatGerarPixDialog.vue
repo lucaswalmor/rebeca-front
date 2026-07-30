@@ -24,12 +24,12 @@
         </div>
 
         <template #footer>
-            <Button label="Cancelar" text @click="$emit('update:visible', false)" />
-            <Button
-                class="confirm-btn"
-                label="Enviar no chat"
-                icon="pi pi-send"
-                :loading="loading"
+            <Botao texto="Cancelar" tipo="texto" tema="rosa" @click="$emit('update:visible', false)" />
+            <Botao
+                texto="Enviar no chat"
+                icone="pi pi-send"
+                tema="sucesso"
+                :carregando="loading"
                 @click="confirmar"
             />
         </template>
@@ -38,13 +38,13 @@
 
 <script>
 import Dialog from 'primevue/dialog';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import InputText from 'primevue/inputtext';
 import IftaLabel from 'primevue/iftalabel';
 
 export default {
     name: 'ChatGerarPixDialog',
-    components: { Dialog, Button, InputText, IftaLabel },
+    components: { Dialog, Botao, InputText, IftaLabel },
     props: {
         visible: Boolean,
         conversationId: { type: [Number, String], required: true },
@@ -134,11 +134,5 @@ export default {
     margin: 0;
     font-size: 0.78rem;
     color: #888;
-}
-
-.confirm-btn {
-    background: #34d399 !important;
-    border-color: #34d399 !important;
-    color: #064e3b !important;
 }
 </style>

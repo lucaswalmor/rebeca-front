@@ -19,14 +19,13 @@
                         <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                 <span class="font-bold text-white text-truncate">{{ content.user_name || 'Becalima007' }}</span>
-                                <Button 
+                                <Botao
                                     v-if="isAdminComputed"
-                                    :icon="content.is_fixed ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
+                                    :icone="content.is_fixed ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
                                     :class="{ 'pin-active': content.is_fixed }"
-                                    text
-                                    rounded
-                                    severity="secondary"
-                                    size="small"
+                                    tipo="texto"
+                                    tema="rosa"
+                                    tamanho="pequeno"
                                     @click="togglePin(contentIndex)"
                                     :title="content.is_fixed ? 'Desfixar post' : 'Fixar post'"
                                 />
@@ -52,13 +51,12 @@
                             popup 
                             :ref="el => { if (el) menuRefs[contentIndex] = el }"
                         />
-                        <Button 
+                        <Botao
                             v-if="this.isAdmin()"
-                            icon="pi pi-ellipsis-v" 
-                            text 
-                            rounded 
-                            severity="secondary"
-                            size="small"
+                            icone="pi pi-ellipsis-v"
+                            tipo="texto"
+                            tema="rosa"
+                            tamanho="pequeno"
                             @click="toggleMenu($event, contentIndex)"
                             aria-label="Menu de ações"
                         />
@@ -119,12 +117,12 @@
                                         </span>
                                         <span class="unlock-price">{{ formatPreco(content.preco) }}</span>
                                     </div>
-                                    <Button
-                                        :label="`Desbloquear conteúdo — ${formatPreco(content.preco)}`"
-                                        icon="pi pi-lock-open"
-                                        class="w-full unlock-btn"
-                                        severity="primary"
-                                        :loading="buyingPostId === content.id"
+                                    <Botao
+                                        :texto="`Desbloquear conteúdo — ${formatPreco(content.preco)}`"
+                                        icone="pi pi-lock-open"
+                                        tema="rosa"
+                                        :bloco="true"
+                                        :carregando="buyingPostId === content.id"
                                         @click="comprarPost(content)"
                                     />
                                 </div>
@@ -240,14 +238,15 @@
             </div>
         </div>
         <template #footer>
-            <Button label="Cancelar" text @click="editDialogVisible = false" />
-            <Button label="Salvar" severity="primary" :loading="editLoading" @click="salvarEdicaoPost" />
+            <Botao texto="Cancelar" tipo="texto" tema="rosa" @click="editDialogVisible = false" />
+            <Botao texto="Salvar" tema="rosa" :carregando="editLoading" @click="salvarEdicaoPost" />
         </template>
     </Dialog>
 </template>
 
 <script>
-import { Avatar, Button, Card, Carousel, Image, Menu, Tag } from 'primevue';
+import { Avatar, Card, Carousel, Image, Menu, Tag } from 'primevue';
+import Botao from '@/components/ui/Botao.vue';
 import Dialog from 'primevue/dialog';
 import InputNumber from 'primevue/inputnumber';
 import Textarea from 'primevue/textarea';
@@ -267,7 +266,7 @@ export default {
     components: {
         Card,
         Carousel,
-        Button,
+        Botao,
         Avatar,
         Image,
         DrawerComentarios,
@@ -1102,11 +1101,6 @@ video.media-content {
     color: #f5cee1;
 }
 
-.unlock-btn {
-    width: 100%;
-    max-width: 100%;
-}
-
 .blur-container {
     user-select: none !important;
     -webkit-user-select: none !important;
@@ -1118,10 +1112,6 @@ video.media-content {
 .pin-active {
     color: #f5cee1 !important;
     background-color: rgba(118, 28, 73, 0.8) !important;
-}
-
-.pin-active :deep(.p-button-icon) {
-    color: #f5cee1 !important;
 }
 
 .tag-status {
@@ -1197,12 +1187,6 @@ video.media-content {
 
     .unlock-slide {
         padding: 0.5rem;
-    }
-
-    .unlock-btn :deep(.p-button-label) {
-        white-space: normal;
-        line-height: 1.25;
-        font-size: 0.9rem;
     }
 
     :deep(.p-carousel-indicator-list) {

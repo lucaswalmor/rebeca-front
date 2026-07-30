@@ -81,20 +81,21 @@
                                             @keyup.enter="enviarResposta(comentario.id)"
                                         />
                                         <InputGroupAddon>
-                                            <Button 
-                                                icon="pi pi-face-smile" 
-                                                severity="secondary"
-                                                text
-                                                rounded
+                                            <Botao
+                                                icone="pi pi-face-smile"
+                                                tema="rosa"
+                                                tipo="texto"
+                                                tamanho="pequeno"
                                                 @click="toggleEmojiPicker(comentario.id)"
                                                 :class="{ 'emoji-active': mostrandoEmojiPicker === comentario.id }"
                                             />
                                         </InputGroupAddon>
                                         <InputGroupAddon>
-                                            <Button 
-                                                icon="pi pi-send" 
-                                                :disabled="!respostaTexto[comentario.id] || !respostaTexto[comentario.id].trim()"
-                                                severity="secondary"
+                                            <Botao
+                                                icone="pi pi-send"
+                                                tema="rosa"
+                                                tamanho="pequeno"
+                                                :desabilitado="!respostaTexto[comentario.id] || !respostaTexto[comentario.id].trim()"
                                                 @click="enviarResposta(comentario.id)"
                                             />
                                         </InputGroupAddon>
@@ -125,20 +126,21 @@
                             @keyup.enter="adicionarComentario"
                         />
                         <InputGroupAddon>
-                            <Button 
-                                icon="pi pi-face-smile" 
-                                severity="secondary"
-                                text
-                                rounded
+                            <Botao
+                                icone="pi pi-face-smile"
+                                tema="rosa"
+                                tipo="texto"
+                                tamanho="pequeno"
                                 @click="toggleEmojiPicker('main')"
                                 :class="{ 'emoji-active': mostrandoEmojiPicker === 'main' }"
                             />
                         </InputGroupAddon>
                         <InputGroupAddon>
-                            <Button 
-                                icon="pi pi-send" 
-                                :disabled="!novoComentario.trim()"
-                                severity="secondary"
+                            <Botao
+                                icone="pi pi-send"
+                                tema="rosa"
+                                tamanho="pequeno"
+                                :desabilitado="!novoComentario.trim()"
                                 @click="adicionarComentario"
                             />
                         </InputGroupAddon>
@@ -157,7 +159,8 @@
 </template>
 
 <script>
-import { Drawer, Avatar, InputGroup, InputGroupAddon, InputText, Button } from 'primevue';
+import { Drawer, Avatar, InputGroup, InputGroupAddon, InputText } from 'primevue';
+import Botao from '@/components/ui/Botao.vue';
 import EmojiPicker from '../EmojiPicker.vue';
 
 export default {
@@ -168,7 +171,7 @@ export default {
         InputGroup,
         InputGroupAddon,
         InputText,
-        Button,
+        Botao,
         EmojiPicker
     },
     props: {
@@ -634,10 +637,10 @@ export default {
         background-color: #2d2d2d;
         border-color: #3d3d3d;
         
-        .p-button {
+        .botao {
             color: #888888;
             
-            &:hover {
+            &:hover:not(:disabled) {
                 background-color: #3d3d3d;
                 color: #ffffff;
             }

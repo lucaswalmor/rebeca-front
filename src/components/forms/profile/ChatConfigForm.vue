@@ -82,21 +82,22 @@
                         @change="onDesktopSelected"
                     />
                     <div class="wallpaper-actions">
-                        <Button
-                            label="Escolher imagem"
-                            icon="pi pi-upload"
-                            size="small"
-                            :loading="uploadingDesktop"
+                        <Botao
+                            texto="Escolher imagem"
+                            icone="pi pi-upload"
+                            tema="rosa"
+                            tamanho="pequeno"
+                            :carregando="uploadingDesktop"
                             @click="$refs.desktopInput.click()"
                         />
-                        <Button
+                        <Botao
                             v-if="dados.wallpaper_desktop"
-                            label="Remover"
-                            icon="pi pi-trash"
-                            severity="secondary"
-                            text
-                            size="small"
-                            :loading="removingDesktop"
+                            texto="Remover"
+                            icone="pi pi-trash"
+                            tema="rosa"
+                            tipo="texto"
+                            tamanho="pequeno"
+                            :carregando="removingDesktop"
                             @click="removeWallpaper('desktop')"
                         />
                     </div>
@@ -120,21 +121,22 @@
                         @change="onMobileSelected"
                     />
                     <div class="wallpaper-actions">
-                        <Button
-                            label="Escolher imagem"
-                            icon="pi pi-upload"
-                            size="small"
-                            :loading="uploadingMobile"
+                        <Botao
+                            texto="Escolher imagem"
+                            icone="pi pi-upload"
+                            tema="rosa"
+                            tamanho="pequeno"
+                            :carregando="uploadingMobile"
                             @click="$refs.mobileInput.click()"
                         />
-                        <Button
+                        <Botao
                             v-if="dados.wallpaper_mobile"
-                            label="Remover"
-                            icon="pi pi-trash"
-                            severity="secondary"
-                            text
-                            size="small"
-                            :loading="removingMobile"
+                            texto="Remover"
+                            icone="pi pi-trash"
+                            tema="rosa"
+                            tipo="texto"
+                            tamanho="pequeno"
+                            :carregando="removingMobile"
                             @click="removeWallpaper('mobile')"
                         />
                     </div>
@@ -147,14 +149,14 @@
 <script>
 import IftaLabel from 'primevue/iftalabel';
 import InputText from 'primevue/inputtext';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 
 export default {
     name: 'ChatConfigForm',
     components: {
         IftaLabel,
         InputText,
-        Button,
+        Botao,
     },
     props: {
         userId: { type: [Number, String], default: null },

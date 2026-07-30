@@ -7,7 +7,7 @@
                 <template #content>
                     <h3>Assinatura necessária</h3>
                     <p>Seu chat está congelado até renovar a assinatura. Galeria e créditos de mídia também ficam indisponíveis.</p>
-                    <Button label="Ir para assinaturas" icon="pi pi-credit-card" @click="$router.push('/user-settings')" />
+                    <Botao texto="Ir para assinaturas" icone="pi pi-credit-card" tema="rosa" @click="$router.push('/user-settings')" />
                 </template>
             </Card>
         </div>
@@ -38,10 +38,11 @@
                 <div v-if="!activeConversation" class="empty-thread">
                     <i class="pi pi-comments"></i>
                     <p>{{ isAdminUser ? 'Selecione uma conversa à esquerda' : 'Abrindo chat...' }}</p>
-                    <Button
+                    <Botao
                         v-if="isAdminUser"
-                        label="Iniciar nova conversa"
-                        icon="pi pi-plus"
+                        texto="Iniciar nova conversa"
+                        icone="pi pi-plus"
+                        tema="rosa"
                         class="mt-3"
                         @click="showStartDialog = true"
                     />
@@ -76,7 +77,7 @@ import ChatThread from '@/components/chat/ChatThread.vue';
 import ChatStartConversationDialog from '@/components/chat/ChatStartConversationDialog.vue';
 import ChatBroadcastDialog from '@/components/chat/ChatBroadcastDialog.vue';
 import Card from 'primevue/card';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import { isAdmin, hasAssinaturaAtiva } from '@/utils/global';
 import { getEcho } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
@@ -90,7 +91,7 @@ export default {
         ChatStartConversationDialog,
         ChatBroadcastDialog,
         Card,
-        Button,
+        Botao,
     },
     data() {
         return {

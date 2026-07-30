@@ -33,12 +33,12 @@
         </div>
 
         <template #footer>
-            <Button label="Agora não" text @click="$emit('update:visible', false)" />
-            <Button
-                class="confirm-btn"
-                label="Presentear"
-                icon="pi pi-heart"
-                :loading="loading"
+            <Botao texto="Agora não" tipo="texto" tema="rosa" @click="$emit('update:visible', false)" />
+            <Botao
+                texto="Presentear"
+                icone="pi pi-heart"
+                tema="rosa"
+                :carregando="loading"
                 @click="confirmar"
             />
         </template>
@@ -47,13 +47,13 @@
 
 <script>
 import Dialog from 'primevue/dialog';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import InputText from 'primevue/inputtext';
 import IftaLabel from 'primevue/iftalabel';
 
 export default {
     name: 'ChatPresentinhoDialog',
-    components: { Dialog, Button, InputText, IftaLabel },
+    components: { Dialog, Botao, InputText, IftaLabel },
     props: {
         visible: Boolean,
         conversationId: { type: [Number, String], required: true },
@@ -180,11 +180,5 @@ export default {
     font-size: 0.78rem;
     color: #888;
     text-align: center;
-}
-
-.confirm-btn {
-    background: #f5cee1 !important;
-    border-color: #f5cee1 !important;
-    color: #761c49 !important;
 }
 </style>

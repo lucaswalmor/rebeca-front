@@ -106,12 +106,13 @@
             <div class="field">
                 <label class="field-label">Imagens e vídeos (opcional)</label>
                 <div class="media-actions">
-                    <Button
-                        label="Adicionar mídia"
-                        icon="pi pi-images"
-                        size="small"
-                        outlined
-                        :disabled="mediaItems.length >= 10"
+                    <Botao
+                        texto="Adicionar mídia"
+                        icone="pi pi-images"
+                        tamanho="pequeno"
+                        tipo="contorno"
+                        tema="roxo"
+                        :desabilitado="mediaItems.length >= 10"
                         @click="$refs.mediaInput.click()"
                     />
                     <input
@@ -145,30 +146,31 @@
             <div class="field audio-field">
                 <label class="field-label">Áudio (opcional)</label>
                 <div class="audio-actions">
-                    <Button
+                    <Botao
                         v-if="!isRecording && !audioBlob"
-                        label="Gravar áudio"
-                        icon="pi pi-microphone"
-                        size="small"
-                        outlined
+                        texto="Gravar áudio"
+                        icone="pi pi-microphone"
+                        tamanho="pequeno"
+                        tipo="contorno"
+                        tema="roxo"
                         @click="startRecording"
                     />
-                    <Button
+                    <Botao
                         v-if="isRecording"
-                        :label="`Parar (${recordLabel})`"
-                        icon="pi pi-stop"
-                        size="small"
-                        severity="danger"
+                        :texto="`Parar (${recordLabel})`"
+                        icone="pi pi-stop"
+                        tamanho="pequeno"
+                        tema="vermelho"
                         @click="stopRecording"
                     />
                     <template v-if="audioBlob && !isRecording">
                         <audio :src="audioPreviewUrl" controls class="audio-preview" />
-                        <Button
-                            label="Remover áudio"
-                            icon="pi pi-trash"
-                            size="small"
-                            text
-                            severity="danger"
+                        <Botao
+                            texto="Remover áudio"
+                            icone="pi pi-trash"
+                            tamanho="pequeno"
+                            tipo="texto"
+                            tema="vermelho"
                             @click="clearAudio"
                         />
                     </template>
@@ -180,12 +182,13 @@
         </div>
 
         <template #footer>
-            <Button label="Cancelar" text @click="$emit('update:visible', false)" />
-            <Button
-                class="send-btn"
-                label="Enviar"
-                icon="pi pi-send"
-                :loading="sending"
+            <Botao texto="Cancelar" tipo="texto" tema="roxo" @click="$emit('update:visible', false)" />
+            <Botao
+                texto="Enviar"
+                icone="pi pi-send"
+                tema="roxo"
+                variante="invertida"
+                :carregando="sending"
                 @click="enviar"
             />
         </template>
@@ -194,7 +197,7 @@
 
 <script>
 import Dialog from 'primevue/dialog';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import IftaLabel from 'primevue/iftalabel';
@@ -202,7 +205,7 @@ import Avatar from 'primevue/avatar';
 
 export default {
     name: 'ChatBroadcastDialog',
-    components: { Dialog, Button, InputText, Textarea, IftaLabel, Avatar },
+    components: { Dialog, Botao, InputText, Textarea, IftaLabel, Avatar },
     props: {
         visible: Boolean,
     },
@@ -717,17 +720,6 @@ export default {
     font-size: 0.78rem;
     color: #888;
     line-height: 1.4;
-}
-
-.send-btn {
-    background: #7c3aed !important;
-    border-color: #7c3aed !important;
-    color: #fff !important;
-
-    :deep(.p-button-label),
-    :deep(.p-button-icon) {
-        color: #fff !important;
-    }
 }
 
 @media (max-width: 560px) {

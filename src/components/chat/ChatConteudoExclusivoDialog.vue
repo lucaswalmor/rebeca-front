@@ -51,13 +51,13 @@
         </div>
 
         <template #footer>
-            <Button label="Cancelar" text @click="$emit('update:visible', false)" />
-            <Button
-                class="confirm-btn"
-                label="Comprar e combinar"
-                icon="pi pi-star"
-                :loading="loading"
-                :disabled="!canBuy"
+            <Botao texto="Cancelar" tipo="texto" tema="amarelo" @click="$emit('update:visible', false)" />
+            <Botao
+                texto="Comprar e combinar"
+                icone="pi pi-star"
+                tema="amarelo"
+                :carregando="loading"
+                :desabilitado="!canBuy"
                 @click="confirmar"
             />
         </template>
@@ -66,11 +66,11 @@
 
 <script>
 import Dialog from 'primevue/dialog';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 
 export default {
     name: 'ChatConteudoExclusivoDialog',
-    components: { Dialog, Button },
+    components: { Dialog, Botao },
     props: {
         visible: Boolean,
         conversationId: { type: [Number, String], required: true },
@@ -227,12 +227,6 @@ export default {
     margin: 0;
     font-size: 0.85rem;
     color: #f87171;
-}
-
-.confirm-btn {
-    background: #fbbf24 !important;
-    border-color: #fbbf24 !important;
-    color: #422006 !important;
 }
 
 @media (max-width: 520px) {

@@ -68,12 +68,12 @@
         </div>
 
         <template #footer>
-            <Button label="Cancelar" text @click="$emit('update:visible', false)" />
-            <Button
-                class="save-btn"
-                label="Salvar e enviar cobrança"
-                icon="pi pi-send"
-                :loading="loading"
+            <Botao texto="Cancelar" tipo="texto" tema="rosa" @click="$emit('update:visible', false)" />
+            <Botao
+                texto="Salvar e enviar cobrança"
+                icone="pi pi-send"
+                tema="rosa"
+                :carregando="loading"
                 @click="salvar"
             />
         </template>
@@ -82,7 +82,7 @@
 
 <script>
 import Dialog from 'primevue/dialog';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
 import IftaLabel from 'primevue/iftalabel';
@@ -91,7 +91,7 @@ const DEFAULT_TITLE = 'Chamada de vídeo com a beca';
 
 export default {
     name: 'ChatVideoCallDialog',
-    components: { Dialog, Button, InputText, InputNumber, IftaLabel },
+    components: { Dialog, Botao, InputText, InputNumber, IftaLabel },
     props: {
         visible: Boolean,
         conversationId: { type: [Number, String], required: true },
@@ -220,12 +220,6 @@ export default {
     margin: 0.35rem 0 0;
     font-size: 0.78rem;
     color: #888;
-}
-
-.save-btn {
-    background: #f5cee1 !important;
-    border-color: #f5cee1 !important;
-    color: #761c49 !important;
 }
 
 @media (max-width: 520px) {

@@ -72,30 +72,31 @@
                                     accept="image/jpeg,image/png,image/webp,image/gif"
                                     @change="onAvatarSelected"
                                 />
-                                <Button
-                                    label="Escolher foto"
-                                    icon="pi pi-camera"
-                                    size="small"
-                                    :loading="uploadingAvatar"
+                                <Botao
+                                    texto="Escolher foto"
+                                    icone="pi pi-camera"
+                                    tema="rosa"
+                                    tamanho="pequeno"
+                                    :carregando="uploadingAvatar"
                                     @click="$refs.avatarInput.click()"
                                 />
-                                <Button
+                                <Botao
                                     v-if="selectedAvatarFile"
-                                    label="Salvar foto"
-                                    icon="pi pi-check"
-                                    size="small"
-                                    class="save-avatar-btn"
-                                    :loading="uploadingAvatar"
+                                    texto="Salvar foto"
+                                    icone="pi pi-check"
+                                    tema="rosa"
+                                    tamanho="pequeno"
+                                    :carregando="uploadingAvatar"
                                     @click="saveAvatar"
                                 />
-                                <Button
+                                <Botao
                                     v-if="selectedAvatarFile"
-                                    label="Cancelar"
-                                    icon="pi pi-times"
-                                    size="small"
-                                    severity="secondary"
-                                    text
-                                    :disabled="uploadingAvatar"
+                                    texto="Cancelar"
+                                    icone="pi pi-times"
+                                    tema="rosa"
+                                    tipo="texto"
+                                    tamanho="pequeno"
+                                    :desabilitado="uploadingAvatar"
                                     @click="cancelAvatarSelect"
                                 />
                             </div>
@@ -207,9 +208,11 @@
 
                                     <Column header="Ações" style="width: 10%">
                                         <template #body="slotProps">
-                                            <Button
-                                                icon="pi pi-eye"
-                                                class="p-button-rounded p-button-info p-button-text"
+                                            <Botao
+                                                icone="pi pi-eye"
+                                                tema="azul"
+                                                tipo="texto"
+                                                tamanho="pequeno"
                                                 @click="visualizarRecibo(slotProps.data)"
                                                 title="Visualizar Recibo"
                                             />
@@ -240,7 +243,7 @@ import IftaLabel from 'primevue/iftalabel';
 import InputText from 'primevue/inputtext';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import Badge from 'primevue/badge';
 import Card from 'primevue/card';
 import Avatar from 'primevue/avatar';
@@ -256,7 +259,7 @@ export default {
         InputText,
         DataTable,
         Column,
-        Button,
+        Botao,
         Badge,
         Card,
         Avatar,
@@ -571,12 +574,6 @@ export default {
 
 .hidden-file {
     display: none;
-}
-
-.save-avatar-btn {
-    background: #f5cee1 !important;
-    border-color: #f5cee1 !important;
-    color: #761c49 !important;
 }
 
 @media (max-width: 768px) {

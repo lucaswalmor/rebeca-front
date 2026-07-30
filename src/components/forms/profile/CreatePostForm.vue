@@ -106,13 +106,13 @@
 
             <div class="row d-flex justify-content-end">
                 <div class="col-md-3">
-                    <Button 
-                        label="Criar Post" 
-                        severity="primary" 
-                        class="w-full" 
-                        @click="criarPost" 
-                        :loading="loading"
-                        :disabled="!canSubmit"
+                    <Botao
+                        texto="Criar Post"
+                        tema="rosa"
+                        :bloco="true"
+                        @click="criarPost"
+                        :carregando="loading"
+                        :desabilitado="!canSubmit"
                     />
                 </div>
             </div>
@@ -124,7 +124,7 @@ import IftaLabel from 'primevue/iftalabel';
 import Textarea from 'primevue/textarea';
 import InputNumber from 'primevue/inputnumber';
 import FileUpload from 'primevue/fileupload';
-import Button from 'primevue/button';
+import Botao from '@/components/ui/Botao.vue';
 import Toast from 'primevue/toast';
 
 export default {
@@ -134,7 +134,7 @@ export default {
         Textarea,
         InputNumber,
         FileUpload,
-        Button,
+        Botao,
         Toast
     },
     emits: ['post-created'],
