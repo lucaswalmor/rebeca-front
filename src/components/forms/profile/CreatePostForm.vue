@@ -49,13 +49,13 @@
             <div class="row mb-3">
                 <div class="col-md-12">
                     <label class="text-white mb-2 d-block">
-                        Prévia (1 imagem ou vídeo)
+                        Prévia (imagens e vídeos)
                         <span v-if="!hasExclusiveFiles" class="text-red-500">*</span>
                         <span class="text-400 text-sm fw-normal"> — visível para assinantes</span>
                     </label>
                     <FileUpload
                         mode="advanced"
-                        :multiple="false"
+                        :multiple="true"
                         accept="image/*,video/*"
                         @select="onPreviewSelect"
                         @remove="onPreviewRemove"
@@ -65,10 +65,10 @@
                         uploadLabel="Enviar"
                         cancelLabel="Cancelar"
                         :customUpload="true"
-                        :fileLimit="1"
+                        :fileLimit="50"
                     >
                         <template #empty>
-                            <p class="text-white">Arraste e solte a prévia aqui ou clique para selecionar.</p>
+                            <p class="text-white">Arraste e solte as prévias aqui ou clique para selecionar.</p>
                         </template>
                     </FileUpload>
                     <small v-if="errors.preview" class="text-red-500">* {{ errors.preview }}</small>
@@ -87,12 +87,13 @@
                         accept="image/*,video/*"
                         @select="onFileSelect"
                         @remove="onFileRemove"
+                        @clear="onFileClear"
                         :auto="false"
                         chooseLabel="Selecionar Arquivos"
                         uploadLabel="Enviar"
                         cancelLabel="Cancelar"
                         :customUpload="true"
-                        :fileLimit="20"
+                        :fileLimit="50"
                     >
                         <template #empty>
                             <p class="text-white">Opcional. Se não enviar, o post fica só com a prévia (grátis para assinantes).</p>
@@ -143,13 +144,16 @@ export default {
                 description: '',
                 preco: null
             },
-            previewFile: null,
+            previewFiles: [],
             selectedFiles: [],
             loading: false,
             errors: {}
         }
     },
     computed: {
+        hasPreviewFiles() {
+            return this.previewFiles.length > 0;
+        },
         hasExclusiveFiles() {
             return this.selectedFiles.length > 0;
         },
@@ -157,22 +161,28 @@ export default {
             return this.hasExclusiveFiles;
         },
         canSubmit() {
-            return !!this.previewFile || this.hasExclusiveFiles;
+            return this.hasPreviewFiles || this.hasExclusiveFiles;
         }
     },
     methods: {
         onPreviewSelect(event) {
             const files = Array.from(event.files || []);
-            this.previewFile = files[0] || null;
+            files.forEach(file => {
+                this.previewFiles.push(file);
+            });
         },
-        onPreviewRemove() {
-            this.previewFile = null;
+        onPreviewRemove(event) {
+            const removedFile = event.file;
+            const index = this.previewFiles.findIndex(f => f.name === removedFile.name && f.size === removedFile.size);
+            if (index !== -1) {
+                this.previewFiles.splice(index, 1);
+            }
         },
         onPreviewClear() {
-            this.previewFile = null;
+            this.previewFiles = [];
         },
         onFileSelect(event) {
-            const files = Array.from(event.files);
+            const files = Array.from(event.files || []);
             files.forEach(file => {
                 this.selectedFiles.push(file);
             });
@@ -184,6 +194,9 @@ export default {
                 this.selectedFiles.splice(index, 1);
             }
         },
+        onFileClear() {
+            this.selectedFiles = [];
+        },
         async criarPost() {
             this.errors = {};
             
@@ -191,7 +204,7 @@ export default {
                 this.errors.description = 'A descrição é obrigatória';
             }
 
-            if (!this.previewFile && !this.hasExclusiveFiles) {
+            if (!this.hasPreviewFiles && !this.hasExclusiveFiles) {
                 this.errors.preview = 'Envie pelo menos a prévia do post';
             }
 
@@ -221,9 +234,11 @@ export default {
                 
                 const postId = postResponse.data.data.id;
 
-                if (this.previewFile) {
+                if (this.hasPreviewFiles) {
                     const previewData = new FormData();
-                    previewData.append('media[]', this.previewFile);
+                    this.previewFiles.forEach(file => {
+                        previewData.append('media[]', file);
+                    });
                     previewData.append('is_preview', '1');
 
                     await this.api.post(`/posts/${postId}/media`, previewData, {
@@ -248,7 +263,7 @@ export default {
                 
                 this.dados.description = '';
                 this.dados.preco = null;
-                this.previewFile = null;
+                this.previewFiles = [];
                 this.selectedFiles = [];
                 
                 this.$emit('post-created');

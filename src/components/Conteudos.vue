@@ -384,7 +384,8 @@ export default {
 
             // Admin: se a API ainda não mandou mídia no array principal, usa a prévia como fallback
             if ((this.isAdminComputed || this.isAdmin()) && media.length === 0 && post.preview) {
-                return this.getMediaForCarousel([post.preview]);
+                const previewList = Array.isArray(post.preview) ? post.preview : [post.preview];
+                return this.getMediaForCarousel(previewList);
             }
 
             return media;
