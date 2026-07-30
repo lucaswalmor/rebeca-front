@@ -71,7 +71,6 @@ export default {
             if (this.playing) {
                 this.pause();
             } else {
-                // pausa outros players na página
                 document.querySelectorAll('audio').forEach((a) => {
                     if (a !== el) a.pause();
                 });
@@ -121,18 +120,19 @@ export default {
 .audio-bubble {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    min-width: 180px;
-    max-width: 260px;
-    padding: 0.15rem 0;
+    gap: 0.7rem;
+    min-width: 200px;
+    max-width: 280px;
+    padding: 0.35rem 0.45rem 0.35rem 0.25rem;
+    box-sizing: border-box;
 }
 
 .play-btn {
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 2.35rem;
+    height: 2.35rem;
     border-radius: 50%;
     border: none;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.14);
     color: #fff;
     display: inline-flex;
     align-items: center;
@@ -141,27 +141,32 @@ export default {
     flex-shrink: 0;
 
     i {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
+        margin-left: 1px;
     }
 }
 
 .audio-bubble.mine .play-btn {
-    background: rgba(117, 28, 73, 0.35);
+    background: rgba(117, 28, 73, 0.4);
     color: #f5cee1;
 }
 
 .audio-track {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.15rem 0.15rem 0.1rem 0;
 }
 
 .progress-rail {
     position: relative;
     height: 4px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.22);
     cursor: pointer;
-    margin: 0.35rem 0 0.25rem;
+    margin: 0.2rem 0.2rem 0 0;
 }
 
 .progress-fill {
@@ -178,11 +183,12 @@ export default {
 .progress-knob {
     position: absolute;
     top: 50%;
-    width: 10px;
-    height: 10px;
+    width: 11px;
+    height: 11px;
     border-radius: 50%;
     background: #25d366;
     transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
 }
 
 .audio-bubble.mine .progress-knob {
@@ -190,8 +196,11 @@ export default {
 }
 
 .audio-meta {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.72);
+    padding-left: 0.05rem;
+    font-variant-numeric: tabular-nums;
 }
 
 audio {

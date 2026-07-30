@@ -69,7 +69,7 @@
                 @contextmenu.prevent="openMenu($event, msg)"
             >
                 <div class="msg-cluster">
-                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text' }">
+                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text', audio: msg.type === 'audio', 'video-call': msg.type === 'video_call' }">
                         <button
                             type="button"
                             class="bubble-menu-btn"
@@ -186,17 +186,42 @@
 
         <div v-else class="chat-composer">
             <div class="composer-left">
-                <div class="speeddial-wrap">
-                    <SpeedDial
-                        :model="speedDialItems"
-                        direction="up"
-                        :transition-delay="40"
-                        show-icon="pi pi-plus"
-                        hide-icon="pi pi-times"
-                        class="composer-speeddial"
-                        button-class="composer-speeddial-btn"
-                    />
+                <div v-if="isAdminUser" class="composer-menu-wrap" ref="composerMenuWrap">
+                    <button
+                        type="button"
+                        class="icon-btn"
+                        :title="showComposerMenu ? 'Fechar' : 'Mais ações'"
+                        @click="showComposerMenu = !showComposerMenu"
+                    >
+                        <i :class="showComposerMenu ? 'pi pi-times' : 'pi pi-plus'"></i>
+                    </button>
+                    <div v-if="showComposerMenu" class="composer-menu" role="menu">
+                        <button
+                            type="button"
+                            class="composer-menu-item"
+                            title="Anexar"
+                            @click="onComposerAttach"
+                        >
+                            <i class="pi pi-paperclip"></i>
+                        </button>
+                        <button
+                            type="button"
+                            class="composer-menu-item"
+                            title="Chamada de vídeo"
+                            @click="onComposerVideoCall"
+                        >
+                            <i class="pi pi-video"></i>
+                        </button>
+                    </div>
                 </div>
+                <button
+                    v-else
+                    class="icon-btn"
+                    title="Enviar mídia"
+                    @click="onAttachClick"
+                >
+                    <i class="pi pi-paperclip"></i>
+                </button>
                 <button class="icon-btn" title="Emoji" @click="showEmoji = !showEmoji">
                     <i class="pi pi-face-smile"></i>
                 </button>
@@ -292,7 +317,6 @@
 import Avatar from 'primevue/avatar';
 import InputText from 'primevue/inputtext';
 import Menu from 'primevue/menu';
-import SpeedDial from 'primevue/speeddial';
 import EmojiPicker from '@/components/EmojiPicker.vue';
 import ChatGalleryDialog from './ChatGalleryDialog.vue';
 import ChatMediaUnlockDialog from './ChatMediaUnlockDialog.vue';
@@ -310,7 +334,6 @@ export default {
         Avatar,
         InputText,
         Menu,
-        SpeedDial,
         EmojiPicker,
         ChatGalleryDialog,
         ChatMediaUnlockDialog,
@@ -335,6 +358,7 @@ export default {
             showUnlock: false,
             unlockPackage: 'media',
             showVideoCallDialog: false,
+            showComposerMenu: false,
             showImagePreview: false,
             previewImageUrl: null,
             replyingTo: null,
@@ -382,25 +406,6 @@ export default {
         },
         canSendRecording() {
             return this.recordElapsedMs >= 800 && !this.sending;
-        },
-        speedDialItems() {
-            const items = [
-                {
-                    label: 'Anexar',
-                    icon: 'pi pi-paperclip',
-                    command: () => this.onAttachClick(),
-                },
-            ];
-            if (this.isAdminUser) {
-                items.push({
-                    label: 'Chamada de vídeo',
-                    icon: 'pi pi-video',
-                    command: () => {
-                        this.showVideoCallDialog = true;
-                    },
-                });
-            }
-            return items;
         },
         otherUser() {
             return this.conversation?.other_user || null;
@@ -483,6 +488,16 @@ export default {
             },
         },
     },
+    mounted() {
+        this._onDocClickComposer = (e) => {
+            if (!this.showComposerMenu) return;
+            const wrap = this.$refs.composerMenuWrap;
+            if (wrap && !wrap.contains(e.target)) {
+                this.showComposerMenu = false;
+            }
+        };
+        document.addEventListener('click', this._onDocClickComposer);
+    },
     beforeUnmount() {
         this.teardownChannel();
         this.stopPolling();
@@ -490,6 +505,9 @@ export default {
         this.cleanupRecording(true);
         if (this.typingTimer) clearTimeout(this.typingTimer);
         if (this.whisperTimer) clearTimeout(this.whisperTimer);
+        if (this._onDocClickComposer) {
+            document.removeEventListener('click', this._onDocClickComposer);
+        }
     },
     methods: {
         isMine(msg) {
@@ -826,6 +844,17 @@ export default {
                 return;
             }
             this.$refs.fileInput.click();
+        },
+        closeComposerMenu() {
+            this.showComposerMenu = false;
+        },
+        onComposerAttach() {
+            this.showComposerMenu = false;
+            this.onAttachClick();
+        },
+        onComposerVideoCall() {
+            this.showComposerMenu = false;
+            this.showVideoCallDialog = true;
         },
         openUnlock(packageType = 'media') {
             this.unlockPackage = packageType === 'audio' ? 'audio' : 'media';
@@ -1444,6 +1473,20 @@ export default {
         padding-top: 0.55rem;
         overflow: visible;
     }
+
+    &.audio {
+        width: min(78vw, 300px);
+        max-width: min(78vw, 300px);
+        padding: 0.45rem 0.55rem 0.35rem;
+        padding-top: 0.65rem;
+    }
+
+    &.video-call {
+        width: auto;
+        max-width: min(85vw, 320px);
+        padding: 0.45rem;
+        padding-top: 0.6rem;
+    }
 }
 
 .bubble-menu-btn {
@@ -1512,6 +1555,20 @@ export default {
     border-radius: 10px;
     background: #121212;
     line-height: 0;
+}
+
+.bubble.audio .bubble-media-wrap {
+    overflow: visible;
+    background: transparent;
+    border-radius: 0;
+    line-height: normal;
+}
+
+.bubble.video-call .bubble-media-wrap {
+    overflow: visible;
+    background: transparent;
+    border-radius: 0;
+    line-height: normal;
 }
 
 .bubble-media-btn {
@@ -1618,31 +1675,38 @@ export default {
     position: relative;
 }
 
-.speeddial-wrap {
+.composer-menu-wrap {
     position: relative;
-    width: 2.4rem;
-    height: 2.4rem;
+    flex-shrink: 0;
 }
 
-.composer-speeddial {
-    position: absolute !important;
-    left: 0;
-    bottom: 0;
+.composer-menu {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 0.45rem);
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    z-index: 40;
 }
 
-:deep(.composer-speeddial-btn) {
-    width: 2.4rem !important;
-    height: 2.4rem !important;
-    background: transparent !important;
-    border: none !important;
-    color: #f5cee1 !important;
-    box-shadow: none !important;
-}
+.composer-menu-item {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    border: 1px solid #333;
+    background: #1f1f1f;
+    color: #f5cee1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 
-:deep(.composer-speeddial .p-speeddial-action) {
-    background: #1f1f1f !important;
-    color: #f5cee1 !important;
-    border: 1px solid #333 !important;
+    &:hover {
+        background: #2a2a2a;
+    }
 }
 
 .composer-input {

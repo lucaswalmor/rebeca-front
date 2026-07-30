@@ -198,6 +198,26 @@ export default {
             };
             return methods[method] || method || 'Não informado';
         },
+        restoreSessionFromCheckout(auth) {
+            if (!auth?.token || !auth?.user?.id) return;
+
+            const hasToken = !!localStorage.getItem('token');
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const loggedIn = hasToken && !!currentUser.id;
+
+            // Sempre restaura se estiver deslogado; se já logado, só atualiza user (mantém token atual)
+            if (!loggedIn) {
+                localStorage.setItem('token', auth.token);
+                localStorage.setItem('user', JSON.stringify(auth.user));
+                this.authStore.login();
+                return;
+            }
+
+            localStorage.setItem('user', JSON.stringify({
+                ...currentUser,
+                ...auth.user,
+            }));
+        },
         async checkPaymentStatus() {
             if (!this.urlParams.order_nsu || !this.urlParams.transaction_nsu || !this.urlParams.slug) {
                 this.isProcessing = false;
@@ -235,23 +255,29 @@ export default {
                     };
 
                     if (this.paymentStatus.paid) {
+                        this.restoreSessionFromCheckout(backendResponse.data.auth);
+
                         if (this.isChatMediaPurchase) {
                             const user = JSON.parse(localStorage.getItem('user') || '{}');
-                            if (typeof assinaturaData.media_credits === 'number') {
-                                user.chat_media_credits = assinaturaData.media_credits;
+                            if (user.id) {
+                                if (typeof assinaturaData.media_credits === 'number') {
+                                    user.chat_media_credits = assinaturaData.media_credits;
+                                }
+                                if (typeof assinaturaData.audio_credits === 'number') {
+                                    user.chat_audio_credits = assinaturaData.audio_credits;
+                                }
+                                localStorage.setItem('user', JSON.stringify(user));
                             }
-                            if (typeof assinaturaData.audio_credits === 'number') {
-                                user.chat_audio_credits = assinaturaData.audio_credits;
-                            }
-                            localStorage.setItem('user', JSON.stringify(user));
                         }
 
                         if (!this.isPostPurchase && !this.isChatMediaPurchase && !this.isVideoCallPurchase) {
                             const user = JSON.parse(localStorage.getItem('user') || '{}');
-                            user.assinatura = true;
-                            user.status_assinatura = 'aprovado';
-                            user.status_assinatura_descricao = 'Assinatura Ativa';
-                            localStorage.setItem('user', JSON.stringify(user));
+                            if (user.id) {
+                                user.assinatura = true;
+                                user.status_assinatura = 'aprovado';
+                                user.status_assinatura_descricao = 'Assinatura Ativa';
+                                localStorage.setItem('user', JSON.stringify(user));
+                            }
                         }
 
                         this.authStore.triggerUpdate();
