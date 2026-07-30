@@ -189,6 +189,8 @@ export default {
                     this.$refs.chatConfigFormRef.preencherDados({
                         pacote_midia_chat: this.formatarMoeda(userData.valor_pacote_midia_chat),
                         pacote_audio_chat: this.formatarMoeda(userData.valor_pacote_audio_chat),
+                        imagem_exclusiva_chat: this.formatarMoeda(userData.valor_imagem_exclusiva_chat),
+                        video_exclusivo_chat: this.formatarMoeda(userData.valor_video_exclusivo_chat),
                         wallpaper_desktop: userData.chat_wallpaper_desktop || null,
                         wallpaper_mobile: userData.chat_wallpaper_mobile || null,
                     });
@@ -264,10 +266,14 @@ export default {
                 const dadosChat = this.$refs.chatConfigFormRef.dadosChat();
                 const valorPacoteMidia = this.converterValorFormatado(dadosChat.pacote_midia_chat);
                 const valorPacoteAudio = this.converterValorFormatado(dadosChat.pacote_audio_chat);
+                const valorImagemExclusiva = this.converterValorFormatado(dadosChat.imagem_exclusiva_chat);
+                const valorVideoExclusivo = this.converterValorFormatado(dadosChat.video_exclusivo_chat);
 
                 await this.api.put(`/users/${this.userId}`, {
                     valor_pacote_midia_chat: valorPacoteMidia,
                     valor_pacote_audio_chat: valorPacoteAudio,
+                    valor_imagem_exclusiva_chat: valorImagemExclusiva,
+                    valor_video_exclusivo_chat: valorVideoExclusivo,
                 });
 
                 this.$toast.add({

@@ -18,6 +18,7 @@ function previewText(msg) {
     if (msg.type === 'audio') return 'Enviou um áudio';
     if (msg.type === 'video_call') return 'Chamada de vídeo';
     if (msg.type === 'presentinho') return 'Enviou um presentinho';
+    if (msg.type === 'conteudo_exclusivo') return 'Pediu conteúdo exclusivo';
     const body = (msg.body || '').trim();
     if (!body) return 'Nova mensagem';
     return body.length > 80 ? `${body.slice(0, 80)}…` : body;

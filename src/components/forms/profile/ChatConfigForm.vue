@@ -3,8 +3,8 @@
         <div class="col-md-12 text-300 mb-3">
             <h4>Configurar chat</h4>
             <p class="hint">
-                Defina os valores dos pacotes de mídia e áudio, e os fundos da conversa. O sistema usa o wallpaper
-                de computador no desktop e o de celular no mobile — para você e para os assinantes.
+                Defina os valores dos pacotes, do conteúdo exclusivo sob encomenda, e os fundos da conversa.
+                O sistema usa o wallpaper de computador no desktop e o de celular no mobile — para você e para os assinantes.
             </p>
         </div>
 
@@ -32,6 +32,34 @@
                         size="small"
                     />
                     <label for="pacote_audio_chat">Pacote chat (5 envios de áudio)</label>
+                </IftaLabel>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <IftaLabel>
+                    <InputText
+                        id="imagem_exclusiva_chat"
+                        v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ ####,##']"
+                        v-model="dados.imagem_exclusiva_chat"
+                        class="w-full"
+                        size="small"
+                    />
+                    <label for="imagem_exclusiva_chat">Imagem exclusiva (sob encomenda)</label>
+                </IftaLabel>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <IftaLabel>
+                    <InputText
+                        id="video_exclusivo_chat"
+                        v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ ####,##']"
+                        v-model="dados.video_exclusivo_chat"
+                        class="w-full"
+                        size="small"
+                    />
+                    <label for="video_exclusivo_chat">Vídeo exclusivo até 1 min</label>
                 </IftaLabel>
             </div>
         </div>
@@ -136,6 +164,8 @@ export default {
             dados: {
                 pacote_midia_chat: 'R$ 0,00',
                 pacote_audio_chat: 'R$ 0,00',
+                imagem_exclusiva_chat: 'R$ 0,00',
+                video_exclusivo_chat: 'R$ 0,00',
                 wallpaper_desktop: null,
                 wallpaper_mobile: null,
             },

@@ -69,7 +69,7 @@
                 @contextmenu.prevent="openMenu($event, msg)"
             >
                 <div class="msg-cluster">
-                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text', audio: msg.type === 'audio', 'video-call': msg.type === 'video_call', presentinho: msg.type === 'presentinho' }">
+                    <div class="bubble" :class="{ mine: isMine(msg), media: msg.type !== 'text', audio: msg.type === 'audio', 'video-call': msg.type === 'video_call', presentinho: msg.type === 'presentinho', exclusive: msg.type === 'conteudo_exclusivo' }">
                         <button
                             type="button"
                             class="bubble-menu-btn"
@@ -124,6 +124,12 @@
                         <div v-else-if="msg.type === 'presentinho'" class="bubble-media-wrap">
                             <ChatPresentinhoCard
                                 :payload="parsePresentinhoPayload(msg)"
+                                :mine="isMine(msg)"
+                            />
+                        </div>
+                        <div v-else-if="msg.type === 'conteudo_exclusivo'" class="bubble-media-wrap">
+                            <ChatConteudoExclusivoCard
+                                :payload="parseExclusivePayload(msg)"
                                 :mine="isMine(msg)"
                             />
                         </div>
@@ -236,6 +242,14 @@
                 >
                     <i class="pi pi-gift"></i>
                 </button>
+                <button
+                    v-if="!isAdminUser"
+                    class="icon-btn exclusive-btn"
+                    title="Conteúdo exclusivo"
+                    @click="showExclusiveDialog = true"
+                >
+                    <i class="pi pi-star"></i>
+                </button>
                 <button class="icon-btn" title="Emoji" @click="showEmoji = !showEmoji">
                     <i class="pi pi-face-smile"></i>
                 </button>
@@ -311,6 +325,13 @@
             v-model:visible="showPresentinhoDialog"
             :conversation-id="conversationId"
         />
+        <ChatConteudoExclusivoDialog
+            v-if="!isAdminUser && conversationId"
+            v-model:visible="showExclusiveDialog"
+            :conversation-id="conversationId"
+            :image-price="exclusiveImagePrice"
+            :video-price="exclusiveVideoPrice"
+        />
 
         <Teleport to="body">
             <div
@@ -345,6 +366,8 @@ import ChatVideoCallCard from './ChatVideoCallCard.vue';
 import ChatVideoCallDialog from './ChatVideoCallDialog.vue';
 import ChatPresentinhoCard from './ChatPresentinhoCard.vue';
 import ChatPresentinhoDialog from './ChatPresentinhoDialog.vue';
+import ChatConteudoExclusivoCard from './ChatConteudoExclusivoCard.vue';
+import ChatConteudoExclusivoDialog from './ChatConteudoExclusivoDialog.vue';
 import { getEcho, isEchoConnected } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 import { isAdmin, currentUserId } from '@/utils/global';
@@ -364,6 +387,8 @@ export default {
         ChatVideoCallDialog,
         ChatPresentinhoCard,
         ChatPresentinhoDialog,
+        ChatConteudoExclusivoCard,
+        ChatConteudoExclusivoDialog,
     },
     props: {
         conversation: { type: Object, required: true },
@@ -382,6 +407,7 @@ export default {
             unlockPackage: 'media',
             showVideoCallDialog: false,
             showPresentinhoDialog: false,
+            showExclusiveDialog: false,
             showComposerMenu: false,
             showImagePreview: false,
             previewImageUrl: null,
@@ -398,6 +424,8 @@ export default {
             audioMaxSeconds: 60,
             packagePrice: null,
             audioPackagePrice: null,
+            exclusiveImagePrice: null,
+            exclusiveVideoPrice: null,
             wallpaperDesktop: null,
             wallpaperMobile: null,
             channel: null,
@@ -544,6 +572,7 @@ export default {
             if (msg.type === 'audio') return 'Áudio';
             if (msg.type === 'video_call') return 'Chamada de vídeo';
             if (msg.type === 'presentinho') return 'Presentinho';
+            if (msg.type === 'conteudo_exclusivo') return 'Conteúdo exclusivo';
             return msg.body || '';
         },
         parseVideoCallPayload(msg) {
@@ -556,6 +585,15 @@ export default {
             }
         },
         parsePresentinhoPayload(msg) {
+            if (!msg?.body) return {};
+            if (typeof msg.body === 'object') return msg.body;
+            try {
+                return JSON.parse(msg.body);
+            } catch (e) {
+                return {};
+            }
+        },
+        parseExclusivePayload(msg) {
             if (!msg?.body) return {};
             if (typeof msg.body === 'object') return msg.body;
             try {
@@ -667,6 +705,8 @@ export default {
                 this.audioMaxSeconds = data.audio_max_seconds || 60;
                 this.packagePrice = data.price;
                 this.audioPackagePrice = data.audio_price;
+                this.exclusiveImagePrice = data.exclusive_image_price;
+                this.exclusiveVideoPrice = data.exclusive_video_price;
                 this.wallpaperDesktop = data.wallpaper_desktop || null;
                 this.wallpaperMobile = data.wallpaper_mobile || null;
                 useChatStore().mediaCredits = this.mediaCredits;
@@ -1354,6 +1394,10 @@ export default {
 
 .gift-btn {
     color: #f9a8d4;
+}
+
+.exclusive-btn {
+    color: #fbbf24;
 }
 
 .credit-pill {
