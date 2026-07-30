@@ -20,6 +20,16 @@
                 size="small"
                 @click="$emit('broadcast')"
             />
+            <Button
+                v-if="showNewButton && conversations.length > 0"
+                label="Apagar todas as conversas"
+                icon="pi pi-trash"
+                class="w-full clear-all-btn"
+                size="small"
+                outlined
+                severity="danger"
+                @click="askClearAll"
+            />
             <InputText
                 v-model="search"
                 placeholder="Pesquisar conversas..."
@@ -92,6 +102,46 @@
                 />
             </template>
         </Dialog>
+
+        <Dialog
+            v-model:visible="clearAllVisible"
+            modal
+            header="Apagar todas as conversas?"
+            :style="{ width: 'min(92vw, 440px)' }"
+            dismissableMask
+        >
+            <p class="confirm-text">
+                Escolha como deseja limpar a lista. Esta ação afeta
+                <strong>{{ conversations.length }}</strong>
+                conversa(s).
+            </p>
+            <div class="clear-all-actions">
+                <Button
+                    label="Só para mim"
+                    icon="pi pi-eye-slash"
+                    outlined
+                    class="w-full"
+                    :loading="clearingAll && clearAllScope === 'me'"
+                    :disabled="clearingAll"
+                    @click="confirmClearAll('me')"
+                />
+                <Button
+                    label="Para todos (permanente)"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    class="w-full"
+                    :loading="clearingAll && clearAllScope === 'everyone'"
+                    :disabled="clearingAll"
+                    @click="confirmClearAll('everyone')"
+                />
+            </div>
+            <p class="confirm-hint">
+                “Só para mim” esconde as conversas da sua lista. “Para todos” apaga o histórico permanentemente para você e para os clientes.
+            </p>
+            <template #footer>
+                <Button label="Cancelar" text :disabled="clearingAll" @click="clearAllVisible = false" />
+            </template>
+        </Dialog>
     </div>
 </template>
 
@@ -112,7 +162,7 @@ export default {
         loading: { type: Boolean, default: false },
         showNewButton: { type: Boolean, default: false },
     },
-    emits: ['select', 'new-conversation', 'broadcast', 'deleted'],
+    emits: ['select', 'new-conversation', 'broadcast', 'deleted', 'cleared-all'],
     data() {
         return {
             search: '',
@@ -121,6 +171,9 @@ export default {
             confirmVisible: false,
             confirmScope: null,
             deleting: false,
+            clearAllVisible: false,
+            clearAllScope: null,
+            clearingAll: false,
         };
     },
     computed: {
@@ -227,6 +280,37 @@ export default {
                 this.deleting = false;
             }
         },
+        askClearAll() {
+            this.clearAllScope = null;
+            this.clearAllVisible = true;
+        },
+        async confirmClearAll(scope) {
+            this.clearAllScope = scope;
+            this.clearingAll = true;
+            try {
+                const { data } = await this.api.post('/chat/conversations/clear-all', { scope });
+                this.clearAllVisible = false;
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Conversas apagadas',
+                    detail: scope === 'everyone'
+                        ? `${data.cleared || 0} conversa(s) apagadas para todos.`
+                        : `${data.cleared || 0} conversa(s) removidas da sua lista.`,
+                    life: 3500,
+                });
+                this.$emit('cleared-all', { scope, cleared: data.cleared || 0 });
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível apagar as conversas',
+                    life: 3500,
+                });
+            } finally {
+                this.clearingAll = false;
+                this.clearAllScope = null;
+            }
+        },
     },
 };
 </script>
@@ -265,6 +349,16 @@ export default {
     background: #7c3aed !important;
     border-color: #7c3aed !important;
     color: #fff !important;
+
+    :deep(.p-button-label),
+    :deep(.p-button-icon) {
+        color: #fff !important;
+    }
+}
+
+.clear-all-btn {
+    border-color: #ef4444 !important;
+    color: #fca5a5 !important;
 }
 
 .search-input {
@@ -367,5 +461,19 @@ export default {
     color: #ddd;
     line-height: 1.5;
     margin: 0;
+}
+
+.clear-all-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-top: 1rem;
+}
+
+.confirm-hint {
+    margin: 0.9rem 0 0;
+    color: #999;
+    font-size: 0.82rem;
+    line-height: 1.45;
 }
 </style>

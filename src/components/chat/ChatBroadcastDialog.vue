@@ -103,6 +103,45 @@
                 />
             </div>
 
+            <div class="field">
+                <label class="field-label">Imagens e vídeos (opcional)</label>
+                <div class="media-actions">
+                    <Button
+                        label="Adicionar mídia"
+                        icon="pi pi-images"
+                        size="small"
+                        outlined
+                        :disabled="mediaItems.length >= 10"
+                        @click="$refs.mediaInput.click()"
+                    />
+                    <input
+                        ref="mediaInput"
+                        type="file"
+                        accept="image/*,video/*"
+                        multiple
+                        hidden
+                        @change="onMediaSelected"
+                    />
+                    <span class="media-count" v-if="mediaItems.length">
+                        {{ mediaItems.length }}/10
+                    </span>
+                </div>
+                <div v-if="mediaItems.length" class="media-grid">
+                    <div
+                        v-for="item in mediaItems"
+                        :key="item.id"
+                        class="media-thumb"
+                    >
+                        <img v-if="item.kind === 'image'" :src="item.url" alt="" />
+                        <video v-else :src="item.url" muted />
+                        <span class="kind-badge">{{ item.kind === 'image' ? 'Foto' : 'Vídeo' }}</span>
+                        <button type="button" class="remove-media" title="Remover" @click="removeMedia(item.id)">
+                            <i class="pi pi-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="field audio-field">
                 <label class="field-label">Áudio (opcional)</label>
                 <div class="audio-actions">
@@ -134,7 +173,9 @@
                         />
                     </template>
                 </div>
-                <p class="hint">Máximo 1 minuto. Envie título, mensagem e/ou áudio — ao menos um é obrigatório.</p>
+                <p class="hint">
+                    Máximo 10 imagens/vídeos e 1 minuto de áudio. Envie título, mensagem, mídia e/ou áudio — ao menos um é obrigatório.
+                </p>
             </div>
         </div>
 
@@ -188,6 +229,8 @@ export default {
             audioBlob: null,
             audioPreviewUrl: null,
             audioDuration: 0,
+            mediaItems: [],
+            mediaIdSeq: 0,
         };
     },
     computed: {
@@ -202,6 +245,7 @@ export default {
                 this.titulo.trim()
                 || this.body.trim()
                 || this.audioBlob
+                || this.mediaItems.length
             );
         },
     },
@@ -211,6 +255,7 @@ export default {
                 this.resetForm();
             } else {
                 this.cleanupRecording(true);
+                this.clearMedia();
             }
         },
         audience(val) {
@@ -220,6 +265,7 @@ export default {
     beforeUnmount() {
         if (this.searchTimer) clearTimeout(this.searchTimer);
         this.cleanupRecording(true);
+        this.clearMedia();
     },
     methods: {
         resetForm() {
@@ -230,6 +276,79 @@ export default {
             this.users = [];
             this.selectedIds = [];
             this.clearAudio();
+            this.clearMedia();
+        },
+        onMediaSelected(event) {
+            const files = Array.from(event.target.files || []);
+            event.target.value = '';
+            if (!files.length) return;
+
+            const remaining = 10 - this.mediaItems.length;
+            if (remaining <= 0) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Limite',
+                    detail: 'Máximo de 10 arquivos por envio.',
+                    life: 3000,
+                });
+                return;
+            }
+
+            const accepted = files.slice(0, remaining);
+            if (files.length > remaining) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Limite',
+                    detail: `Apenas ${remaining} arquivo(s) foram adicionados (máx. 10).`,
+                    life: 3500,
+                });
+            }
+
+            for (const file of accepted) {
+                const isVideo = file.type.startsWith('video/');
+                const isImage = file.type.startsWith('image/');
+                if (!isVideo && !isImage) {
+                    this.$toast.add({
+                        severity: 'warn',
+                        summary: 'Arquivo inválido',
+                        detail: `${file.name} não é imagem nem vídeo.`,
+                        life: 3000,
+                    });
+                    continue;
+                }
+
+                const max = isVideo ? 100 * 1024 * 1024 : 25 * 1024 * 1024;
+                if (file.size > max) {
+                    this.$toast.add({
+                        severity: 'warn',
+                        summary: 'Arquivo grande',
+                        detail: isVideo
+                            ? `${file.name}: vídeo até 100MB`
+                            : `${file.name}: imagem até 25MB`,
+                        life: 3500,
+                    });
+                    continue;
+                }
+
+                this.mediaIdSeq += 1;
+                this.mediaItems.push({
+                    id: this.mediaIdSeq,
+                    file,
+                    kind: isVideo ? 'video' : 'image',
+                    url: URL.createObjectURL(file),
+                });
+            }
+        },
+        removeMedia(id) {
+            const item = this.mediaItems.find((m) => m.id === id);
+            if (item?.url) URL.revokeObjectURL(item.url);
+            this.mediaItems = this.mediaItems.filter((m) => m.id !== id);
+        },
+        clearMedia() {
+            this.mediaItems.forEach((item) => {
+                if (item.url) URL.revokeObjectURL(item.url);
+            });
+            this.mediaItems = [];
         },
         displayName(user) {
             return user.apelido || `${user.nome || ''} ${user.sobrenome || ''}`.trim() || user.email;
@@ -340,7 +459,7 @@ export default {
                 this.$toast.add({
                     severity: 'warn',
                     summary: 'Conteúdo obrigatório',
-                    detail: 'Informe título, mensagem ou grave um áudio.',
+                    detail: 'Informe título, mensagem, mídia ou grave um áudio.',
                     life: 3500,
                 });
                 return;
@@ -369,6 +488,9 @@ export default {
                     form.append('media', this.audioBlob, 'broadcast.webm');
                     form.append('audio_duration', String(this.audioDuration || 1));
                 }
+                this.mediaItems.forEach((item) => {
+                    form.append('media_files[]', item.file, item.file.name);
+                });
 
                 const { data } = await this.api.post('/chat/broadcast', form, {
                     headers: { 'Content-Type': 'multipart/form-data' },
@@ -517,6 +639,74 @@ export default {
     gap: 0.55rem;
 }
 
+.media-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.media-count {
+    font-size: 0.8rem;
+    color: #c4b5fd;
+}
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 0.55rem;
+    margin-top: 0.65rem;
+}
+
+.media-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1a1a1a;
+    border: 1px solid #333;
+
+    img,
+    video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+}
+
+.kind-badge {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.65);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+}
+
+.remove-media {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+
+    i {
+        font-size: 0.7rem;
+    }
+}
+
 .audio-preview {
     width: min(100%, 240px);
     height: 36px;
@@ -530,9 +720,14 @@ export default {
 }
 
 .send-btn {
-    background: #a78bfa !important;
-    border-color: #a78bfa !important;
-    color: #1e1b4b !important;
+    background: #7c3aed !important;
+    border-color: #7c3aed !important;
+    color: #fff !important;
+
+    :deep(.p-button-label),
+    :deep(.p-button-icon) {
+        color: #fff !important;
+    }
 }
 
 @media (max-width: 560px) {

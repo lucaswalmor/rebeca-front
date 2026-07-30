@@ -28,7 +28,7 @@
                     />
                     <label for="presentinho_valor">Valor do presentinho</label>
                 </IftaLabel>
-                <p class="gift-hint">Mínimo R$ 1,01</p>
+                <p class="gift-hint">Mínimo R$ 50,00</p>
             </div>
         </div>
 
@@ -82,11 +82,11 @@ export default {
         },
         async confirmar() {
             const valor = this.parseValor(this.valorMasked);
-            if (!valor || valor < 1.01) {
+            if (!valor || valor < 50) {
                 this.$toast.add({
                     severity: 'warn',
                     summary: 'Valor inválido',
-                    detail: 'Informe um valor de no mínimo R$ 1,01.',
+                    detail: 'Informe um valor de no mínimo R$ 50,00.',
                     life: 3500,
                 });
                 return;

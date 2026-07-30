@@ -27,6 +27,7 @@
                     @new-conversation="showStartDialog = true"
                     @broadcast="showBroadcastDialog = true"
                     @deleted="onConversationDeleted"
+                    @cleared-all="onConversationsClearedAll"
                 />
             </aside>
 
@@ -183,6 +184,11 @@ export default {
             if (Number(this.activeConversation?.id) === Number(conversation?.id)) {
                 this.activeConversation = null;
             }
+            await this.loadConversations();
+            useChatStore().fetchUnread();
+        },
+        async onConversationsClearedAll() {
+            this.activeConversation = null;
             await this.loadConversations();
             useChatStore().fetchUnread();
         },

@@ -40,6 +40,14 @@
                                     <span>Configurar chat</span>
                                 </div>
                                 <div
+                                    class="menu-item"
+                                    :class="{ 'menu-item-active': activeMenu === 'mensagem-inicial' }"
+                                    @click="activeMenu = 'mensagem-inicial'"
+                                >
+                                    <i class="pi pi-send me-2"></i>
+                                    <span>Mensagem inicial</span>
+                                </div>
+                                <div
                                     class="menu-item menu-item-logout"
                                     @click="handleLogout"
                                 >
@@ -93,6 +101,24 @@
                             </div>
                         </div>
                     </div>
+
+                    <div v-show="activeMenu === 'mensagem-inicial'">
+                        <WelcomeMessageForm ref="welcomeMessageFormRef" :user-id="userId" />
+
+                        <Divider />
+
+                        <div class="row d-flex justify-content-end">
+                            <div class="col-md-3">
+                                <Button
+                                    label="Salvar mensagem"
+                                    severity="primary"
+                                    class="w-full"
+                                    @click="salvarWelcome"
+                                    :loading="loadingWelcome"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -106,6 +132,7 @@ import SocialForm from '@/components/forms/profile/SocialForm.vue';
 import SobreForm from '@/components/forms/profile/SobreForm.vue';
 import CreatePostForm from '@/components/forms/profile/CreatePostForm.vue';
 import ChatConfigForm from '@/components/forms/profile/ChatConfigForm.vue';
+import WelcomeMessageForm from '@/components/forms/profile/WelcomeMessageForm.vue';
 import Divider from 'primevue/divider';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
@@ -120,6 +147,7 @@ export default {
         SobreForm,
         CreatePostForm,
         ChatConfigForm,
+        WelcomeMessageForm,
         Divider,
         Button,
         Card,
@@ -129,6 +157,7 @@ export default {
             dadosFormulario: null,
             loading: false,
             loadingChat: false,
+            loadingWelcome: false,
             userId: null,
             activeMenu: 'perfil',
         };
@@ -193,6 +222,17 @@ export default {
                         video_exclusivo_chat: this.formatarMoeda(userData.valor_video_exclusivo_chat),
                         wallpaper_desktop: userData.chat_wallpaper_desktop || null,
                         wallpaper_mobile: userData.chat_wallpaper_mobile || null,
+                    });
+                }
+
+                if (this.$refs.welcomeMessageFormRef && userData) {
+                    this.$refs.welcomeMessageFormRef.preencherDados({
+                        titulo: userData.welcome_titulo || '',
+                        body: userData.welcome_body || '',
+                        image_url: userData.welcome_image_url || null,
+                        video_url: userData.welcome_video_url || null,
+                        audio_url: userData.welcome_audio_url || null,
+                        audio_duration: userData.welcome_audio_duration || null,
                     });
                 }
             } catch (error) {
@@ -291,6 +331,48 @@ export default {
                 });
             } finally {
                 this.loadingChat = false;
+            }
+        },
+        async salvarWelcome() {
+            try {
+                const form = this.$refs.welcomeMessageFormRef;
+                if (!form) return;
+
+                this.loadingWelcome = true;
+                const audioOk = await form.ensurePendingAudioUploaded();
+                if (!audioOk) {
+                    this.loadingWelcome = false;
+                    return;
+                }
+
+                if (!form.hasContent) {
+                    this.$toast.add({
+                        severity: 'warn',
+                        summary: 'Conteúdo obrigatório',
+                        detail: 'Defina pelo menos título, mensagem, imagem, vídeo ou áudio para ativar a mensagem inicial.',
+                        life: 4000,
+                    });
+                    this.loadingWelcome = false;
+                    return;
+                }
+
+                await this.api.put(`/users/${this.userId}`, form.dadosWelcome());
+
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Sucesso',
+                    detail: 'Mensagem inicial salva!',
+                    life: 3000,
+                });
+            } catch (error) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: error.response?.data?.message || 'Erro ao salvar mensagem inicial',
+                    life: 3000,
+                });
+            } finally {
+                this.loadingWelcome = false;
             }
         },
         converterValorFormatado(valorFormatado) {
