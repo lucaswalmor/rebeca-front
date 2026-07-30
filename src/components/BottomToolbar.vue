@@ -48,7 +48,6 @@
       <i class="fa-solid fa-right-to-bracket"></i>
     </button>
   </nav>
-  <div class="bottom-toolbar-spacer" aria-hidden="true"></div>
 </template>
 
 <script>
@@ -100,8 +99,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.bottom-toolbar,
-.bottom-toolbar-spacer {
+.bottom-toolbar {
   display: none;
 }
 
@@ -149,11 +147,6 @@ export default {
     &.active {
       color: #f5cee1;
     }
-  }
-
-  .bottom-toolbar-spacer {
-    display: block;
-    height: calc(60px + env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

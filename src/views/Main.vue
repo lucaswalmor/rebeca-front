@@ -287,7 +287,7 @@ export default {
 
 @media (max-width: 768px) {
     .main-feed {
-        padding: 0.5rem 0.15rem;
+        padding: 0.25rem 0.15rem calc(72px + env(safe-area-inset-bottom, 0px));
         max-width: 100%;
     }
 

@@ -1,7 +1,7 @@
 <template>
-    <div class="mb-5">
+    <div class="mb-5 profile-page">
         <Header />
-        <div class="container px-6 mt-6">
+        <div class="container px-6 settings-content">
             <div class="row">
                 <div class="col-12 text-center text-white">
                     <h3>Configurar Perfil</h3>
@@ -309,6 +309,17 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.settings-content {
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .settings-content {
+        margin-top: 0.75rem;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 .profile-menu-card {
     :deep(.p-card-body) {
         background-color: #121212;

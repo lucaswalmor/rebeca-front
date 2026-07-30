@@ -17,7 +17,6 @@ import api from './axios/api';
 import { MyPreset } from './primevue/config';
 import { isAdmin, hasAssinaturaAtiva, isLoggedIn, statusAssinatura, currentUserId } from './utils/global';
 import pinia from './stores';
-import { initScreenshotGuard } from './utils/screenshotGuard';
 
 const app = createApp(App)
 app.use(router)
@@ -41,9 +40,3 @@ app.use(PrimeVue, {
 app.use(ToastService);
 app.use(VueTheMask);
 app.mount('#app');
-
-document.addEventListener('contextmenu', (event) => {
-    event.preventDefault();
-});
-
-initScreenshotGuard();
