@@ -26,12 +26,14 @@
                 </button>
                 <button
                     v-if="!isAdminUser"
-                    class="icon-btn"
-                    title="Comprar créditos para enviar fotos/vídeos"
-                    @click="showUnlock = true"
+                    class="icon-btn has-credit"
+                    title="Comprar créditos de mídia ou áudio"
+                    @click="openUnlock('media')"
                 >
                     <i class="pi pi-shopping-bag"></i>
-                    <span v-if="mediaCredits > 0" class="credit-pill">{{ mediaCredits }}</span>
+                    <span v-if="mediaCredits > 0 || audioCredits > 0" class="credit-pill">
+                        {{ mediaCredits }}/{{ audioCredits }}
+                    </span>
                 </button>
                 <button
                     class="icon-btn"
@@ -106,7 +108,14 @@
                                 class="bubble-media-video"
                             />
                         </div>
-                        <div v-if="msg.body" class="bubble-text">{{ msg.body }}</div>
+                        <div v-else-if="msg.type === 'audio' && msg.media_url" class="bubble-media-wrap">
+                            <ChatAudioBubble
+                                :src="msg.media_url"
+                                :duration-seconds="Number(msg.body) || 0"
+                                :mine="isMine(msg)"
+                            />
+                        </div>
+                        <div v-if="msg.body && msg.type === 'text'" class="bubble-text">{{ msg.body }}</div>
 
                         <div class="bubble-meta">
                             <span v-if="msg.edited_at" class="edited">editada</span>
@@ -155,7 +164,21 @@
             <button class="icon-btn" @click="cancelEdit"><i class="pi pi-times"></i></button>
         </div>
 
-        <div class="chat-composer">
+        <div v-if="isRecording" class="chat-composer is-recording">
+            <ChatVoiceRecorder
+                :elapsed-ms="recordElapsedMs"
+                :max-seconds="audioMaxSeconds"
+                :paused="recordPaused"
+                :can-send="canSendRecording"
+                :level="recordLevel"
+                :preview-url="recordPreviewUrl"
+                @discard="discardRecording"
+                @toggle-pause="toggleRecordPause"
+                @send="sendRecording"
+            />
+        </div>
+
+        <div v-else class="chat-composer">
             <button class="icon-btn" @click="showEmoji = !showEmoji">
                 <i class="pi pi-face-smile"></i>
             </button>
@@ -180,8 +203,23 @@
                 @keydown.enter.exact.prevent="sendText"
                 @input="onTyping"
             />
-            <button class="send-btn" :disabled="sending || !draft.trim()" @click="sendText">
+            <button
+                v-if="hasDraft"
+                class="send-btn"
+                :disabled="sending || !draft.trim()"
+                title="Enviar"
+                @click="sendText"
+            >
                 <i class="pi pi-send"></i>
+            </button>
+            <button
+                v-else
+                class="mic-btn"
+                :disabled="sending"
+                title="Gravar áudio"
+                @click="startRecording"
+            >
+                <i class="pi pi-microphone"></i>
             </button>
         </div>
 
@@ -199,8 +237,12 @@
         <ChatMediaUnlockDialog
             v-model:visible="showUnlock"
             :media-credits="mediaCredits"
+            :audio-credits="audioCredits"
             :credits-per-pack="creditsPerPack"
+            :audio-credits-per-pack="audioCreditsPerPack"
             :price="packagePrice"
+            :audio-price="audioPackagePrice"
+            :initial-package="unlockPackage"
         />
 
         <Teleport to="body">
@@ -230,6 +272,8 @@ import Menu from 'primevue/menu';
 import EmojiPicker from '@/components/EmojiPicker.vue';
 import ChatGalleryDialog from './ChatGalleryDialog.vue';
 import ChatMediaUnlockDialog from './ChatMediaUnlockDialog.vue';
+import ChatAudioBubble from './ChatAudioBubble.vue';
+import ChatVoiceRecorder from './ChatVoiceRecorder.vue';
 import { getEcho, chatLog, chatWarn, isEchoConnected } from '@/utils/echo';
 import { useChatStore } from '@/stores/chat';
 import { isAdmin, currentUserId } from '@/utils/global';
@@ -243,6 +287,8 @@ export default {
         EmojiPicker,
         ChatGalleryDialog,
         ChatMediaUnlockDialog,
+        ChatAudioBubble,
+        ChatVoiceRecorder,
     },
     props: {
         conversation: { type: Object, required: true },
@@ -258,6 +304,7 @@ export default {
             showEmoji: false,
             showGallery: false,
             showUnlock: false,
+            unlockPackage: 'media',
             showImagePreview: false,
             previewImageUrl: null,
             replyingTo: null,
@@ -267,12 +314,29 @@ export default {
             whisperTimer: null,
             menuMessage: null,
             mediaCredits: 0,
+            audioCredits: 0,
             creditsPerPack: 5,
+            audioCreditsPerPack: 5,
+            audioMaxSeconds: 60,
             packagePrice: null,
+            audioPackagePrice: null,
             wallpaperDesktop: null,
             wallpaperMobile: null,
             channel: null,
             pollTimer: null,
+            isRecording: false,
+            recordPaused: false,
+            recordElapsedMs: 0,
+            recordLevel: 0,
+            recordChunks: [],
+            mediaRecorder: null,
+            mediaStream: null,
+            audioContext: null,
+            analyser: null,
+            recordRaf: null,
+            recordStartedAt: 0,
+            recordAccumMs: 0,
+            recordPreviewUrl: null,
             defaultAvatar: 'https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png',
         };
     },
@@ -282,6 +346,12 @@ export default {
         },
         isAdminUser() {
             return isAdmin();
+        },
+        hasDraft() {
+            return Boolean((this.draft || '').trim());
+        },
+        canSendRecording() {
+            return this.recordElapsedMs >= 800 && !this.sending;
         },
         otherUser() {
             return this.conversation?.other_user || null;
@@ -368,6 +438,7 @@ export default {
         this.teardownChannel();
         this.stopPolling();
         this.closeImagePreview();
+        this.cleanupRecording(true);
         if (this.typingTimer) clearTimeout(this.typingTimer);
         if (this.whisperTimer) clearTimeout(this.whisperTimer);
     },
@@ -379,6 +450,7 @@ export default {
             if (!msg) return '';
             if (msg.type === 'image') return 'Foto';
             if (msg.type === 'video') return 'Vídeo';
+            if (msg.type === 'audio') return 'Áudio';
             return msg.body || '';
         },
         formatTime(iso) {
@@ -465,8 +537,12 @@ export default {
             try {
                 const { data } = await this.api.get('/chat/media-package', { skipLoading: true });
                 this.mediaCredits = data.media_credits || 0;
+                this.audioCredits = data.audio_credits || 0;
                 this.creditsPerPack = data.credits_per_pack || 5;
+                this.audioCreditsPerPack = data.audio_credits_per_pack || 5;
+                this.audioMaxSeconds = data.audio_max_seconds || 60;
                 this.packagePrice = data.price;
+                this.audioPackagePrice = data.audio_price;
                 this.wallpaperDesktop = data.wallpaper_desktop || null;
                 this.wallpaperMobile = data.wallpaper_mobile || null;
                 useChatStore().mediaCredits = this.mediaCredits;
@@ -668,10 +744,14 @@ export default {
         },
         onAttachClick() {
             if (!this.isAdminUser && this.mediaCredits < 1) {
-                this.showUnlock = true;
+                this.openUnlock('media');
                 return;
             }
             this.$refs.fileInput.click();
+        },
+        openUnlock(packageType = 'media') {
+            this.unlockPackage = packageType === 'audio' ? 'audio' : 'media';
+            this.showUnlock = true;
         },
         async onFileSelected(event) {
             const file = event.target.files?.[0];
@@ -679,7 +759,7 @@ export default {
             if (!file) return;
 
             if (!this.isAdminUser && this.mediaCredits < 1) {
-                this.showUnlock = true;
+                this.openUnlock('media');
                 return;
             }
 
@@ -714,7 +794,11 @@ export default {
                 if (typeof data.media_credits === 'number') {
                     this.mediaCredits = data.media_credits;
                     useChatStore().mediaCredits = this.mediaCredits;
-                } else {
+                }
+                if (typeof data.audio_credits === 'number') {
+                    this.audioCredits = data.audio_credits;
+                }
+                if (typeof data.media_credits !== 'number') {
                     await this.loadPackageInfo();
                 }
                 this.replyingTo = null;
@@ -722,12 +806,307 @@ export default {
                 this.$nextTick(this.scrollToBottom);
             } catch (e) {
                 if (e.response?.data?.requires_media_pack) {
-                    this.showUnlock = true;
+                    this.openUnlock(e.response?.data?.package_needed || 'media');
                 }
                 this.$toast.add({
                     severity: 'error',
                     summary: 'Erro',
                     detail: e.response?.data?.message || 'Falha ao enviar mídia',
+                    life: 4000,
+                });
+            } finally {
+                this.sending = false;
+            }
+        },
+        pickRecorderMime() {
+            const candidates = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/mp4',
+                'audio/ogg;codecs=opus',
+            ];
+            for (const type of candidates) {
+                if (window.MediaRecorder?.isTypeSupported?.(type)) return type;
+            }
+            return '';
+        },
+        async startRecording() {
+            if (this.isRecording || this.sending) return;
+
+            if (!this.isAdminUser && this.audioCredits < 1) {
+                this.openUnlock('audio');
+                return;
+            }
+
+            if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Não suportado',
+                    detail: 'Seu navegador não permite gravar áudio.',
+                    life: 4000,
+                });
+                return;
+            }
+
+            try {
+                this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mimeType = this.pickRecorderMime();
+                this.recordChunks = [];
+                this.mediaRecorder = mimeType
+                    ? new MediaRecorder(this.mediaStream, { mimeType })
+                    : new MediaRecorder(this.mediaStream);
+
+                this.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size > 0) {
+                        this.recordChunks.push(event.data);
+                    }
+                };
+
+                this.setupAnalyser(this.mediaStream);
+                this.mediaRecorder.start(200);
+                this.isRecording = true;
+                this.recordPaused = false;
+                this.recordAccumMs = 0;
+                this.recordStartedAt = Date.now();
+                this.recordElapsedMs = 0;
+                this.showEmoji = false;
+                this.tickRecordingClock();
+            } catch (e) {
+                this.cleanupRecording(true);
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Microfone',
+                    detail: 'Não foi possível acessar o microfone. Verifique a permissão.',
+                    life: 4500,
+                });
+            }
+        },
+        setupAnalyser(stream) {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = this.audioContext.createMediaStreamSource(stream);
+                this.analyser = this.audioContext.createAnalyser();
+                this.analyser.fftSize = 256;
+                source.connect(this.analyser);
+            } catch (e) {
+                this.analyser = null;
+            }
+        },
+        tickRecordingClock() {
+            if (this.recordRaf) cancelAnimationFrame(this.recordRaf);
+            const loop = () => {
+                if (!this.isRecording) return;
+
+                if (!this.recordPaused) {
+                    this.recordElapsedMs = this.recordAccumMs + (Date.now() - this.recordStartedAt);
+                    const maxMs = this.audioMaxSeconds * 1000;
+                    if (this.recordElapsedMs >= maxMs) {
+                        this.recordElapsedMs = maxMs;
+                        this.pauseRecording(true);
+                        return;
+                    }
+                    if (this.analyser) {
+                        const data = new Uint8Array(this.analyser.frequencyBinCount);
+                        this.analyser.getByteTimeDomainData(data);
+                        let sum = 0;
+                        for (let i = 0; i < data.length; i += 1) {
+                            const v = (data[i] - 128) / 128;
+                            sum += v * v;
+                        }
+                        this.recordLevel = Math.min(1, Math.sqrt(sum / data.length) * 4);
+                    } else {
+                        this.recordLevel = 0.25;
+                    }
+                }
+
+                this.recordRaf = requestAnimationFrame(loop);
+            };
+            this.recordRaf = requestAnimationFrame(loop);
+        },
+        pauseRecording(fromCap = false) {
+            if (!this.mediaRecorder || this.recordPaused) return;
+            try {
+                if (this.mediaRecorder.state === 'recording') {
+                    this.mediaRecorder.pause();
+                }
+            } catch (e) {
+                // alguns browsers não suportam pause
+            }
+            this.recordAccumMs = Math.min(
+                this.audioMaxSeconds * 1000,
+                this.recordAccumMs + (Date.now() - this.recordStartedAt)
+            );
+            this.recordElapsedMs = this.recordAccumMs;
+            this.recordPaused = true;
+            this.recordLevel = 0;
+            this.buildRecordPreview();
+            if (fromCap) {
+                this.$toast.add({
+                    severity: 'info',
+                    summary: 'Limite de 1 minuto',
+                    detail: 'Gravação pausada. Ouça, envie ou descarte o áudio.',
+                    life: 3500,
+                });
+            }
+        },
+        buildRecordPreview() {
+            try {
+                this.mediaRecorder?.requestData?.();
+            } catch (e) {
+                // ignore
+            }
+            window.setTimeout(() => {
+                const mime = this.mediaRecorder?.mimeType || 'audio/webm';
+                const blob = new Blob(this.recordChunks, { type: mime });
+                if (this.recordPreviewUrl) {
+                    URL.revokeObjectURL(this.recordPreviewUrl);
+                    this.recordPreviewUrl = null;
+                }
+                if (blob.size > 0) {
+                    this.recordPreviewUrl = URL.createObjectURL(blob);
+                }
+            }, 80);
+        },
+        resumeRecording() {
+            if (!this.mediaRecorder || !this.recordPaused) return;
+            if (this.recordElapsedMs >= this.audioMaxSeconds * 1000) return;
+            if (this.recordPreviewUrl) {
+                URL.revokeObjectURL(this.recordPreviewUrl);
+                this.recordPreviewUrl = null;
+            }
+            try {
+                if (this.mediaRecorder.state === 'paused') {
+                    this.mediaRecorder.resume();
+                }
+            } catch (e) {
+                // ignore
+            }
+            this.recordStartedAt = Date.now();
+            this.recordPaused = false;
+            this.tickRecordingClock();
+        },
+        toggleRecordPause() {
+            if (this.recordPaused) this.resumeRecording();
+            else this.pauseRecording(false);
+        },
+        async discardRecording() {
+            await this.cleanupRecording(true);
+        },
+        stopRecorderToBlob() {
+            return new Promise((resolve) => {
+                const recorder = this.mediaRecorder;
+                if (!recorder) {
+                    resolve(null);
+                    return;
+                }
+
+                const finish = () => {
+                    const mime = recorder.mimeType || 'audio/webm';
+                    const blob = new Blob(this.recordChunks, { type: mime });
+                    resolve(blob.size > 0 ? blob : null);
+                };
+
+                if (recorder.state === 'inactive') {
+                    finish();
+                    return;
+                }
+
+                recorder.onstop = finish;
+                try {
+                    recorder.requestData?.();
+                } catch (e) {
+                    // ignore
+                }
+                recorder.stop();
+            });
+        },
+        async cleanupRecording(hard = false) {
+            if (this.recordRaf) {
+                cancelAnimationFrame(this.recordRaf);
+                this.recordRaf = null;
+            }
+            try {
+                if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                    this.mediaRecorder.onstop = null;
+                    this.mediaRecorder.stop();
+                }
+            } catch (e) {
+                // ignore
+            }
+            this.mediaRecorder = null;
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach((t) => t.stop());
+                this.mediaStream = null;
+            }
+            if (this.audioContext) {
+                try {
+                    await this.audioContext.close();
+                } catch (e) {
+                    // ignore
+                }
+                this.audioContext = null;
+            }
+            this.analyser = null;
+            if (this.recordPreviewUrl) {
+                URL.revokeObjectURL(this.recordPreviewUrl);
+                this.recordPreviewUrl = null;
+            }
+            if (hard) {
+                this.recordChunks = [];
+                this.isRecording = false;
+                this.recordPaused = false;
+                this.recordElapsedMs = 0;
+                this.recordAccumMs = 0;
+                this.recordLevel = 0;
+            }
+        },
+        async sendRecording() {
+            if (!this.canSendRecording) return;
+            const durationSec = Math.max(1, Math.min(
+                this.audioMaxSeconds,
+                Math.round(this.recordElapsedMs / 1000)
+            ));
+
+            this.sending = true;
+            try {
+                const blob = await this.stopRecorderToBlob();
+                await this.cleanupRecording(true);
+                if (!blob) {
+                    throw new Error('Áudio vazio');
+                }
+
+                const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
+                const file = new File([blob], `audio_${Date.now()}.${ext}`, { type: blob.type || 'audio/webm' });
+
+                const form = new FormData();
+                form.append('type', 'audio');
+                form.append('media', file);
+                form.append('body', String(durationSec));
+                if (this.replyingTo) form.append('reply_to_id', this.replyingTo.id);
+
+                const { data } = await this.api.post(
+                    `/chat/conversations/${this.conversationId}/messages`,
+                    form
+                );
+                this.upsertMessage(data.data || data);
+                if (typeof data.audio_credits === 'number') {
+                    this.audioCredits = data.audio_credits;
+                }
+                if (typeof data.media_credits === 'number') {
+                    this.mediaCredits = data.media_credits;
+                    useChatStore().mediaCredits = this.mediaCredits;
+                }
+                this.replyingTo = null;
+                this.$emit('updated');
+                this.$nextTick(this.scrollToBottom);
+            } catch (e) {
+                if (e.response?.data?.requires_media_pack) {
+                    this.openUnlock(e.response?.data?.package_needed || 'audio');
+                }
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || e.message || 'Falha ao enviar áudio',
                     life: 4000,
                 });
             } finally {
@@ -1142,6 +1521,10 @@ export default {
     background: #121212;
     border-top: 1px solid #2a2a2a;
     flex-shrink: 0;
+
+    &.is-recording {
+        padding-bottom: 1.35rem;
+    }
 }
 
 .composer-input {
@@ -1149,14 +1532,37 @@ export default {
     border-radius: 999px !important;
 }
 
-.send-btn {
+.send-btn,
+.mic-btn {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
     border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.send-btn {
     background: #f5cee1;
     color: #761c49;
-    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.mic-btn {
+    background: transparent;
+    color: #f5cee1;
+    font-size: 1.15rem;
+
+    &:hover {
+        background: #1a1a1a;
+    }
 
     &:disabled {
         opacity: 0.5;

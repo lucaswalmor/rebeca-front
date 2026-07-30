@@ -188,6 +188,7 @@ export default {
                 if (this.$refs.chatConfigFormRef && userData) {
                     this.$refs.chatConfigFormRef.preencherDados({
                         pacote_midia_chat: this.formatarMoeda(userData.valor_pacote_midia_chat),
+                        pacote_audio_chat: this.formatarMoeda(userData.valor_pacote_audio_chat),
                         wallpaper_desktop: userData.chat_wallpaper_desktop || null,
                         wallpaper_mobile: userData.chat_wallpaper_mobile || null,
                     });
@@ -262,9 +263,11 @@ export default {
                 this.loadingChat = true;
                 const dadosChat = this.$refs.chatConfigFormRef.dadosChat();
                 const valorPacoteMidia = this.converterValorFormatado(dadosChat.pacote_midia_chat);
+                const valorPacoteAudio = this.converterValorFormatado(dadosChat.pacote_audio_chat);
 
                 await this.api.put(`/users/${this.userId}`, {
                     valor_pacote_midia_chat: valorPacoteMidia,
+                    valor_pacote_audio_chat: valorPacoteAudio,
                 });
 
                 this.$toast.add({

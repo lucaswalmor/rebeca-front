@@ -212,7 +212,8 @@ export default {
                         || (this.urlParams.order_nsu || '').startsWith('post-');
 
                     this.isChatMediaPurchase = backendResponse.data.type === 'chat_media'
-                        || (this.urlParams.order_nsu || '').startsWith('chatmedia-');
+                        || (this.urlParams.order_nsu || '').startsWith('chatmedia-')
+                        || (this.urlParams.order_nsu || '').startsWith('chataudio-');
 
                     this.paymentStatus = {
                         paid: assinaturaData.status === 'aprovado',
@@ -226,9 +227,14 @@ export default {
                     };
 
                     if (this.paymentStatus.paid) {
-                        if (this.isChatMediaPurchase && typeof assinaturaData.media_credits === 'number') {
+                        if (this.isChatMediaPurchase) {
                             const user = JSON.parse(localStorage.getItem('user') || '{}');
-                            user.chat_media_credits = assinaturaData.media_credits;
+                            if (typeof assinaturaData.media_credits === 'number') {
+                                user.chat_media_credits = assinaturaData.media_credits;
+                            }
+                            if (typeof assinaturaData.audio_credits === 'number') {
+                                user.chat_audio_credits = assinaturaData.audio_credits;
+                            }
                             localStorage.setItem('user', JSON.stringify(user));
                         }
 

@@ -161,6 +161,7 @@ export default {
             if (!m) return 'Sem mensagens';
             if (m.type === 'image') return 'Foto';
             if (m.type === 'video') return 'Vídeo';
+            if (m.type === 'audio') return 'Áudio';
             return m.body || '';
         },
         formatTime(iso) {

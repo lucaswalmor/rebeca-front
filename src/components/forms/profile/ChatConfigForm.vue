@@ -3,22 +3,37 @@
         <div class="col-md-12 text-300 mb-3">
             <h4>Configurar chat</h4>
             <p class="hint">
-                Defina o valor do pacote de mídia e os fundos da conversa. O sistema usa o wallpaper
+                Defina os valores dos pacotes de mídia e áudio, e os fundos da conversa. O sistema usa o wallpaper
                 de computador no desktop e o de celular no mobile — para você e para os assinantes.
             </p>
         </div>
 
-        <div class="col-md-12 mb-4">
-            <IftaLabel>
-                <InputText
-                    id="pacote_midia_chat"
-                    v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ ####,##']"
-                    v-model="dados.pacote_midia_chat"
-                    class="w-full"
-                    size="small"
-                />
-                <label for="pacote_midia_chat">Pacote chat (5 envios foto/vídeo)</label>
-            </IftaLabel>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <IftaLabel>
+                    <InputText
+                        id="pacote_midia_chat"
+                        v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ ####,##']"
+                        v-model="dados.pacote_midia_chat"
+                        class="w-full"
+                        size="small"
+                    />
+                    <label for="pacote_midia_chat">Pacote chat (5 envios foto/vídeo)</label>
+                </IftaLabel>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <IftaLabel>
+                    <InputText
+                        id="pacote_audio_chat"
+                        v-mask="['R$ #,##', 'R$ ##,##', 'R$ ###,##', 'R$ ####,##']"
+                        v-model="dados.pacote_audio_chat"
+                        class="w-full"
+                        size="small"
+                    />
+                    <label for="pacote_audio_chat">Pacote chat (5 envios de áudio)</label>
+                </IftaLabel>
+            </div>
         </div>
 
         <div class="row g-3">
@@ -120,6 +135,7 @@ export default {
         return {
             dados: {
                 pacote_midia_chat: 'R$ 0,00',
+                pacote_audio_chat: 'R$ 0,00',
                 wallpaper_desktop: null,
                 wallpaper_mobile: null,
             },
