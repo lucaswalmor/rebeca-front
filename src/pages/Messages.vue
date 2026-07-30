@@ -219,10 +219,18 @@ export default {
 @media (max-width: 768px) {
     .messages-page {
         padding-bottom: 0;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .messages-shell {
-        height: calc(100dvh - 56px - 60px - env(safe-area-inset-bottom, 0px));
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        height: auto;
+        width: 100%;
     }
 }
 
