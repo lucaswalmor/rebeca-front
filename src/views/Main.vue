@@ -4,10 +4,12 @@
             <Hero :user-data="userData" />
 
             <Menu
+                v-model:activeTab="activeTab"
                 :totalPostagens="postsCount.total || 0"
             />
 
-            <Content :conteudos="conteudos" />
+            <Content v-if="activeTab === 'posts'" :conteudos="conteudos" />
+            <PostsGaleria v-else :conteudos="conteudos" />
 
             <div v-if="loadingMore" class="text-center p-3">
                 <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #f5cee1;"></i>
@@ -21,6 +23,7 @@
 import Hero from '@/components/Hero.vue';
 import Menu from '@/components/Menu.vue';
 import Content from '@/views/Content.vue';
+import PostsGaleria from '@/components/PostsGaleria.vue';
 import ScrollTop from 'primevue/scrolltop';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -31,10 +34,12 @@ export default {
         Hero,
         Menu,
         Content,
+        PostsGaleria,
         ScrollTop,
     },
     data() {
         return {
+            activeTab: 'posts',
             conteudos: [],
             loading: false,
             loadingMore: false,
@@ -143,6 +148,7 @@ export default {
         },
         async handleAuthChange() {
             await this.carregarContagens();
+            this.currentPage = 1;
             await this.carregarPosts();
         },
     },
