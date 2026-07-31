@@ -49,73 +49,81 @@
         </template>
     </Card>
 
-    <!-- Lightbox PrimeVue Gallery (apenas mídias liberadas) -->
-    <Gallery
-        v-if="lightboxOpen"
-        fullscreen
-        v-model:activeIndex="lightboxIndex"
-        class="posts-gallery-lightbox"
-        :class="lightboxVisible ? 'is-visible' : 'is-hidden'"
-        @update:fullscreen="onFullscreenChange"
-    >
-        <GalleryBackdrop />
-        <GalleryPrev>
-            <ChevronLeft />
-        </GalleryPrev>
-        <GalleryNext>
-            <ChevronRight />
-        </GalleryNext>
-        <GalleryHeader class="justify-end gap-0.5">
-            <GalleryZoomIn>
-                <SearchPlus />
-            </GalleryZoomIn>
-            <GalleryZoomOut>
-                <SearchMinus />
-            </GalleryZoomOut>
-            <button type="button" class="p-gallery-action" @click="closeLightbox">
-                <Times />
+    <!-- Lightbox fullscreen (custom: Gallery do PrimeVue não dimensiona vídeo corretamente) -->
+    <Teleport to="body">
+        <div
+            v-if="lightboxOpen"
+            class="posts-lightbox"
+            :class="{ 'is-visible': lightboxVisible }"
+            @keydown.esc="closeLightbox"
+        >
+            <button type="button" class="posts-lightbox-close" title="Fechar" @click="closeLightbox">
+                <i class="pi pi-times"></i>
             </button>
-        </GalleryHeader>
-        <GalleryContent>
-            <GalleryItem v-for="(item, index) in lightboxItems" :key="item.key">
-                <img
-                    v-if="item.tipo === 'image'"
-                    :src="item.url"
-                    :alt="item.alt || `imagem-${index + 1}`"
-                    class="lightbox-media"
-                    :class="lightboxVisible ? 'is-ready' : 'is-entering'"
-                />
-                <video
-                    v-else
-                    :src="item.url"
-                    controls
-                    class="lightbox-media lightbox-video"
-                    :class="lightboxVisible ? 'is-ready' : 'is-entering'"
-                />
-            </GalleryItem>
-        </GalleryContent>
-        <GalleryFooter>
-            <GalleryThumbnail>
-                <GalleryThumbnailContent>
-                    <GalleryThumbnailItem
-                        v-for="(item, index) in lightboxItems"
-                        :key="`thumb-${item.key}`"
-                        :index="index"
-                    >
-                        <img
-                            v-if="item.tipo === 'image'"
-                            draggable="false"
-                            :src="item.url"
-                            class="h-full w-full object-cover"
-                        />
-                        <div v-else class="thumb-video-placeholder">
-                            <i class="fa-solid fa-film"></i>
-                        </div>
-                    </GalleryThumbnailItem>
-                </GalleryThumbnailContent>
-            </GalleryThumbnail>
-        </GalleryFooter>
-    </Gallery>
+
+            <button
+                v-if="lightboxItems.length > 1"
+                type="button"
+                class="posts-lightbox-nav is-prev"
+                title="Anterior"
+                @click="lightboxPrev"
+            >
+                <i class="pi pi-chevron-left"></i>
+            </button>
+
+            <div class="posts-lightbox-stage" @click.self="closeLightbox">
+                <template v-if="currentLightboxItem">
+                    <img
+                        v-if="currentLightboxItem.tipo === 'image'"
+                        :key="`img-${currentLightboxItem.key}`"
+                        :src="currentLightboxItem.url"
+                        :alt="currentLightboxItem.alt || 'Mídia'"
+                        class="posts-lightbox-media"
+                    />
+                    <video
+                        v-else
+                        :key="`video-${currentLightboxItem.key}`"
+                        :src="currentLightboxItem.url"
+                        class="posts-lightbox-media is-video"
+                        controls
+                        playsinline
+                        autoplay
+                    />
+                </template>
+            </div>
+
+            <button
+                v-if="lightboxItems.length > 1"
+                type="button"
+                class="posts-lightbox-nav is-next"
+                title="Próximo"
+                @click="lightboxNext"
+            >
+                <i class="pi pi-chevron-right"></i>
+            </button>
+
+            <div v-if="lightboxItems.length > 1" class="posts-lightbox-thumbs">
+                <button
+                    v-for="(item, index) in lightboxItems"
+                    :key="`lb-thumb-${item.key}`"
+                    type="button"
+                    class="posts-lightbox-thumb"
+                    :class="{ 'is-active': index === lightboxIndex }"
+                    @click="lightboxIndex = index"
+                >
+                    <img
+                        v-if="item.tipo === 'image'"
+                        :src="item.url"
+                        alt=""
+                        draggable="false"
+                    />
+                    <div v-else class="posts-lightbox-thumb-video">
+                        <i class="fa-solid fa-film"></i>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </Teleport>
 
     <!-- Modal de conteúdo bloqueado -->
     <Dialog
@@ -164,24 +172,6 @@ import { storeToRefs } from 'pinia';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import Skeleton from 'primevue/skeleton';
-import Gallery from 'primevue/gallery';
-import GalleryBackdrop from 'primevue/gallerybackdrop';
-import GalleryContent from 'primevue/gallerycontent';
-import GalleryItem from 'primevue/galleryitem';
-import GalleryPrev from 'primevue/galleryprev';
-import GalleryNext from 'primevue/gallerynext';
-import GalleryHeader from 'primevue/galleryheader';
-import GalleryFooter from 'primevue/galleryfooter';
-import GalleryThumbnail from 'primevue/gallerythumbnail';
-import GalleryThumbnailContent from 'primevue/gallerythumbnailcontent';
-import GalleryThumbnailItem from 'primevue/gallerythumbnailitem';
-import GalleryZoomIn from 'primevue/galleryzoomin';
-import GalleryZoomOut from 'primevue/galleryzoomout';
-import ChevronLeft from '@primeicons/vue/chevron-left';
-import ChevronRight from '@primeicons/vue/chevron-right';
-import SearchMinus from '@primeicons/vue/search-minus';
-import SearchPlus from '@primeicons/vue/search-plus';
-import Times from '@primeicons/vue/times';
 import Botao from '@/components/ui/Botao.vue';
 import { useAuthStore } from '@/stores/auth';
 
@@ -192,24 +182,6 @@ export default {
         Dialog,
         Skeleton,
         Botao,
-        Gallery,
-        GalleryBackdrop,
-        GalleryContent,
-        GalleryItem,
-        GalleryPrev,
-        GalleryNext,
-        GalleryHeader,
-        GalleryFooter,
-        GalleryThumbnail,
-        GalleryThumbnailContent,
-        GalleryThumbnailItem,
-        GalleryZoomIn,
-        GalleryZoomOut,
-        ChevronLeft,
-        ChevronRight,
-        SearchMinus,
-        SearchPlus,
-        Times,
     },
     props: {
         active: {
@@ -291,6 +263,9 @@ export default {
         lightboxItems() {
             return this.gridItems.filter((item) => item.kind === 'media');
         },
+        currentLightboxItem() {
+            return this.lightboxItems[this.lightboxIndex] || null;
+        },
     },
     watch: {
         active: {
@@ -309,6 +284,18 @@ export default {
                 this.ensureLoaded();
             }
         },
+        lightboxOpen(isOpen) {
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+            if (isOpen) {
+                window.addEventListener('keydown', this.onLightboxKeydown);
+            } else {
+                window.removeEventListener('keydown', this.onLightboxKeydown);
+            }
+        },
+    },
+    beforeUnmount() {
+        window.removeEventListener('keydown', this.onLightboxKeydown);
+        document.body.style.overflow = '';
     },
     methods: {
         async ensureLoaded() {
@@ -407,8 +394,21 @@ export default {
                 this.lightboxOpen = false;
             }, 200);
         },
-        onFullscreenChange(value) {
-            if (!value) this.closeLightbox();
+        lightboxPrev() {
+            const total = this.lightboxItems.length;
+            if (total <= 1) return;
+            this.lightboxIndex = (this.lightboxIndex - 1 + total) % total;
+        },
+        lightboxNext() {
+            const total = this.lightboxItems.length;
+            if (total <= 1) return;
+            this.lightboxIndex = (this.lightboxIndex + 1) % total;
+        },
+        onLightboxKeydown(event) {
+            if (!this.lightboxOpen) return;
+            if (event.key === 'Escape') this.closeLightbox();
+            if (event.key === 'ArrowLeft') this.lightboxPrev();
+            if (event.key === 'ArrowRight') this.lightboxNext();
         },
         async comprarPost(post) {
             if (!post?.id || this.isAdmin) return;
@@ -527,6 +527,10 @@ export default {
     width: 100%;
     height: 100%;
     position: relative;
+
+    video {
+        pointer-events: none;
+    }
 }
 
 .gallery-play-icon {
@@ -555,46 +559,127 @@ export default {
     font-size: 1.5rem;
 }
 
-.posts-gallery-lightbox {
+.posts-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.92);
+    opacity: 0;
     transition: opacity 0.2s ease;
 
     &.is-visible {
         opacity: 1;
     }
+}
 
-    &.is-hidden {
-        opacity: 0;
+.posts-lightbox-close,
+.posts-lightbox-nav {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: rgba(245, 206, 225, 0.28);
+        color: #f5cee1;
     }
 }
 
-.lightbox-media {
+.posts-lightbox-close {
+    top: 1rem;
+    right: 1rem;
+}
+
+.posts-lightbox-nav {
+    top: 50%;
+    transform: translateY(-50%);
+
+    &.is-prev {
+        left: 0.75rem;
+    }
+
+    &.is-next {
+        right: 0.75rem;
+    }
+}
+
+.posts-lightbox-stage {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 4.5rem 1rem;
+    min-height: 0;
+}
+
+.posts-lightbox-media {
     max-width: min(92vw, 1100px);
-    max-height: 75vh;
+    max-height: min(78vh, calc(100vh - 10rem));
+    width: auto;
+    height: auto;
     object-fit: contain;
-    transition: transform 0.3s ease, filter 0.3s ease;
+    border-radius: 4px;
 
-    &.is-entering {
-        transform: scale(0.9);
-        filter: blur(12px);
-    }
-
-    &.is-ready {
-        transform: scale(1);
-        filter: blur(0);
+    &.is-video {
+        width: min(96vw, 1200px);
+        max-height: min(78vh, calc(100vh - 10rem));
+        background: #000;
     }
 }
 
-.lightbox-video {
-    background: #000;
+.posts-lightbox-thumbs {
+    display: flex;
+    gap: 0.5rem;
+    max-width: min(96vw, 900px);
+    overflow-x: auto;
+    padding: 0.75rem 1rem 1.25rem;
+    scrollbar-width: thin;
 }
 
-.thumb-video-placeholder {
+.posts-lightbox-thumb {
+    flex: 0 0 auto;
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1a1a1a;
+    cursor: pointer;
+    line-height: 0;
+
+    &.is-active {
+        border-color: #f5cee1;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+}
+
+.posts-lightbox-thumb-video {
     width: 100%;
     height: 100%;
     display: grid;
     place-items: center;
-    background: #1a1a1a;
     color: #f5cee1;
+    background: #1a1a1a;
 }
 
 .unlock-panel {
