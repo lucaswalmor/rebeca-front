@@ -8,10 +8,10 @@
                 :totalPostagens="postsCount.total || 0"
             />
 
-            <Content v-if="activeTab === 'posts'" :conteudos="conteudos" />
-            <PostsGaleria v-else :conteudos="conteudos" />
+            <Content v-show="activeTab === 'posts'" :conteudos="conteudos" />
+            <PostsGaleria v-show="activeTab === 'galeria'" :active="activeTab === 'galeria'" />
 
-            <div v-if="loadingMore" class="text-center p-3">
+            <div v-if="activeTab === 'posts' && loadingMore" class="text-center p-3">
                 <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #f5cee1;"></i>
             </div>
         </div>
@@ -135,6 +135,8 @@ export default {
             }
         },
         handleScroll() {
+            if (this.activeTab !== 'posts') return;
+
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             const windowHeight = window.innerHeight;
             const documentHeight = document.documentElement.scrollHeight;

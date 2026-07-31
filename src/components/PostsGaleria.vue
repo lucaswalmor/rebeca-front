@@ -1,7 +1,17 @@
 <template>
     <Card class="mb-2">
         <template #content>
-            <div v-if="gridItems.length === 0" class="text-center p-5">
+            <div v-if="loading" class="gallery-grid">
+                <div
+                    v-for="n in skeletonCount"
+                    :key="`skeleton-${n}`"
+                    class="gallery-thumb gallery-skeleton-wrap"
+                >
+                    <Skeleton width="100%" height="100%" borderRadius="10px" />
+                </div>
+            </div>
+
+            <div v-else-if="gridItems.length === 0" class="text-center p-5">
                 <i class="fa-solid fa-images fa-3x text-white mb-3" style="opacity: 0.5;"></i>
                 <p class="text-white">Ainda não há mídias na galeria.</p>
             </div>
@@ -150,8 +160,10 @@
 
 <script>
 import { nextTick } from 'vue';
+import { storeToRefs } from 'pinia';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
+import Skeleton from 'primevue/skeleton';
 import Gallery from 'primevue/gallery';
 import GalleryBackdrop from 'primevue/gallerybackdrop';
 import GalleryContent from 'primevue/gallerycontent';
@@ -171,12 +183,14 @@ import SearchMinus from '@primeicons/vue/search-minus';
 import SearchPlus from '@primeicons/vue/search-plus';
 import Times from '@primeicons/vue/times';
 import Botao from '@/components/ui/Botao.vue';
+import { useAuthStore } from '@/stores/auth';
 
 export default {
     name: 'PostsGaleria',
     components: {
         Card,
         Dialog,
+        Skeleton,
         Botao,
         Gallery,
         GalleryBackdrop,
@@ -198,13 +212,22 @@ export default {
         Times,
     },
     props: {
-        conteudos: {
-            type: Array,
-            default: () => [],
+        active: {
+            type: Boolean,
+            default: false,
         },
+    },
+    setup() {
+        const authStore = useAuthStore();
+        const { updateTrigger } = storeToRefs(authStore);
+        return { updateTrigger };
     },
     data() {
         return {
+            posts: [],
+            loading: false,
+            loadedOnce: false,
+            skeletonCount: 12,
             lightboxOpen: false,
             lightboxVisible: false,
             lightboxIndex: 0,
@@ -222,7 +245,7 @@ export default {
         gridItems() {
             const items = [];
 
-            (this.conteudos || []).forEach((post) => {
+            (this.posts || []).forEach((post) => {
                 if (!post) return;
 
                 if (this.hasFullAccess(post)) {
@@ -269,7 +292,55 @@ export default {
             return this.gridItems.filter((item) => item.kind === 'media');
         },
     },
+    watch: {
+        active: {
+            immediate: true,
+            handler(isActive) {
+                if (isActive) {
+                    this.ensureLoaded();
+                }
+            },
+        },
+        updateTrigger() {
+            // Login/logout muda o acesso: invalida cache e recarrega se a aba estiver aberta
+            this.loadedOnce = false;
+            this.posts = [];
+            if (this.active) {
+                this.ensureLoaded();
+            }
+        },
+    },
     methods: {
+        async ensureLoaded() {
+            if (this.loadedOnce || this.loading) return;
+            await this.fetchGallery();
+        },
+        async fetchGallery() {
+            this.loading = true;
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const isAdminUser = user.is_admin === true || user.is_admin === 'true' || user.is_admin === 1;
+                let url = isAdminUser ? '/posts/admin/all' : '/posts';
+                const params = new URLSearchParams();
+                params.append('page', '1');
+                params.append('per_page', '200');
+                url += '?' + params.toString();
+
+                const response = await this.api.get(url);
+                this.posts = response.data.data || [];
+                this.loadedOnce = true;
+            } catch (error) {
+                console.error('Erro ao carregar galeria:', error);
+                this.$toast?.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: 'Erro ao carregar a galeria',
+                    life: 3000,
+                });
+            } finally {
+                this.loading = false;
+            }
+        },
         hasFullAccess(post) {
             if (this.isAdmin) return true;
             return post.has_full_access === true || post.is_locked === false;
@@ -413,6 +484,21 @@ export default {
 @media (min-width: 1200px) {
     .gallery-grid {
         grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.gallery-skeleton-wrap {
+    cursor: default;
+    pointer-events: none;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    :deep(.p-skeleton) {
+        width: 100% !important;
+        height: 100% !important;
+        background: #1f1f1f;
     }
 }
 
