@@ -33,6 +33,14 @@
                                     <span>Minhas Assinaturas</span>
                                 </div>
                                 <div
+                                    class="menu-item"
+                                    :class="{ 'menu-item-active': activeMenu === 'notificacoes' }"
+                                    @click="activeMenu = 'notificacoes'"
+                                >
+                                    <i class="pi pi-bell me-2"></i>
+                                    <span>Notificações</span>
+                                </div>
+                                <div
                                     class="menu-item menu-item-logout"
                                     @click="handleLogout"
                                 >
@@ -222,6 +230,32 @@
                             </template>
                         </Card>
                     </div>
+
+                    <!-- Notificações -->
+                    <div v-show="activeMenu === 'notificacoes'">
+                        <div class="col-md-12 text-300 mb-3">
+                            <h4>Notificações</h4>
+                        </div>
+
+                        <Card class="notifications-card">
+                            <template #content>
+                                <div class="notification-row">
+                                    <div class="notification-copy">
+                                        <p class="notification-title">Novos posts por e-mail</p>
+                                        <p class="notification-hint">
+                                            Receba um e-mail sempre que a Becalima007 publicar um novo post.
+                                            Disponível para assinantes com plano ativo.
+                                        </p>
+                                    </div>
+                                    <ToggleSwitch
+                                        v-model="notifyNewPostsEmail"
+                                        :disabled="savingNotifyPreference"
+                                        @update:modelValue="salvarPreferenciaNotificacao"
+                                    />
+                                </div>
+                            </template>
+                        </Card>
+                    </div>
                 </div>
             </div>
         </div>
@@ -247,6 +281,7 @@ import Botao from '@/components/ui/Botao.vue';
 import Badge from 'primevue/badge';
 import Card from 'primevue/card';
 import Avatar from 'primevue/avatar';
+import ToggleSwitch from 'primevue/toggleswitch';
 import { performLogout } from '@/utils/logout';
 
 export default {
@@ -263,6 +298,7 @@ export default {
         Badge,
         Card,
         Avatar,
+        ToggleSwitch,
     },
     data() {
         return {
@@ -279,6 +315,8 @@ export default {
             selectedAvatarFile: null,
             avatarPreview: null,
             uploadingAvatar: false,
+            notifyNewPostsEmail: false,
+            savingNotifyPreference: false,
             assinaturas: [],
             loading: false,
             showReciboDialog: false,
@@ -309,18 +347,23 @@ export default {
                     telefone: user.telefone || '',
                     path_img_avatar: user.path_img_avatar || null,
                 };
+                this.notifyNewPostsEmail = !!user.notify_new_posts_email;
 
-                // Atualiza avatar a partir da API (fonte da verdade)
+                // Atualiza preferências a partir da API (fonte da verdade)
                 try {
                     const { data } = await this.api.get(`/users/${user.id}`, { skipLoading: true });
                     const fresh = data.data || data;
                     if (fresh?.path_img_avatar) {
                         this.userData.path_img_avatar = fresh.path_img_avatar;
-                        localStorage.setItem('user', JSON.stringify({
-                            ...user,
-                            path_img_avatar: fresh.path_img_avatar,
-                        }));
                     }
+                    if (typeof fresh?.notify_new_posts_email === 'boolean') {
+                        this.notifyNewPostsEmail = fresh.notify_new_posts_email;
+                    }
+                    localStorage.setItem('user', JSON.stringify({
+                        ...user,
+                        path_img_avatar: this.userData.path_img_avatar,
+                        notify_new_posts_email: this.notifyNewPostsEmail,
+                    }));
                 } catch {
                     // mantém localStorage
                 }
@@ -339,6 +382,44 @@ export default {
                     telefone: '',
                     path_img_avatar: null,
                 };
+            }
+        },
+
+        async salvarPreferenciaNotificacao(value) {
+            if (!this.userData.id) return;
+
+            const previous = !value;
+            this.savingNotifyPreference = true;
+            try {
+                await this.api.patch(`/users/${this.userData.id}`, {
+                    notify_new_posts_email: !!value,
+                });
+
+                this.notifyNewPostsEmail = !!value;
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                localStorage.setItem('user', JSON.stringify({
+                    ...user,
+                    notify_new_posts_email: !!value,
+                }));
+
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Preferência salva',
+                    detail: value
+                        ? 'Você receberá e-mails quando houver novos posts.'
+                        : 'Notificações por e-mail desativadas.',
+                    life: 3000,
+                });
+            } catch (e) {
+                this.notifyNewPostsEmail = previous;
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Erro',
+                    detail: e.response?.data?.message || 'Não foi possível salvar a preferência',
+                    life: 3500,
+                });
+            } finally {
+                this.savingNotifyPreference = false;
             }
         },
 
@@ -572,6 +653,39 @@ export default {
     max-width: 22rem;
 }
 
+.notifications-card {
+    :deep(.p-card-body),
+    :deep(.p-card-content) {
+        background-color: #121212;
+        border-radius: 10px;
+    }
+}
+
+.notification-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+}
+
+.notification-copy {
+    min-width: 0;
+}
+
+.notification-title {
+    margin: 0 0 0.35rem;
+    color: #fff;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.notification-hint {
+    margin: 0;
+    color: #999;
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
 .hidden-file {
     display: none;
 }
@@ -590,6 +704,11 @@ export default {
 
     .avatar-actions {
         align-items: center;
+    }
+
+    .notification-row {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
