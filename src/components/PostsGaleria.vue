@@ -16,35 +16,38 @@
                 <p class="text-white">Ainda não há mídias na galeria.</p>
             </div>
 
-            <div v-else class="gallery-grid">
-                <div
-                    v-for="(item, index) in gridItems"
-                    :key="item.key"
-                    class="gallery-thumb"
-                    @click="onThumbClick(item, index)"
-                >
-                    <template v-if="item.kind === 'media'">
-                        <img
-                            v-if="item.tipo === 'image'"
-                            :src="item.url"
-                            :alt="item.alt"
-                            class="gallery-thumb-media"
-                            loading="lazy"
-                        />
-                        <div v-else class="gallery-thumb-video">
-                            <video
+            <div v-else class="gallery-grid-wrap">
+                <div class="gallery-grid">
+                    <div
+                        v-for="(item, index) in visibleGridItems"
+                        :key="item.key"
+                        class="gallery-thumb"
+                        @click="onThumbClick(item, index)"
+                    >
+                        <template v-if="item.kind === 'media'">
+                            <img
+                                v-if="item.tipo === 'image'"
                                 :src="item.url"
-                                muted
-                                preload="metadata"
+                                :alt="item.alt"
                                 class="gallery-thumb-media"
+                                loading="lazy"
                             />
-                            <i class="fa-solid fa-play gallery-play-icon"></i>
+                            <GalleryVideoThumb
+                                v-else
+                                :url="item.url"
+                            />
+                        </template>
+                        <div v-else class="gallery-thumb-locked">
+                            <i class="fa-solid fa-lock"></i>
                         </div>
-                    </template>
-                    <div v-else class="gallery-thumb-locked">
-                        <i class="fa-solid fa-lock"></i>
                     </div>
                 </div>
+                <div
+                    v-if="hasMoreGridItems"
+                    ref="loadMoreSentinel"
+                    class="gallery-load-more-sentinel"
+                    aria-hidden="true"
+                />
             </div>
         </template>
     </Card>
@@ -173,6 +176,7 @@ import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import Skeleton from 'primevue/skeleton';
 import Botao from '@/components/ui/Botao.vue';
+import GalleryVideoThumb from '@/components/GalleryVideoThumb.vue';
 import { useAuthStore } from '@/stores/auth';
 
 export default {
@@ -182,6 +186,7 @@ export default {
         Dialog,
         Skeleton,
         Botao,
+        GalleryVideoThumb,
     },
     props: {
         active: {
@@ -200,6 +205,9 @@ export default {
             loading: false,
             loadedOnce: false,
             skeletonCount: 12,
+            pageSize: 12,
+            visibleCount: 12,
+            loadMoreObserver: null,
             lightboxOpen: false,
             lightboxVisible: false,
             lightboxIndex: 0,
@@ -260,6 +268,12 @@ export default {
 
             return items;
         },
+        visibleGridItems() {
+            return this.gridItems.slice(0, this.visibleCount);
+        },
+        hasMoreGridItems() {
+            return this.visibleCount < this.gridItems.length;
+        },
         lightboxItems() {
             return this.gridItems.filter((item) => item.kind === 'media');
         },
@@ -273,15 +287,24 @@ export default {
             handler(isActive) {
                 if (isActive) {
                     this.ensureLoaded();
+                    this.$nextTick(() => this.setupLoadMoreObserver());
                 }
             },
         },
         updateTrigger() {
-            // Login/logout muda o acesso: invalida cache e recarrega se a aba estiver aberta
             this.loadedOnce = false;
             this.posts = [];
+            this.visibleCount = this.pageSize;
             if (this.active) {
                 this.ensureLoaded();
+            }
+        },
+        hasMoreGridItems() {
+            this.$nextTick(() => this.setupLoadMoreObserver());
+        },
+        loading(isLoading) {
+            if (!isLoading) {
+                this.$nextTick(() => this.setupLoadMoreObserver());
             }
         },
         lightboxOpen(isOpen) {
@@ -294,16 +317,48 @@ export default {
         },
     },
     beforeUnmount() {
+        this.teardownLoadMoreObserver();
         window.removeEventListener('keydown', this.onLightboxKeydown);
         document.body.style.overflow = '';
     },
     methods: {
+        setupLoadMoreObserver() {
+            this.teardownLoadMoreObserver();
+            if (!this.hasMoreGridItems || !this.$refs.loadMoreSentinel) return;
+
+            this.loadMoreObserver = new IntersectionObserver(
+                (entries) => {
+                    if (entries.some((entry) => entry.isIntersecting)) {
+                        this.loadMoreGridItems();
+                    }
+                },
+                {
+                    root: null,
+                    rootMargin: '320px 0px',
+                    threshold: 0,
+                }
+            );
+            this.loadMoreObserver.observe(this.$refs.loadMoreSentinel);
+        },
+        teardownLoadMoreObserver() {
+            this.loadMoreObserver?.disconnect();
+            this.loadMoreObserver = null;
+        },
+        loadMoreGridItems() {
+            if (!this.hasMoreGridItems) return;
+            this.visibleCount = Math.min(
+                this.visibleCount + this.pageSize,
+                this.gridItems.length
+            );
+            this.$nextTick(() => this.setupLoadMoreObserver());
+        },
         async ensureLoaded() {
             if (this.loadedOnce || this.loading) return;
             await this.fetchGallery();
         },
         async fetchGallery() {
             this.loading = true;
+            this.visibleCount = this.pageSize;
             try {
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 const isAdminUser = user.is_admin === true || user.is_admin === 'true' || user.is_admin === 1;
@@ -474,6 +529,13 @@ export default {
     gap: 0.5rem;
 }
 
+.gallery-load-more-sentinel {
+    width: 100%;
+    height: 1px;
+    margin-top: 0.5rem;
+    pointer-events: none;
+}
+
 @media (min-width: 768px) {
     .gallery-grid {
         grid-template-columns: repeat(4, 1fr);
@@ -521,31 +583,6 @@ export default {
     height: 100%;
     object-fit: cover;
     display: block;
-}
-
-.gallery-thumb-video {
-    width: 100%;
-    height: 100%;
-    position: relative;
-
-    video {
-        pointer-events: none;
-    }
-}
-
-.gallery-play-icon {
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    width: 1.25rem;
-    height: 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #f5cee1;
-    font-size: 1.1rem;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
-    pointer-events: none;
 }
 
 .gallery-thumb-locked {
