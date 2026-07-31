@@ -28,6 +28,7 @@ app.config.globalProperties.isLoggedIn = isLoggedIn;
 app.config.globalProperties.statusAssinatura = statusAssinatura;
 app.config.globalProperties.currentUserId = currentUserId;
 app.use(PrimeVue, {
+    license: 'eyJpZCI6IjUwZjdkMDQ4LTU1ZjMtNGUxOC1hMzMzLWI2NjlhM2VjMDliMSIsInByb2R1Y3QiOiJwcmltZXVpIiwidGllciI6ImNvbW11bml0eSIsInR5cGUiOiJkZXYiLCJpYXQiOjE3ODU0Njg5NzgsImV4cCI6MTgxNzAwNDk3OH0.8pr3D3WyYzfRBqAJpcj0VWBX-qcwXc-YyrjZ-W-E49Xsf3kf-1PkGHM3_m0BRozwCCopoJDJ6M6OUTsOqCNIBQ',
     theme: {
         preset: MyPreset,
         options: {

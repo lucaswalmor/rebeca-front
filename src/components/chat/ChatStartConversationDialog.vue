@@ -23,13 +23,16 @@
                 Nenhum usuário encontrado.
             </div>
 
-            <button
+            <div
                 v-for="user in users"
                 :key="user.id"
-                type="button"
                 class="user-row"
-                :disabled="startingId === user.id"
-                @click="startChat(user)"
+                role="button"
+                tabindex="0"
+                :aria-disabled="startingId === user.id"
+                :class="{ 'is-disabled': startingId === user.id }"
+                @click="startingId !== user.id && startChat(user)"
+                @keydown.enter.prevent="startingId !== user.id && startChat(user)"
             >
                 <Avatar
                     :image="user.path_img_avatar || defaultAvatar"
@@ -56,7 +59,7 @@
                 </button>
                 <i v-if="startingId === user.id" class="pi pi-spin pi-spinner"></i>
                 <i v-else class="pi pi-comments"></i>
-            </button>
+            </div>
 
             <div v-if="loadingMore" class="center py-2">
                 <i class="pi pi-spin pi-spinner"></i>
@@ -247,7 +250,7 @@ export default {
         background: #1a1a1a;
     }
 
-    &:disabled {
+    &.is-disabled {
         opacity: 0.7;
         cursor: wait;
     }
